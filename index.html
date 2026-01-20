@@ -8,7 +8,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&family=Inter:wght@200;300;400;500&display=swap" rel="stylesheet">
 
     <!-- Styles -->
     <link rel="stylesheet" href="css/styles.css">
@@ -20,14 +20,20 @@
 <div class="grid-overlay"></div>
 
 <div class="dashboard" id="dashboard">
-    <div class="clock-container">
-        <div class="clock-wrapper">
-            <canvas id="clock-arc-canvas"></canvas>
-            <div class="clock-text">
-                <span class="clock" id="clock">5:00</span>
-                <span class="clock-period" id="clock-period">AM</span>
+    <div class="top-bar">
+        <div id="weather-display" class="weather-display"></div>
+        <div class="clock-container">
+            <div class="clock-hud-line left"></div>
+            <div class="clock-wrapper">
+                <div class="clock-text">
+                    <span class="clock" id="clock">5:00</span>
+                    <span class="clock-period" id="clock-period">AM</span>
+                </div>
+                <div class="clock-progress" id="clock-progress"></div>
             </div>
+            <div class="clock-hud-line right"></div>
         </div>
+        <div class="top-bar-spacer"></div>
     </div>
 
     <div class="main-content">
@@ -81,6 +87,7 @@
 <script src="js/timer.js"></script>
 <script src="js/globe.js"></script>
 <script src="js/hud.js"></script>
+<script src="js/weather.js"></script>
 <script src="js/main.js"></script>
 
 </body>

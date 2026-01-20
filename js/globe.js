@@ -118,24 +118,23 @@ class DottedGlobe {
     }
 
     async loadLandData() {
+        const loading = document.getElementById('globe-loading');
+
         try {
             const response = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json');
+            if (!response.ok) throw new Error('Network response was not ok');
             const topology = await response.json();
             const landFeature = topoFeature(topology, topology.objects.land);
             this.isLand = createLandChecker(landFeature);
             this.generateLandPoints();
-            this.ready = true;
-
-            const loading = document.getElementById('globe-loading');
-            if (loading) loading.style.display = 'none';
-
-            this.animate();
         } catch (error) {
-            console.error('Failed to load land data:', error);
+            console.error('Failed to load land data, using fallback:', error);
             this.generateFallbackPoints();
-            this.ready = true;
-            this.animate();
         }
+
+        this.ready = true;
+        if (loading) loading.style.display = 'none';
+        this.animate();
     }
 
     generateLandPoints() {

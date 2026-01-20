@@ -3,55 +3,65 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // Initialize all components when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    // Initialize lava lamp background
-    const lavaLamp = new LavaLamp(document.getElementById('lava-canvas'));
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // Initialize lava lamp background
+        const lavaLamp = new LavaLamp(document.getElementById('lava-canvas'));
 
-    // Initialize clock
-    initClock();
+        // Initialize clock
+        initClock();
 
-    // Initialize goals
-    initGoals();
+        // Initialize goals
+        initGoals();
 
-    // Initialize schedule
-    initSchedule();
+        // Initialize schedule
+        initSchedule();
 
-    // Initialize timer
-    initTimer();
+        // Initialize timer
+        initTimer();
 
-    // Initialize HUD elements (clock arc, globe arcs)
-    const hud = initHUD();
+        // Initialize weather
+        initWeather();
 
-    // Initialize globes
-    const mainGlobe = new DottedGlobe(document.getElementById('globe-canvas'), {
-        size: 450,
-        highlightLocation: CONFIG.location,
-        rotationSpeed: 0.001,
-        dotSpacing: 2.0,
-        dotColor: '#2d2d2d',
-        highlightColor: '#e67635',
-        initialRotation: 1.4
-    });
+        // Initialize HUD elements (globe arcs)
+        const hud = initHUD();
 
-    const timerGlobe = new DottedGlobe(document.getElementById('timer-globe-canvas'), {
-        size: 650,
-        highlightLocation: CONFIG.location,
-        rotationSpeed: 0.0006,
-        dotSpacing: 2.5,
-        dotColor: '#4a4a4a',
-        highlightColor: '#e67635',
-        initialRotation: 1.4
-    });
+        // Initialize globes
+        const mainGlobe = new DottedGlobe(document.getElementById('globe-canvas'), {
+            size: 450,
+            highlightLocation: CONFIG.location,
+            rotationSpeed: 0.001,
+            dotSpacing: 2.0,
+            dotColor: '#2d2d2d',
+            highlightColor: '#e67635',
+            initialRotation: 1.4
+        });
 
-    // Load land data for both globes
-    Promise.all([
-        mainGlobe.loadLandData(),
-        timerGlobe.loadLandData()
-    ]);
+        const timerGlobe = new DottedGlobe(document.getElementById('timer-globe-canvas'), {
+            size: 650,
+            highlightLocation: CONFIG.location,
+            rotationSpeed: 0.0006,
+            dotSpacing: 2.5,
+            dotColor: '#4a4a4a',
+            highlightColor: '#e67635',
+            initialRotation: 1.4
+        });
 
-    // Handle window resize
-    window.addEventListener('resize', () => {
-        mainGlobe.resize();
-        timerGlobe.resize();
-    });
+        // Load land data for both globes
+        await Promise.all([
+            mainGlobe.loadLandData(),
+            timerGlobe.loadLandData()
+        ]);
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            mainGlobe.resize();
+            timerGlobe.resize();
+        });
+    } catch (error) {
+        console.error('Initialization error:', error);
+        // Hide loading indicator even on error
+        const loading = document.getElementById('globe-loading');
+        if (loading) loading.style.display = 'none';
+    }
 });

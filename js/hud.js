@@ -280,11 +280,8 @@ class GlobeHUD {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function initHUD() {
-    // Clock arc
-    const clockArc = new ClockArc(document.getElementById('clock-arc-canvas'));
-
     // Globe HUD (450 is the globe size from main.js)
     const globeHUD = new GlobeHUD(document.getElementById('globe-hud-canvas'), 450);
 
-    return { clockArc, globeHUD };
+    return { globeHUD };
 }
