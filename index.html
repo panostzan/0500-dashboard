@@ -17,11 +17,17 @@
 
 <div class="background"></div>
 <canvas id="lava-canvas"></canvas>
+<div class="grid-overlay"></div>
 
 <div class="dashboard" id="dashboard">
     <div class="clock-container">
-        <span class="clock" id="clock">5:00</span>
-        <span class="clock-period" id="clock-period">AM</span>
+        <div class="clock-wrapper">
+            <canvas id="clock-arc-canvas"></canvas>
+            <div class="clock-text">
+                <span class="clock" id="clock">5:00</span>
+                <span class="clock-period" id="clock-period">AM</span>
+            </div>
+        </div>
     </div>
 
     <div class="main-content">
@@ -30,11 +36,15 @@
         </div>
 
         <div class="globe-section">
-            <div class="globe-loading" id="globe-loading">LOADING...</div>
-            <canvas id="globe-canvas"></canvas>
+            <div class="globe-wrapper">
+                <div class="globe-loading" id="globe-loading">LOADING...</div>
+                <canvas id="globe-canvas"></canvas>
+                <canvas id="globe-hud-canvas"></canvas>
+            </div>
         </div>
 
-        <div class="schedule-section">
+        <div class="schedule-section hud-frame">
+            <div class="hud-corners"></div>
             <div class="schedule-header">TODAY</div>
             <div class="schedule-scroll" id="schedule-scroll">
                 <div class="time-grid" id="time-grid">
@@ -70,6 +80,7 @@
 <script src="js/schedule.js"></script>
 <script src="js/timer.js"></script>
 <script src="js/globe.js"></script>
+<script src="js/hud.js"></script>
 <script src="js/main.js"></script>
 
 </body>

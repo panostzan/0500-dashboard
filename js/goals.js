@@ -12,7 +12,8 @@ function renderGoals() {
     ];
 
     container.innerHTML = sections.map(section => `
-        <div class="goal-group">
+        <div class="goal-group hud-frame">
+            <div class="hud-corners"></div>
             <h3>${section.title}</h3>
             ${section.items.map((item, idx) => `
                 <div class="goal-item" data-section="${section.title}" data-index="${idx}">

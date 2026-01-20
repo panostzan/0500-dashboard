@@ -19,6 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize timer
     initTimer();
 
+    // Initialize HUD elements (clock arc, globe arcs)
+    const hud = initHUD();
+
     // Initialize globes
     const mainGlobe = new DottedGlobe(document.getElementById('globe-canvas'), {
         size: 450,

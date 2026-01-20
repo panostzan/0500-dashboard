@@ -112,6 +112,7 @@ class DottedGlobe {
         this.landPoints = [];
         this.isLand = null;
         this.ready = false;
+        this.breathPhase = 0;
 
         this.resize();
     }
@@ -248,15 +249,24 @@ class DottedGlobe {
             const depthOpacity = Math.max(0.12, (dot.z + 0.15) / 1.15);
 
             if (dot.isHighlight) {
-                const glowRadius = dotRadius * 5;
+                // Breathing animation
+                const breathScale = 1 + Math.sin(this.breathPhase) * 0.3;
+                const breathOpacity = 0.6 + Math.sin(this.breathPhase) * 0.4;
 
+                const glowRadius = dotRadius * 5 * breathScale;
+
+                // Outer glow (breathing)
                 const gradient = this.ctx.createRadialGradient(
                     dot.x, dot.y, 0,
                     dot.x, dot.y, glowRadius
                 );
-                gradient.addColorStop(0, this.highlightColor);
-                gradient.addColorStop(0.3, this.highlightColor + 'cc');
-                gradient.addColorStop(0.6, this.highlightColor + '44');
+                const alpha1 = Math.floor(breathOpacity * 255).toString(16).padStart(2, '0');
+                const alpha2 = Math.floor(breathOpacity * 0.6 * 255).toString(16).padStart(2, '0');
+                const alpha3 = Math.floor(breathOpacity * 0.2 * 255).toString(16).padStart(2, '0');
+
+                gradient.addColorStop(0, this.highlightColor + alpha1);
+                gradient.addColorStop(0.3, this.highlightColor + alpha2);
+                gradient.addColorStop(0.6, this.highlightColor + alpha3);
                 gradient.addColorStop(1, 'transparent');
 
                 this.ctx.beginPath();
@@ -264,8 +274,10 @@ class DottedGlobe {
                 this.ctx.fillStyle = gradient;
                 this.ctx.fill();
 
+                // Inner solid dot (also pulses slightly)
+                const coreSize = dotRadius * (1.6 + Math.sin(this.breathPhase) * 0.2);
                 this.ctx.beginPath();
-                this.ctx.arc(dot.x, dot.y, dotRadius * 1.8, 0, Math.PI * 2);
+                this.ctx.arc(dot.x, dot.y, coreSize, 0, Math.PI * 2);
                 this.ctx.fillStyle = this.highlightColor;
                 this.ctx.fill();
             } else {
@@ -281,6 +293,7 @@ class DottedGlobe {
     animate() {
         if (!this.ready) return;
         this.rotation += this.rotationSpeed;
+        this.breathPhase += 0.03; // Slow breathing cycle (~4 seconds)
         this.draw();
         requestAnimationFrame(() => this.animate());
     }
