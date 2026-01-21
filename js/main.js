@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Initialize weather
         initWeather();
 
+        // Initialize notes
+        initNotes();
+
         // Initialize HUD elements (globe arcs)
         const hud = initHUD();
 
