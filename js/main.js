@@ -132,8 +132,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const globeContainer = document.querySelector('.globe-section');
         const getGlobeSize = () => {
             if (window.innerWidth <= 768) {
-                // Mobile: fit within container
-                return Math.min(globeContainer.offsetWidth, globeContainer.offsetHeight, 180);
+                // Mobile: fixed size for proper aspect ratio
+                return 200;
             }
             return 450; // Desktop size
         };

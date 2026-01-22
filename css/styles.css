@@ -2523,17 +2523,24 @@ html, body {
         display: flex !important;
         justify-content: center;
         align-items: center;
-        height: 200px;
-        min-height: 200px;
-        margin-bottom: 1rem;
-        border-radius: 12px;
-        overflow: hidden;
+        height: 220px;
+        min-height: 220px;
+        margin-bottom: 0.5rem;
+        overflow: visible;
     }
 
     .globe-wrapper {
         display: flex;
         justify-content: center;
         align-items: center;
+        width: 200px;
+        height: 200px;
+        position: relative;
+    }
+
+    #globe-canvas {
+        width: 200px !important;
+        height: 200px !important;
     }
 
     .globe-loading {
