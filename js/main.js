@@ -26,6 +26,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Initialize notes
         initNotes();
 
+        // Initialize sleep card
+        initSleepCard();
+
         // Initialize HUD elements (globe arcs)
         const hud = initHUD();
 

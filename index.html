@@ -67,13 +67,119 @@
         <!-- Timer presets populated by JS -->
     </div>
 
-    <div class="notes-card" id="notes-card">
-        <div class="notes-header" id="notes-header">
-            <span class="notes-title">NOTES</span>
-            <span class="notes-toggle">+</span>
+    <!-- Compact chips row -->
+    <div class="bottom-chips" id="bottom-chips">
+        <button class="chip chip-notes" id="chip-notes">
+            <span class="chip-label">NOTES</span>
+            <span class="chip-value" id="chip-notes-count"></span>
+        </button>
+        <button class="chip chip-rest" id="chip-rest">
+            <span class="chip-label">REST</span>
+            <span class="chip-value" id="chip-rest-countdown">0:00:00</span>
+        </button>
+    </div>
+</div>
+
+<!-- Notes Modal -->
+<div class="modal-overlay" id="notes-modal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-notes">
+        <div class="modal-header">
+            <span class="modal-title">NOTES</span>
+            <button class="modal-close" id="notes-modal-close">&times;</button>
         </div>
-        <div class="notes-body" id="notes-body">
+        <div class="modal-body">
             <textarea class="notes-input" id="notes-input" placeholder="quick thoughts..." spellcheck="false"></textarea>
+        </div>
+    </div>
+</div>
+
+<!-- Sleep Dashboard Modal -->
+<div class="modal-overlay" id="sleep-modal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-sleep">
+        <div class="modal-header">
+            <span class="modal-title">REST</span>
+            <button class="modal-close" id="sleep-modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="sleep-dashboard">
+                <!-- Quick Actions -->
+                <div class="sleep-actions">
+                    <button class="sleep-action-btn" id="btn-going-to-bed">
+                        <span class="btn-icon">🌙</span> Going to bed
+                    </button>
+                    <button class="sleep-action-btn disabled" id="btn-woke-up">
+                        <span class="btn-icon">☀️</span> Just woke up
+                    </button>
+                </div>
+
+                <!-- Main countdown -->
+                <div class="sleep-main">
+                    <div class="sleep-status" id="sleep-status">TIME UNTIL BED</div>
+                    <div class="sleep-countdown-large" id="sleep-countdown">0:00:00</div>
+                    <div class="sleep-progress-bar">
+                        <div class="sleep-progress-fill" id="sleep-progress-fill"></div>
+                    </div>
+                </div>
+
+                <!-- Stats row -->
+                <div class="sleep-stats">
+                    <div class="sleep-stat">
+                        <span class="sleep-stat-value" id="sleep-bedtime">9:30 PM</span>
+                        <span class="sleep-stat-label">BEDTIME</span>
+                    </div>
+                    <div class="sleep-stat">
+                        <span class="sleep-stat-value" id="sleep-if-now">7h 30m</span>
+                        <span class="sleep-stat-label">IF YOU SLEEP NOW</span>
+                    </div>
+                    <div class="sleep-stat">
+                        <span class="sleep-stat-value" id="sleep-wake-display">5:00 AM</span>
+                        <span class="sleep-stat-label">WAKE TIME</span>
+                    </div>
+                </div>
+
+                <!-- Sleep quality indicator -->
+                <div class="sleep-quality" id="sleep-quality">
+                    <div class="sleep-quality-bar">
+                        <div class="sleep-quality-zone zone-poor">TERRIBLE</div>
+                        <div class="sleep-quality-zone zone-ok">LOW</div>
+                        <div class="sleep-quality-zone zone-good">SOLID</div>
+                        <div class="sleep-quality-zone zone-ideal">IDEAL</div>
+                    </div>
+                    <div class="sleep-quality-marker" id="sleep-quality-marker"></div>
+                </div>
+
+                <!-- Weekly Chart Section -->
+                <div class="sleep-section">
+                    <div class="sleep-section-header">THIS WEEK</div>
+                    <div class="weekly-chart" id="weekly-chart"></div>
+                </div>
+
+                <!-- Bedtime Consistency Band -->
+                <div class="sleep-section">
+                    <div class="sleep-section-header">BEDTIME CONSISTENCY</div>
+                    <div class="bedtime-band" id="bedtime-band"></div>
+                </div>
+
+                <!-- Sleep Debt & Weekly Average -->
+                <div class="sleep-bottom-row">
+                    <div class="sleep-debt-card" id="sleep-debt"></div>
+                    <div class="weekly-avg-card" id="weekly-avg-zone"></div>
+                </div>
+
+                <!-- Settings -->
+                <div class="sleep-settings-row">
+                    <div class="sleep-setting">
+                        <label>WAKE TIME</label>
+                        <input type="time" id="sleep-wake-input" value="05:00">
+                    </div>
+                    <div class="sleep-setting">
+                        <label>TARGET HOURS</label>
+                        <input type="number" id="sleep-hours-input" value="7.5" min="4" max="12" step="0.5">
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -99,6 +205,7 @@
 <script src="js/hud.js"></script>
 <script src="js/weather.js"></script>
 <script src="js/notes.js"></script>
+<script src="js/sleep.js"></script>
 <script src="js/main.js"></script>
 
 </body>

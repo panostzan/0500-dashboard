@@ -1,63 +1,174 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// SCHEDULE
+// SCHEDULE - Notebook Style
 // ═══════════════════════════════════════════════════════════════════════════════
 
+const SCHEDULE_STORAGE_KEY = '0500_schedule_entries';
+
+function loadScheduleEntries() {
+    const saved = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+    if (saved) {
+        return JSON.parse(saved);
+    }
+    // Default empty entries for the day
+    return Array(20).fill(null).map(() => ({ time: '', activity: '' }));
+}
+
+function saveScheduleEntries(entries) {
+    localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(entries));
+}
+
 function renderSchedule() {
-    const gridContainer = document.getElementById('time-grid');
-    const eventsContainer = document.getElementById('schedule-events');
+    const container = document.getElementById('schedule-scroll');
+    const entries = loadScheduleEntries();
 
-    const startHour = 5;
-    const endHour = 24;
-    let gridHTML = '';
+    let html = '<div class="schedule-notebook">';
 
-    for (let hour = startHour; hour <= endHour; hour++) {
-        for (let quarter = 0; quarter < 4; quarter++) {
-            if (hour === endHour && quarter > 0) break;
+    entries.forEach((entry, index) => {
+        html += `
+            <div class="schedule-row" data-index="${index}">
+                <input
+                    type="text"
+                    class="schedule-time-input"
+                    placeholder="--:--"
+                    value="${entry.time}"
+                    data-field="time"
+                    maxlength="7"
+                >
+                <div class="schedule-row-divider"></div>
+                <input
+                    type="text"
+                    class="schedule-activity-input"
+                    placeholder="..."
+                    value="${entry.activity}"
+                    data-field="activity"
+                >
+            </div>
+        `;
+    });
 
-            const showLabel = quarter === 0;
-            const displayHour = hour % 12 || 12;
-            const period = hour >= 12 ? 'PM' : 'AM';
+    // Add new row button
+    html += `
+        <button class="schedule-add-row" id="add-schedule-row">+ add row</button>
+    </div>`;
 
-            gridHTML += `
-                <div class="time-slot">
-                    <span class="time-label">${showLabel ? `${displayHour} ${period}` : ''}</span>
-                    <div class="time-line" style="opacity: ${showLabel ? 0.18 : 0.06}"></div>
-                </div>
-            `;
+    container.innerHTML = html;
+
+    // Attach event listeners
+    attachScheduleListeners();
+}
+
+function attachScheduleListeners() {
+    const rows = document.querySelectorAll('.schedule-row');
+
+    rows.forEach(row => {
+        const inputs = row.querySelectorAll('input');
+
+        inputs.forEach(input => {
+            // Save on input change
+            input.addEventListener('input', () => {
+                saveCurrentSchedule();
+            });
+
+            // Auto-format time input
+            if (input.dataset.field === 'time') {
+                input.addEventListener('blur', () => {
+                    input.value = formatTimeInput(input.value);
+                    saveCurrentSchedule();
+                });
+            }
+
+            // Handle Enter key: time → activity → next time → next activity...
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+
+                    if (input.dataset.field === 'time') {
+                        // Time field → move to activity in same row
+                        row.querySelector('[data-field="activity"]')?.focus();
+                    } else {
+                        // Activity field → move to time in next row
+                        const nextRow = row.nextElementSibling;
+                        if (nextRow && nextRow.classList.contains('schedule-row')) {
+                            nextRow.querySelector('[data-field="time"]')?.focus();
+                        }
+                    }
+                }
+            });
+        });
+    });
+
+    // Add row button
+    const addBtn = document.getElementById('add-schedule-row');
+    if (addBtn) {
+        addBtn.addEventListener('click', () => {
+            const entries = loadScheduleEntries();
+            entries.push({ time: '', activity: '' });
+            saveScheduleEntries(entries);
+            renderSchedule();
+            // Focus the new row
+            const rows = document.querySelectorAll('.schedule-row');
+            const lastRow = rows[rows.length - 1];
+            lastRow?.querySelector('[data-field="time"]')?.focus();
+        });
+    }
+}
+
+function formatTimeInput(value) {
+    if (!value.trim()) return '';
+
+    // Remove all non-numeric characters except colon
+    let cleaned = value.replace(/[^\d:aApPmM\s]/g, '');
+
+    // Try to parse various formats
+    let match;
+
+    // Format: "5" or "05" -> "5:00 AM"
+    if ((match = cleaned.match(/^(\d{1,2})$/))) {
+        let hour = parseInt(match[1]);
+        if (hour >= 1 && hour <= 12) {
+            return `${hour}:00`;
         }
     }
 
-    gridContainer.innerHTML = gridHTML;
-
-    const slotHeight = 20;
-
-    eventsContainer.innerHTML = CONFIG.schedule.map(event => {
-        const [hours, minutes] = event.time.split(':').map(Number);
-        const startSlot = (hours - startHour) * 4 + (minutes / 15);
-        const durationSlots = event.duration / 15;
-
-        const top = startSlot * slotHeight;
-        const height = durationSlots * slotHeight - 4;
-
-        return `
-            <div class="schedule-event ${event.type}" style="top: ${top}px; height: ${height}px;">
-                ${event.title}
-            </div>
-        `;
-    }).join('');
-
-    // Scroll to current time
-    setTimeout(() => {
-        const now = new Date();
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
-
-        if (currentHour >= startHour) {
-            const currentSlot = (currentHour - startHour) * 4 + Math.floor(currentMinute / 15);
-            const scrollTo = Math.max(0, (currentSlot - 4) * slotHeight);
-            document.getElementById('schedule-scroll').scrollTop = scrollTo;
+    // Format: "530" -> "5:30"
+    if ((match = cleaned.match(/^(\d{1,2})(\d{2})$/))) {
+        let hour = parseInt(match[1]);
+        let min = match[2];
+        if (hour >= 1 && hour <= 12) {
+            return `${hour}:${min}`;
         }
-    }, 100);
+    }
+
+    // Format: "5:30" or "05:30"
+    if ((match = cleaned.match(/^(\d{1,2}):(\d{2})$/))) {
+        let hour = parseInt(match[1]);
+        let min = match[2];
+        return `${hour}:${min}`;
+    }
+
+    // Format with AM/PM: "5pm", "5:30pm", "5:30 pm"
+    if ((match = cleaned.match(/^(\d{1,2}):?(\d{2})?\s*(am|pm|a|p)$/i))) {
+        let hour = parseInt(match[1]);
+        let min = match[2] || '00';
+        let period = match[3].toLowerCase().startsWith('p') ? 'PM' : 'AM';
+        return `${hour}:${min} ${period}`;
+    }
+
+    // Return original if no match
+    return value;
+}
+
+function saveCurrentSchedule() {
+    const rows = document.querySelectorAll('.schedule-row');
+    const entries = [];
+
+    rows.forEach(row => {
+        const time = row.querySelector('[data-field="time"]')?.value || '';
+        const activity = row.querySelector('[data-field="activity"]')?.value || '';
+        entries.push({ time, activity });
+    });
+
+    saveScheduleEntries(entries);
 }
 
 function initSchedule() {
