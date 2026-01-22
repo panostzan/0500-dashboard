@@ -94,6 +94,12 @@ function logBedtime() {
 
     saveSleepLog(log);
     updateSleepDashboard();
+
+    // Update tracking status indicator
+    if (typeof updateSleepTrackingStatus === 'function') {
+        updateSleepTrackingStatus();
+    }
+
     return bedtime;
 }
 
@@ -126,6 +132,12 @@ function logWakeUp() {
     }
 
     updateSleepDashboard();
+
+    // Update tracking status indicator
+    if (typeof updateSleepTrackingStatus === 'function') {
+        updateSleepTrackingStatus();
+    }
+
     return now;
 }
 

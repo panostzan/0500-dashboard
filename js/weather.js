@@ -34,6 +34,9 @@ async function fetchWeather() {
 
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&daily=sunrise,sunset&timezone=auto`;
 
+    // Show syncing status
+    updateWeatherStatus('syncing');
+
     try {
         const response = await fetch(url);
         const data = await response.json();
@@ -66,17 +69,39 @@ function renderWeather(data) {
 
     if (!data) {
         container.innerHTML = `<span class="weather-error">--</span>`;
+        updateWeatherStatus('offline');
         return;
     }
 
+    // Create structure with placeholder for animation
     container.innerHTML = `
-        <div class="weather-temp">${data.temp}°</div>
+        <div class="weather-temp" id="weather-temp-value">--°</div>
         <div class="weather-condition">${data.weather.icon} ${data.weather.label}</div>
         <div class="weather-sun">
             <span class="sun-item"><span class="sun-label">RISE</span> ${data.sunrise}</span>
             <span class="sun-item"><span class="sun-label">SET</span> ${data.sunset}</span>
         </div>
     `;
+
+    // Animate temperature if animation function is available
+    const tempElement = document.getElementById('weather-temp-value');
+    if (tempElement && typeof animateTemperature === 'function') {
+        animateTemperature(tempElement, data.temp, 1000);
+    } else if (tempElement) {
+        tempElement.textContent = `${data.temp}°`;
+    }
+
+    // Update status indicator
+    updateWeatherStatus('active');
+}
+
+// Weather status indicator helper
+function updateWeatherStatus(status) {
+    const indicator = document.getElementById('weather-status-indicator');
+    if (indicator) {
+        indicator.classList.remove('status-active', 'status-syncing', 'status-offline');
+        indicator.classList.add(`status-${status}`);
+    }
 }
 
 function initWeather() {

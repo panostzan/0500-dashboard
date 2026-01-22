@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>0500 - HUD Demo</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&family=Inter:wght@200;300;400;500&display=swap" rel="stylesheet">
+
+    <!-- Main Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+
+    <style>
+        /* Demo page specific styles */
+        body {
+            background: linear-gradient(180deg, #ffd4b8 0%, #ffc9a8 50%, #ffbe98 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .demo-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            color: var(--hud-amber);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .demo-section {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .demo-section h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            color: var(--hud-amber);
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--hud-line);
+            padding-bottom: 0.5rem;
+        }
+
+        .demo-row {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .demo-item {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .demo-item-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           GLOWING BORDERS DEMO
+           ═══════════════════════════════════════════════════════════════════ */
+
+        .glow-demo-card {
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(10px);
+            border-radius: 14px;
+            padding: 1.5rem;
+            position: relative;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Subtle glow */
+        .glow-subtle {
+            box-shadow:
+                0 0 10px rgba(212, 145, 92, 0.1),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Medium glow */
+        .glow-medium {
+            box-shadow:
+                0 0 15px rgba(212, 145, 92, 0.2),
+                0 0 30px rgba(212, 145, 92, 0.1),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Bright glow */
+        .glow-bright {
+            box-shadow:
+                0 0 20px rgba(212, 145, 92, 0.3),
+                0 0 40px rgba(212, 145, 92, 0.15),
+                0 0 60px rgba(212, 145, 92, 0.05),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Animated pulsing glow */
+        .glow-pulse {
+            animation: glowPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% {
+                box-shadow:
+                    0 0 10px rgba(212, 145, 92, 0.15),
+                    0 0 20px rgba(212, 145, 92, 0.1),
+                    inset 0 0 20px rgba(255, 255, 255, 0.1);
+            }
+            50% {
+                box-shadow:
+                    0 0 20px rgba(212, 145, 92, 0.3),
+                    0 0 40px rgba(212, 145, 92, 0.15),
+                    0 0 60px rgba(212, 145, 92, 0.05),
+                    inset 0 0 20px rgba(255, 255, 255, 0.15);
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           CORNER BRACKETS DEMO
+           ═══════════════════════════════════════════════════════════════════ */
+
+        .corner-demo-card {
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(10px);
+            border-radius: 14px;
+            padding: 1.5rem;
+            position: relative;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Thin corners */
+        .corners-thin::before,
+        .corners-thin::after,
+        .corners-thin .corner-bl,
+        .corners-thin .corner-br {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-color: var(--hud-amber);
+            border-style: solid;
+            border-width: 0;
+            opacity: 0.5;
+        }
+
+        .corners-thin::before { top: -2px; left: -2px; border-top-width: 1px; border-left-width: 1px; }
+        .corners-thin::after { top: -2px; right: -2px; border-top-width: 1px; border-right-width: 1px; }
+        .corners-thin .corner-bl { bottom: -2px; left: -2px; border-bottom-width: 1px; border-left-width: 1px; }
+        .corners-thin .corner-br { bottom: -2px; right: -2px; border-bottom-width: 1px; border-right-width: 1px; }
+
+        /* Thick corners with glow */
+        .corners-thick::before,
+        .corners-thick::after,
+        .corners-thick .corner-bl,
+        .corners-thick .corner-br {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-color: var(--hud-amber);
+            border-style: solid;
+            border-width: 0;
+            opacity: 0.7;
+            filter: drop-shadow(0 0 6px var(--hud-amber));
+        }
+
+        .corners-thick::before { top: -4px; left: -4px; border-top-width: 2px; border-left-width: 2px; }
+        .corners-thick::after { top: -4px; right: -4px; border-top-width: 2px; border-right-width: 2px; }
+        .corners-thick .corner-bl { bottom: -4px; left: -4px; border-bottom-width: 2px; border-left-width: 2px; }
+        .corners-thick .corner-br { bottom: -4px; right: -4px; border-bottom-width: 2px; border-right-width: 2px; }
+
+        /* Animated breathing corners */
+        .corners-animated::before,
+        .corners-animated::after,
+        .corners-animated .corner-bl,
+        .corners-animated .corner-br {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-color: var(--hud-amber);
+            border-style: solid;
+            border-width: 0;
+            animation: cornerBreathe 4s ease-in-out infinite;
+        }
+
+        .corners-animated::before { top: -3px; left: -3px; border-top-width: 2px; border-left-width: 2px; }
+        .corners-animated::after { top: -3px; right: -3px; border-top-width: 2px; border-right-width: 2px; animation-delay: 0.5s; }
+        .corners-animated .corner-bl { bottom: -3px; left: -3px; border-bottom-width: 2px; border-left-width: 2px; animation-delay: 1s; }
+        .corners-animated .corner-br { bottom: -3px; right: -3px; border-bottom-width: 2px; border-right-width: 2px; animation-delay: 1.5s; }
+
+        @keyframes cornerBreathe {
+            0%, 100% {
+                opacity: 0.4;
+                filter: drop-shadow(0 0 4px var(--hud-amber));
+            }
+            50% {
+                opacity: 1;
+                filter: drop-shadow(0 0 12px var(--hud-amber));
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           STATUS INDICATORS DEMO
+           ═══════════════════════════════════════════════════════════════════ */
+
+        .status-demo-row {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .status-demo-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            position: relative;
+        }
+
+        /* Active state - solid */
+        .status-active {
+            background: var(--check-green);
+            box-shadow: 0 0 8px rgba(106, 176, 76, 0.6);
+        }
+
+        /* Syncing state - pulsing */
+        .status-syncing {
+            background: var(--hud-amber);
+            animation: statusPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% {
+                opacity: 0.4;
+                box-shadow: 0 0 4px rgba(212, 145, 92, 0.3);
+            }
+            50% {
+                opacity: 1;
+                box-shadow: 0 0 12px rgba(212, 145, 92, 0.8);
+            }
+        }
+
+        /* Offline state - dim hollow */
+        .status-offline {
+            background: transparent;
+            border: 2px solid var(--text-muted);
+            opacity: 0.4;
+        }
+
+        .status-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           ANIMATION DEMO
+           ═══════════════════════════════════════════════════════════════════ */
+
+        .animation-demo-value {
+            font-family: 'Inter', sans-serif;
+            font-size: 3rem;
+            font-weight: 200;
+            color: var(--text-primary);
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .demo-button {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 8px;
+            background: rgba(212, 145, 92, 0.2);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            color: var(--hud-amber);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .demo-button:hover {
+            background: rgba(212, 145, 92, 0.35);
+        }
+    </style>
+</head>
+<body>
+
+<div class="demo-container">
+    <h1 class="demo-title">HUD ENHANCEMENT DEMO</h1>
+
+    <!-- Glowing Borders Section -->
+    <div class="demo-section">
+        <h2>GLOWING BORDERS</h2>
+        <div class="demo-row">
+            <div class="demo-item">
+                <div class="demo-item-label">Subtle Glow</div>
+                <div class="glow-demo-card glow-subtle">PANEL CONTENT</div>
+            </div>
+            <div class="demo-item">
+                <div class="demo-item-label">Medium Glow</div>
+                <div class="glow-demo-card glow-medium">PANEL CONTENT</div>
+            </div>
+            <div class="demo-item">
+                <div class="demo-item-label">Bright Glow</div>
+                <div class="glow-demo-card glow-bright">PANEL CONTENT</div>
+            </div>
+            <div class="demo-item">
+                <div class="demo-item-label">Pulsing Glow</div>
+                <div class="glow-demo-card glow-pulse">PANEL CONTENT</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Corner Brackets Section -->
+    <div class="demo-section">
+        <h2>CORNER BRACKETS</h2>
+        <div class="demo-row">
+            <div class="demo-item">
+                <div class="demo-item-label">Thin Corners</div>
+                <div class="corner-demo-card corners-thin">
+                    <span class="corner-bl"></span>
+                    <span class="corner-br"></span>
+                    PANEL CONTENT
+                </div>
+            </div>
+            <div class="demo-item">
+                <div class="demo-item-label">Thick + Glow</div>
+                <div class="corner-demo-card corners-thick">
+                    <span class="corner-bl"></span>
+                    <span class="corner-br"></span>
+                    PANEL CONTENT
+                </div>
+            </div>
+            <div class="demo-item">
+                <div class="demo-item-label">Animated Breathing</div>
+                <div class="corner-demo-card corners-animated">
+                    <span class="corner-bl"></span>
+                    <span class="corner-br"></span>
+                    PANEL CONTENT
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Indicators Section -->
+    <div class="demo-section">
+        <h2>STATUS INDICATORS</h2>
+        <div class="status-demo-row">
+            <div class="status-demo-item">
+                <div class="status-indicator status-active"></div>
+                <span class="status-label">Active / Connected</span>
+            </div>
+            <div class="status-demo-item">
+                <div class="status-indicator status-syncing"></div>
+                <span class="status-label">Syncing / Loading</span>
+            </div>
+            <div class="status-demo-item">
+                <div class="status-indicator status-offline"></div>
+                <span class="status-label">Offline / Inactive</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Animation Demo Section -->
+    <div class="demo-section">
+        <h2>NUMBER ANIMATIONS</h2>
+        <div class="demo-row">
+            <div class="demo-item">
+                <div class="demo-item-label">Clock Ticker</div>
+                <div class="animation-demo-value" id="demo-clock">5:00</div>
+                <button class="demo-button" onclick="demoClockAnimation()">RUN ANIMATION</button>
+            </div>
+            <div class="demo-item">
+                <div class="demo-item-label">Temperature</div>
+                <div class="animation-demo-value" id="demo-temp">--°</div>
+                <button class="demo-button" onclick="demoTempAnimation()">RUN ANIMATION</button>
+            </div>
+            <div class="demo-item">
+                <div class="demo-item-label">Timer Start</div>
+                <div class="animation-demo-value" id="demo-timer">0:00</div>
+                <button class="demo-button" onclick="demoTimerAnimation()">RUN ANIMATION</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Combined Effect -->
+    <div class="demo-section">
+        <h2>COMBINED EFFECT</h2>
+        <div class="demo-row">
+            <div class="demo-item" style="flex: 2;">
+                <div class="demo-item-label">Goal Card with Glow + Corners + Status</div>
+                <div class="glow-demo-card glow-pulse corners-animated" style="padding: 1.5rem;">
+                    <span class="corner-bl"></span>
+                    <span class="corner-br"></span>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div class="status-indicator status-active"></div>
+                        <div style="flex: 1;">
+                            <div style="font-family: 'Orbitron', sans-serif; font-size: 0.7rem; letter-spacing: 0.12em; color: var(--hud-amber); margin-bottom: 0.5rem;">DAILY GOALS</div>
+                            <div style="font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--text-primary);">Complete morning routine</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="js/animations.js"></script>
+<script>
+    function demoClockAnimation() {
+        const element = document.getElementById('demo-clock');
+        animateClockTicker(element, '7:45', 1200);
+    }
+
+    function demoTempAnimation() {
+        const element = document.getElementById('demo-temp');
+        animateTemperature(element, 23, 1000);
+    }
+
+    function demoTimerAnimation() {
+        const element = document.getElementById('demo-timer');
+        animateTimerStart(element, 25, 800);
+    }
+
+    // Run all animations on load for demo effect
+    window.addEventListener('load', () => {
+        setTimeout(demoClockAnimation, 500);
+        setTimeout(demoTempAnimation, 800);
+        setTimeout(demoTimerAnimation, 1100);
+    });
+</script>
+
+</body>
+</html>

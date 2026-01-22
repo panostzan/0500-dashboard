@@ -31,6 +31,22 @@ function updateClock() {
 }
 
 function initClock() {
+    // Run boot animation on first load
+    if (typeof shouldRunBootAnimation === 'function' && shouldRunBootAnimation()) {
+        const clockElement = document.getElementById('clock');
+        if (clockElement) {
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            hours = hours % 12 || 12;
+            const targetTime = `${hours}:${minutes}`;
+
+            // Animate clock ticker on boot
+            animateClockTicker(clockElement, targetTime, 1200);
+        }
+    } else {
+        updateClock();
+    }
+
     setInterval(updateClock, 1000);
-    updateClock();
 }

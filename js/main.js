@@ -2,9 +2,75 @@
 // MAIN - Application Initialization
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// STATUS INDICATOR MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Show sync indicator briefly when data is saved
+ */
+function showSyncIndicator() {
+    const indicator = document.getElementById('sync-indicator');
+    if (!indicator) return;
+
+    indicator.classList.add('visible');
+
+    // Update indicator to syncing state
+    const statusDot = indicator.querySelector('.status-indicator');
+    if (statusDot) {
+        statusDot.classList.remove('status-active', 'status-offline');
+        statusDot.classList.add('status-syncing');
+    }
+
+    // Show for 1 second, then fade out
+    setTimeout(() => {
+        indicator.classList.remove('visible');
+    }, 1000);
+}
+
+/**
+ * Hook into localStorage to show sync indicator on saves
+ */
+function initSyncIndicator() {
+    const originalSetItem = localStorage.setItem;
+    localStorage.setItem = function(key, value) {
+        originalSetItem.call(this, key, value);
+        // Only show for our app's data keys
+        if (key.startsWith('0500_')) {
+            showSyncIndicator();
+        }
+    };
+}
+
+/**
+ * Update sleep tracking status indicator
+ */
+function updateSleepTrackingStatus() {
+    const indicator = document.getElementById('sleep-tracking-indicator');
+    if (!indicator) return;
+
+    // Check if there's pending sleep tracking (bedtime logged but not wake)
+    const log = localStorage.getItem('0500_sleep_log');
+    if (log) {
+        const parsed = JSON.parse(log);
+        const lastEntry = parsed[parsed.length - 1];
+        const isPending = lastEntry && lastEntry.bedtime && !lastEntry.wakeTime;
+
+        indicator.classList.remove('status-active', 'status-syncing', 'status-offline');
+        if (isPending) {
+            indicator.classList.add('status-syncing');
+        } else {
+            indicator.classList.add('status-active');
+        }
+    }
+}
+
 // Initialize all components when DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        // Initialize status indicator system
+        initSyncIndicator();
+
         // Initialize lava lamp background
         const lavaLamp = new LavaLamp(document.getElementById('lava-canvas'));
 
@@ -28,6 +94,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Initialize sleep card
         initSleepCard();
+
+        // Update sleep tracking status
+        updateSleepTrackingStatus();
 
         // Initialize HUD elements (globe arcs)
         const hud = initHUD();

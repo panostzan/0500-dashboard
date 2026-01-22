@@ -104,29 +104,30 @@ html, body {
 .hud-frame .corner-br {
     content: '';
     position: absolute;
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     border-color: var(--hud-amber);
     border-style: solid;
     border-width: 0;
-    opacity: 0.5;
-    animation: breathe 4s ease-in-out infinite;
+    opacity: 0.6;
+    animation: breathe-glow 4s ease-in-out infinite;
 }
 
 /* Top left corner */
 .hud-frame::before {
     top: -4px;
     left: -4px;
-    border-top-width: 1px;
-    border-left-width: 1px;
+    border-top-width: 2px;
+    border-left-width: 2px;
 }
 
 /* Top right corner */
 .hud-frame::after {
     top: -4px;
     right: -4px;
-    border-top-width: 1px;
-    border-right-width: 1px;
+    border-top-width: 2px;
+    border-right-width: 2px;
+    animation-delay: 0.5s;
 }
 
 /* Bottom corners via pseudo-elements on inner element */
@@ -144,15 +145,16 @@ html, body {
     position: absolute;
     bottom: -4px;
     left: -4px;
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     border-color: var(--hud-amber);
     border-style: solid;
     border-width: 0;
-    border-bottom-width: 1px;
-    border-left-width: 1px;
-    opacity: 0.5;
-    animation: breathe 4s ease-in-out infinite;
+    border-bottom-width: 2px;
+    border-left-width: 2px;
+    opacity: 0.6;
+    animation: breathe-glow 4s ease-in-out infinite;
+    animation-delay: 1s;
 }
 
 .hud-corners::after {
@@ -160,15 +162,179 @@ html, body {
     position: absolute;
     bottom: -4px;
     right: -4px;
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     border-color: var(--hud-amber);
     border-style: solid;
     border-width: 0;
-    border-bottom-width: 1px;
-    border-right-width: 1px;
-    opacity: 0.5;
-    animation: breathe 4s ease-in-out infinite;
+    border-bottom-width: 2px;
+    border-right-width: 2px;
+    opacity: 0.6;
+    animation: breathe-glow 4s ease-in-out infinite;
+    animation-delay: 1.5s;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ENHANCED HUD GLOWING BORDERS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Panel glow effect - subtle ambient glow for panels */
+.hud-glow {
+    box-shadow:
+        0 0 15px rgba(212, 145, 92, 0.15),
+        0 0 30px rgba(212, 145, 92, 0.08),
+        inset 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+/* Animated pulsing glow */
+.hud-glow-pulse {
+    animation: hudGlowPulse 4s ease-in-out infinite;
+}
+
+@keyframes hudGlowPulse {
+    0%, 100% {
+        box-shadow:
+            0 0 10px rgba(212, 145, 92, 0.12),
+            0 0 20px rgba(212, 145, 92, 0.06),
+            inset 0 0 20px rgba(255, 255, 255, 0.08);
+    }
+    50% {
+        box-shadow:
+            0 0 20px rgba(212, 145, 92, 0.2),
+            0 0 40px rgba(212, 145, 92, 0.1),
+            inset 0 0 25px rgba(255, 255, 255, 0.12);
+    }
+}
+
+/* Enhanced corner brackets with glow */
+.hud-frame-glow::before,
+.hud-frame-glow::after {
+    width: 20px;
+    height: 20px;
+    border-width: 0;
+    animation: cornerGlowBreathe 4s ease-in-out infinite;
+}
+
+.hud-frame-glow::before {
+    top: -4px;
+    left: -4px;
+    border-top-width: 2px;
+    border-left-width: 2px;
+}
+
+.hud-frame-glow::after {
+    top: -4px;
+    right: -4px;
+    border-top-width: 2px;
+    border-right-width: 2px;
+    animation-delay: 0.5s;
+}
+
+.hud-corners-glow::before {
+    width: 20px;
+    height: 20px;
+    border-bottom-width: 2px;
+    border-left-width: 2px;
+    animation: cornerGlowBreathe 4s ease-in-out infinite;
+    animation-delay: 1s;
+}
+
+.hud-corners-glow::after {
+    width: 20px;
+    height: 20px;
+    border-bottom-width: 2px;
+    border-right-width: 2px;
+    animation: cornerGlowBreathe 4s ease-in-out infinite;
+    animation-delay: 1.5s;
+}
+
+@keyframes cornerGlowBreathe {
+    0%, 100% {
+        opacity: 0.4;
+        filter: drop-shadow(0 0 4px var(--hud-amber));
+    }
+    50% {
+        opacity: 0.9;
+        filter: drop-shadow(0 0 10px var(--hud-amber));
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   STATUS INDICATORS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+/* Active state - solid green/amber glow */
+.status-active {
+    background: var(--check-green);
+    box-shadow: 0 0 6px rgba(106, 176, 76, 0.6);
+}
+
+.status-active.amber {
+    background: var(--hud-amber);
+    box-shadow: 0 0 6px rgba(212, 145, 92, 0.6);
+}
+
+/* Syncing/loading state - pulsing */
+.status-syncing {
+    background: var(--hud-amber);
+    animation: statusPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+    0%, 100% {
+        opacity: 0.4;
+        box-shadow: 0 0 3px rgba(212, 145, 92, 0.3);
+    }
+    50% {
+        opacity: 1;
+        box-shadow: 0 0 10px rgba(212, 145, 92, 0.7);
+    }
+}
+
+/* Offline/inactive state - dim hollow */
+.status-offline {
+    background: transparent;
+    border: 1.5px solid var(--text-muted);
+    opacity: 0.4;
+    box-shadow: none;
+}
+
+/* Status indicator in top bar */
+.weather-status-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Data sync indicator */
+.sync-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.5rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sync-indicator.visible {
+    opacity: 1;
+}
+
+.sync-indicator .status-indicator {
+    width: 6px;
+    height: 6px;
 }
 
 /* Main layout */
@@ -379,6 +545,12 @@ html, body {
     backdrop-filter: blur(10px);
     border-radius: 14px;
     padding: 1rem 1.25rem;
+    /* Subtle ambient glow */
+    box-shadow:
+        0 0 12px rgba(212, 145, 92, 0.08),
+        0 0 24px rgba(212, 145, 92, 0.04),
+        inset 0 0 15px rgba(255, 255, 255, 0.08);
+    animation: hudGlowPulse 6s ease-in-out infinite;
 }
 
 .goal-group h3 {
@@ -579,6 +751,13 @@ html, body {
     overflow-x: hidden;
     display: flex;
     flex-direction: column;
+    /* Subtle ambient glow */
+    box-shadow:
+        0 0 15px rgba(212, 145, 92, 0.1),
+        0 0 30px rgba(212, 145, 92, 0.05),
+        inset 0 0 20px rgba(255, 255, 255, 0.08);
+    animation: hudGlowPulse 5s ease-in-out infinite;
+    animation-delay: 1s;
 }
 
 .schedule-header {
@@ -761,11 +940,14 @@ html, body {
     color: var(--text-primary);
     cursor: pointer;
     transition: all 0.3s ease;
+    /* Subtle glow on timer buttons */
+    box-shadow: 0 0 8px rgba(212, 145, 92, 0.15);
 }
 
 .timer-preset:hover {
     background: rgba(255, 255, 255, 0.65);
     transform: scale(1.08);
+    box-shadow: 0 0 15px rgba(212, 145, 92, 0.3);
 }
 
 /* Notes card */
@@ -1238,11 +1420,22 @@ html, body {
     background: linear-gradient(145deg, rgba(255, 220, 200, 0.95), rgba(255, 200, 170, 0.95));
     backdrop-filter: blur(20px);
     border-radius: 20px;
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+    box-shadow:
+        0 25px 60px rgba(0, 0, 0, 0.3),
+        0 0 30px rgba(212, 145, 92, 0.15),
+        inset 0 0 30px rgba(255, 255, 255, 0.1);
     transform: translateY(20px) scale(0.95);
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
     max-height: 85vh;
     overflow: hidden;
+    border: 1px solid rgba(212, 145, 92, 0.2);
+}
+
+.modal-overlay.active .modal-content {
+    box-shadow:
+        0 25px 60px rgba(0, 0, 0, 0.3),
+        0 0 40px rgba(212, 145, 92, 0.25),
+        inset 0 0 30px rgba(255, 255, 255, 0.1);
 }
 
 .modal-overlay.active .modal-content {

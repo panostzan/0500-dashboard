@@ -21,7 +21,10 @@
 
 <div class="dashboard" id="dashboard">
     <div class="top-bar">
-        <div id="weather-display" class="weather-display"></div>
+        <div class="weather-status-wrapper">
+            <div class="status-indicator status-syncing" id="weather-status-indicator"></div>
+            <div id="weather-display" class="weather-display"></div>
+        </div>
         <div class="clock-container">
             <div class="clock-hud-line left"></div>
             <div class="clock-wrapper">
@@ -73,6 +76,13 @@
             <span class="chip-label">NOTES</span>
             <span class="chip-value" id="chip-notes-count"></span>
         </button>
+
+        <!-- Data sync indicator -->
+        <div class="sync-indicator" id="sync-indicator">
+            <div class="status-indicator status-syncing"></div>
+            <span>SYNCING</span>
+        </div>
+
         <button class="chip chip-rest" id="chip-rest">
             <span class="chip-label">REST</span>
             <span class="chip-value" id="chip-rest-countdown">0:00:00</span>
@@ -99,7 +109,10 @@
     <div class="modal-backdrop"></div>
     <div class="modal-content modal-sleep">
         <div class="modal-header">
-            <span class="modal-title">REST</span>
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <div class="status-indicator status-active amber" id="sleep-tracking-indicator"></div>
+                <span class="modal-title">REST</span>
+            </div>
             <button class="modal-close" id="sleep-modal-close">&times;</button>
         </div>
         <div class="modal-body">
@@ -196,6 +209,7 @@
 
 <!-- Scripts -->
 <script src="js/config.js"></script>
+<script src="js/animations.js"></script>
 <script src="js/lava-lamp.js"></script>
 <script src="js/clock.js"></script>
 <script src="js/goals.js"></script>

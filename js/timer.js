@@ -23,12 +23,25 @@ function renderTimerPresets() {
 function startTimer(minutes) {
     timerRemaining = minutes * 60;
     timerPaused = false;
-    updateTimerDisplay();
 
     document.getElementById('dashboard').classList.add('hidden');
     document.getElementById('timer-overlay').classList.add('active');
     document.getElementById('timer-pause').textContent = 'PAUSE';
 
+    // Animate timer display on start
+    const timerDisplay = document.getElementById('timer-display');
+    if (timerDisplay && typeof animateTimerStart === 'function') {
+        animateTimerStart(timerDisplay, minutes, 800, () => {
+            // Start the actual countdown after animation completes
+            startTimerCountdown();
+        });
+    } else {
+        updateTimerDisplay();
+        startTimerCountdown();
+    }
+}
+
+function startTimerCountdown() {
     timerInterval = setInterval(() => {
         if (!timerPaused) {
             timerRemaining--;
