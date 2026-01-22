@@ -5,12 +5,12 @@ This file outlines planned features for future versions of 0500.
 The goal is to eventually launch on Vercel as a public tool.
 
 
-v1.1 - DATA PERSISTENCE
------------------------
-- Save checked goals to localStorage
-- Remember timer history and preferences
-- Persist custom schedule across sessions
-- Optional: IndexedDB for larger data storage
+v1.1 - DATA PERSISTENCE ✓ COMPLETE
+-----------------------------------
+- Save checked goals to localStorage ✓
+- Persist custom schedule across sessions ✓
+- Sleep settings and log persistence ✓
+- Notes auto-save ✓
 
 
 v1.2 - CUSTOMIZABLE GOALS & SCHEDULE
@@ -22,13 +22,12 @@ v1.2 - CUSTOMIZABLE GOALS & SCHEDULE
 - Delete events from schedule
 
 
-v1.3 - WEATHER INTEGRATION
---------------------------
-- Show current temperature
-- Display sunrise/sunset times (relevant to 0500 theme)
-- Weather condition icon
-- Use OpenWeatherMap API or similar
-- Location auto-detect or manual entry
+v1.3 - WEATHER INTEGRATION ✓ COMPLETE
+--------------------------------------
+- Show current temperature ✓
+- Display sunrise/sunset times ✓
+- Weather condition indicator ✓
+- Location-based weather data ✓
 
 
 v1.4 - CALENDAR INTEGRATION

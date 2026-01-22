@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layout Options Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&family=Inter:wght@200;300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --orange-400: #fb923c;
+            --coral: #ff7f6e;
+            --teal: #5eadb0;
+            --hud-amber: #d4915c;
+            --text-primary: #1a1a1a;
+            --text-secondary: #4a4a4a;
+            --text-muted: #7a7a7a;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(180deg, #ffd4b8 0%, #ffc9a8 50%, #ffbe98 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            text-align: center;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+            letter-spacing: 0.1em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .option {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .option:hover {
+            border-color: var(--hud-amber);
+            transform: translateY(-4px);
+        }
+
+        .option-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            letter-spacing: 0.1em;
+            color: var(--hud-amber);
+            margin-bottom: 0.5rem;
+        }
+
+        .option-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+
+        /* Mini dashboard mockups */
+        .mockup {
+            background: linear-gradient(180deg, #ffd4b8 0%, #ffbe98 100%);
+            border-radius: 12px;
+            height: 280px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .mock-topbar {
+            height: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 12px;
+        }
+
+        .mock-weather {
+            width: 50px;
+            height: 24px;
+            background: rgba(255,255,255,0.4);
+            border-radius: 4px;
+        }
+
+        .mock-clock {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 200;
+            color: var(--text-primary);
+        }
+
+        .mock-main {
+            display: grid;
+            grid-template-columns: 60px 1fr 60px;
+            gap: 8px;
+            padding: 0 12px;
+            height: 160px;
+        }
+
+        .mock-goals {
+            background: rgba(255,255,255,0.4);
+            border-radius: 8px;
+            padding: 6px;
+        }
+
+        .mock-globe-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .mock-globe {
+            width: 100px;
+            height: 100px;
+            border: 2px dashed var(--hud-amber);
+            border-radius: 50%;
+            opacity: 0.5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            color: var(--text-muted);
+        }
+
+        .mock-schedule {
+            background: rgba(255,255,255,0.4);
+            border-radius: 8px;
+            padding: 6px;
+        }
+
+        .mock-bottom {
+            position: absolute;
+            bottom: 8px;
+            left: 12px;
+            right: 12px;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .mock-card {
+            background: rgba(255,255,255,0.5);
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.5rem;
+            letter-spacing: 0.05em;
+            color: var(--hud-amber);
+        }
+
+        .mock-card.rest {
+            background: rgba(94, 173, 176, 0.3);
+        }
+
+        .mock-card.notes {
+            background: rgba(255,255,255,0.5);
+        }
+
+        .mock-timer {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            margin-bottom: 4px;
+        }
+
+        .mock-timer-btn {
+            width: 20px;
+            height: 20px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 50%;
+        }
+
+        /* Option 1: Side placement */
+        .opt1 .mock-goals {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .opt1 .mock-goals-inner {
+            flex: 1;
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+        }
+
+        .opt1 .mock-notes-side {
+            height: 30px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.45rem;
+            color: var(--hud-amber);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .opt1 .mock-schedule {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .opt1 .mock-schedule-inner {
+            flex: 1;
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+        }
+
+        .opt1 .mock-rest-side {
+            height: 30px;
+            background: rgba(94, 173, 176, 0.3);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.45rem;
+            color: var(--teal);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .opt1 .mock-bottom {
+            justify-content: center;
+        }
+
+        /* Option 2: Floating corners */
+        .opt2 .mock-notes-corner {
+            position: absolute;
+            bottom: 8px;
+            left: 12px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.45rem;
+            color: var(--hud-amber);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .opt2 .mock-rest-corner {
+            position: absolute;
+            bottom: 8px;
+            right: 12px;
+            background: rgba(94, 173, 176, 0.3);
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.45rem;
+            color: var(--teal);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .opt2 .mock-bottom {
+            bottom: 35px;
+        }
+
+        /* Option 3: Tabbed */
+        .opt3 .mock-tabbed {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.5);
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .opt3 .mock-tab {
+            padding: 4px 12px;
+            font-size: 0.45rem;
+            font-family: 'Orbitron', sans-serif;
+            color: var(--text-muted);
+        }
+
+        .opt3 .mock-tab.active {
+            background: rgba(94, 173, 176, 0.4);
+            color: var(--teal);
+        }
+
+        .opt3 .mock-bottom {
+            bottom: 35px;
+        }
+
+        /* Option 4: Top bar integration */
+        .opt4 .mock-topbar {
+            display: grid;
+            grid-template-columns: 60px 1fr 80px;
+            align-items: center;
+        }
+
+        .opt4 .mock-rest-top {
+            background: rgba(94, 173, 176, 0.3);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 0.45rem;
+            font-family: 'Orbitron', sans-serif;
+            color: var(--teal);
+            text-align: center;
+        }
+
+        .opt4 .mock-bottom .mock-card {
+            width: 100px;
+        }
+
+        /* Option 5: Compact collapsed */
+        .opt5 .mock-bottom {
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .opt5 .mock-compact-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .opt5 .mock-compact {
+            background: rgba(255,255,255,0.4);
+            border-radius: 4px;
+            padding: 3px 10px;
+            font-size: 0.45rem;
+            font-family: 'Orbitron', sans-serif;
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .opt5 .mock-compact .label {
+            color: var(--hud-amber);
+        }
+
+        .opt5 .mock-compact .value {
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .opt5 .mock-compact.rest {
+            background: rgba(94, 173, 176, 0.25);
+        }
+
+        .opt5 .mock-compact.rest .label {
+            color: var(--teal);
+        }
+
+        .pros-cons {
+            margin-top: 1rem;
+            font-size: 0.7rem;
+        }
+
+        .pros-cons dt {
+            color: var(--teal);
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+
+        .pros-cons dd {
+            color: var(--text-muted);
+            margin-left: 0;
+        }
+
+        .pros-cons .con dt {
+            color: var(--coral);
+        }
+
+        .recommended {
+            border-color: var(--teal);
+            box-shadow: 0 0 20px rgba(94, 173, 176, 0.3);
+        }
+
+        .recommended .option-title::after {
+            content: ' (RECOMMENDED)';
+            color: var(--teal);
+            font-size: 0.6rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>LAYOUT OPTIONS</h1>
+    <p class="subtitle">Hover to highlight. Pick your favorite layout for Notes + Rest cards.</p>
+
+    <div class="options-grid">
+        <!-- Option 1: Side Placement -->
+        <div class="option recommended">
+            <div class="option-title">OPTION 1: SIDE PLACEMENT</div>
+            <div class="option-desc">Notes under Goals (left), Rest under Schedule (right). Center stays clear.</div>
+            <div class="mockup opt1">
+                <div class="mock-topbar">
+                    <div class="mock-weather"></div>
+                    <div class="mock-clock">5:00</div>
+                    <div style="width: 50px;"></div>
+                </div>
+                <div class="mock-main">
+                    <div class="mock-goals">
+                        <div class="mock-goals-inner"></div>
+                        <div class="mock-notes-side">NOTES</div>
+                    </div>
+                    <div class="mock-globe-area">
+                        <div class="mock-globe">GLOBE</div>
+                    </div>
+                    <div class="mock-schedule">
+                        <div class="mock-schedule-inner"></div>
+                        <div class="mock-rest-side">REST 2:34</div>
+                    </div>
+                </div>
+                <div class="mock-bottom">
+                    <div class="mock-timer">
+                        <div class="mock-timer-btn"></div>
+                        <div class="mock-timer-btn"></div>
+                        <div class="mock-timer-btn"></div>
+                    </div>
+                </div>
+            </div>
+            <dl class="pros-cons">
+                <dt>+ Pros</dt>
+                <dd>Clean center, uses existing columns, logical grouping</dd>
+                <div class="con">
+                    <dt>- Cons</dt>
+                    <dd>Side columns get taller</dd>
+                </div>
+            </dl>
+        </div>
+
+        <!-- Option 2: Floating Corners -->
+        <div class="option">
+            <div class="option-title">OPTION 2: FLOATING CORNERS</div>
+            <div class="option-desc">Notes bottom-left, Rest bottom-right. Small footprint, expand on click.</div>
+            <div class="mockup opt2">
+                <div class="mock-topbar">
+                    <div class="mock-weather"></div>
+                    <div class="mock-clock">5:00</div>
+                    <div style="width: 50px;"></div>
+                </div>
+                <div class="mock-main">
+                    <div class="mock-goals"></div>
+                    <div class="mock-globe-area">
+                        <div class="mock-globe">GLOBE</div>
+                    </div>
+                    <div class="mock-schedule"></div>
+                </div>
+                <div class="mock-bottom">
+                    <div class="mock-timer">
+                        <div class="mock-timer-btn"></div>
+                        <div class="mock-timer-btn"></div>
+                        <div class="mock-timer-btn"></div>
+                    </div>
+                </div>
+                <div class="mock-notes-corner">NOTES</div>
+                <div class="mock-rest-corner">REST 2:34</div>
+            </div>
+            <dl class="pros-cons">
+                <dt>+ Pros</dt>
+                <dd>Minimal footprint, always accessible, doesn't crowd center</dd>
+                <div class="con">
+                    <dt>- Cons</dt>
+                    <dd>May feel disconnected, expands could still overlap</dd>
+                </div>
+            </dl>
+        </div>
+
+        <!-- Option 3: Tabbed -->
+        <div class="option">
+            <div class="option-title">OPTION 3: TABBED BOTTOM PANEL</div>
+            <div class="option-desc">Single card with NOTES | REST tabs. Only one open at a time.</div>
+            <div class="mockup opt3">
+                <div class="mock-topbar">
+                    <div class="mock-weather"></div>
+                    <div class="mock-clock">5:00</div>
+                    <div style="width: 50px;"></div>
+                </div>
+                <div class="mock-main">
+                    <div class="mock-goals"></div>
+                    <div class="mock-globe-area">
+                        <div class="mock-globe">GLOBE</div>
+                    </div>
+                    <div class="mock-schedule"></div>
+                </div>
+                <div class="mock-bottom">
+                    <div class="mock-timer">
+                        <div class="mock-timer-btn"></div>
+                        <div class="mock-timer-btn"></div>
+                        <div class="mock-timer-btn"></div>
+                    </div>
+                </div>
+                <div class="mock-tabbed">
+                    <div class="mock-tab">NOTES</div>
+                    <div class="mock-tab active">REST</div>
+                </div>
+            </div>
+            <dl class="pros-cons">
+                <dt>+ Pros</dt>
+                <dd>Compact, only one panel at a time, clean</dd>
+                <div class="con">
+                    <dt>- Cons</dt>
+                    <dd>Can't see both at once, extra click to switch</dd>
+                </div>
+            </dl>
+        </div>
+
+        <!-- Option 4: Top Bar -->
+        <div class="option">
+            <div class="option-title">OPTION 4: TOP BAR INTEGRATION</div>
+            <div class="option-desc">Rest countdown in top bar (always visible). Notes stays at bottom alone.</div>
+            <div class="mockup opt4">
+                <div class="mock-topbar">
+                    <div class="mock-weather"></div>
+                    <div class="mock-clock">5:00</div>
+                    <div class="mock-rest-top">REST 2:34:17</div>
+                </div>
+                <div class="mock-main">
+                    <div class="mock-goals"></div>
+                    <div class="mock-globe-area">
+                        <div class="mock-globe">GLOBE</div>
+                    </div>
+                    <div class="mock-schedule"></div>
+                </div>
+                <div class="mock-bottom">
+                    <div class="mock-timer">
+                        <div class="mock-timer-btn"></div>
+                        <div class="mock-timer-btn"></div>
+                        <div class="mock-timer-btn"></div>
+                    </div>
+                    <div class="mock-card notes">NOTES</div>
+                </div>
+            </div>
+            <dl class="pros-cons">
+                <dt>+ Pros</dt>
+                <dd>Rest always visible (time-sensitive), bottom uncrowded</dd>
+                <div class="con">
+                    <dt>- Cons</dt>
+                    <dd>Top bar gets busier, less room for rest details</dd>
+                </div>
+            </dl>
+        </div>
+
+        <!-- Option 5: Compact Inline -->
+        <div class="option">
+            <div class="option-title">OPTION 5: COMPACT INLINE ROW</div>
+            <div class="option-desc">Both cards as small inline chips showing key info. Click to expand as overlay.</div>
+            <div class="mockup opt5">
+                <div class="mock-topbar">
+                    <div class="mock-weather"></div>
+                    <div class="mock-clock">5:00</div>
+                    <div style="width: 50px;"></div>
+                </div>
+                <div class="mock-main">
+                    <div class="mock-goals"></div>
+                    <div class="mock-globe-area">
+                        <div class="mock-globe">GLOBE</div>
+                    </div>
+                    <div class="mock-schedule"></div>
+                </div>
+                <div class="mock-bottom">
+                    <div class="mock-timer">
+                        <div class="mock-timer-btn"></div>
+                        <div class="mock-timer-btn"></div>
+                        <div class="mock-timer-btn"></div>
+                    </div>
+                    <div class="mock-compact-row">
+                        <div class="mock-compact">
+                            <span class="label">NOTES</span>
+                            <span class="value">3 items</span>
+                        </div>
+                        <div class="mock-compact rest">
+                            <span class="label">REST</span>
+                            <span class="value">2:34:17</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <dl class="pros-cons">
+                <dt>+ Pros</dt>
+                <dd>Both visible with key info, very compact, expands on demand</dd>
+                <div class="con">
+                    <dt>- Cons</dt>
+                    <dd>Expanded state still needs handling</dd>
+                </div>
+            </dl>
+        </div>
+    </div>
+</body>
+</html>
