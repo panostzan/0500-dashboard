@@ -45,6 +45,29 @@
 <canvas id="lava-canvas"></canvas>
 <div class="grid-overlay"></div>
 
+<!-- Mobile Navigation (hidden on desktop) -->
+<nav class="mobile-nav" id="mobile-nav">
+    <div class="mobile-nav-tabs">
+        <button class="mobile-tab active" data-tab="goals">
+            <span class="tab-icon">◎</span>
+            <span class="tab-label">Goals</span>
+        </button>
+        <button class="mobile-tab" data-tab="schedule">
+            <span class="tab-icon">▤</span>
+            <span class="tab-label">Schedule</span>
+        </button>
+        <button class="mobile-tab" data-tab="sleep">
+            <span class="tab-icon">◐</span>
+            <span class="tab-label">Sleep</span>
+        </button>
+    </div>
+    <div class="mobile-timer-buttons">
+        <button class="mobile-timer-btn" data-minutes="5">5</button>
+        <button class="mobile-timer-btn" data-minutes="15">15</button>
+        <button class="mobile-timer-btn" data-minutes="25">25</button>
+    </div>
+</nav>
+
 <div class="dashboard" id="dashboard">
     <div class="top-bar">
         <div class="weather-status-wrapper">
@@ -66,7 +89,7 @@
     </div>
 
     <div class="main-content">
-        <div class="goals-section" id="goals-section">
+        <div class="goals-section mobile-panel" id="goals-section" data-panel="goals">
             <!-- Goals populated by JS -->
         </div>
 
@@ -78,7 +101,7 @@
             </div>
         </div>
 
-        <div class="schedule-section hud-frame">
+        <div class="schedule-section hud-frame mobile-panel" data-panel="schedule">
             <div class="hud-corners"></div>
             <div class="schedule-header">TODAY</div>
             <div class="schedule-scroll" id="schedule-scroll">
@@ -87,6 +110,81 @@
                 </div>
                 <div class="schedule-events" id="schedule-events">
                     <!-- Events populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Sleep Panel (hidden on desktop, shown as tab on mobile) -->
+        <div class="mobile-sleep-panel mobile-panel" data-panel="sleep" id="mobile-sleep-panel">
+            <div class="mobile-sleep-content">
+                <!-- Main countdown -->
+                <div class="mobile-sleep-main">
+                    <div class="mobile-sleep-status" id="mobile-sleep-status">TIME UNTIL BED</div>
+                    <div class="mobile-sleep-countdown" id="mobile-sleep-countdown">0:00:00</div>
+                    <div class="mobile-sleep-progress">
+                        <div class="mobile-sleep-progress-fill" id="mobile-sleep-progress-fill"></div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="mobile-sleep-actions">
+                    <button class="mobile-sleep-btn" id="mobile-btn-bed">
+                        <span>🌙</span> Going to bed
+                    </button>
+                    <button class="mobile-sleep-btn disabled" id="mobile-btn-wake">
+                        <span>☀️</span> Just woke up
+                    </button>
+                </div>
+
+                <!-- Stats -->
+                <div class="mobile-sleep-stats">
+                    <div class="mobile-stat">
+                        <span class="mobile-stat-value" id="mobile-sleep-bedtime">--:--</span>
+                        <span class="mobile-stat-label">BEDTIME</span>
+                    </div>
+                    <div class="mobile-stat">
+                        <span class="mobile-stat-value" id="mobile-sleep-if-now">--</span>
+                        <span class="mobile-stat-label">IF NOW</span>
+                    </div>
+                    <div class="mobile-stat">
+                        <span class="mobile-stat-value" id="mobile-sleep-wake">--:--</span>
+                        <span class="mobile-stat-label">WAKE</span>
+                    </div>
+                </div>
+
+                <!-- Quality bar -->
+                <div class="mobile-sleep-quality">
+                    <div class="mobile-quality-bar">
+                        <div class="mobile-quality-zone zone-poor"></div>
+                        <div class="mobile-quality-zone zone-ok"></div>
+                        <div class="mobile-quality-zone zone-good"></div>
+                        <div class="mobile-quality-zone zone-ideal"></div>
+                    </div>
+                    <div class="mobile-quality-marker" id="mobile-quality-marker"></div>
+                </div>
+
+                <!-- Weekly chart -->
+                <div class="mobile-weekly-section">
+                    <div class="mobile-section-label">THIS WEEK</div>
+                    <div class="mobile-weekly-chart" id="mobile-weekly-chart"></div>
+                </div>
+
+                <!-- Settings row -->
+                <div class="mobile-sleep-settings">
+                    <div class="mobile-setting">
+                        <label>WAKE</label>
+                        <input type="time" id="mobile-wake-input" value="05:00">
+                    </div>
+                    <div class="mobile-setting">
+                        <label>HOURS</label>
+                        <input type="number" id="mobile-hours-input" value="7.5" min="4" max="12" step="0.5">
+                    </div>
+                </div>
+
+                <!-- Data buttons -->
+                <div class="mobile-data-actions">
+                    <button class="mobile-data-btn" id="mobile-export">↓ Export</button>
+                    <button class="mobile-data-btn" id="mobile-import">↑ Import</button>
                 </div>
             </div>
         </div>
@@ -256,6 +354,7 @@
 <script src="js/weather.js"></script>
 <script src="js/notes.js"></script>
 <script src="js/sleep.js"></script>
+<script src="js/mobile.js"></script>
 <script src="js/main.js"></script>
 
 </body>
