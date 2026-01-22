@@ -10,8 +10,8 @@ function loadCollapsedState() {
     if (saved) {
         return JSON.parse(saved);
     }
-    // Default: mid-term and long-term are collapsed
-    return { midTerm: true, longTerm: true };
+    // Default: all sections start expanded on first load
+    return { daily: false, midTerm: true, longTerm: true };
 }
 
 function saveCollapsedState(state) {
@@ -41,7 +41,7 @@ function renderGoals() {
     const collapsed = loadCollapsedState();
 
     const sections = [
-        { key: 'daily', title: 'DAILY', items: goals.daily, collapsible: false },
+        { key: 'daily', title: 'DAILY', items: goals.daily, collapsible: true },
         { key: 'midTerm', title: 'MID-TERM', items: goals.midTerm, collapsible: true },
         { key: 'longTerm', title: 'LONG-TERM', items: goals.longTerm, collapsible: true }
     ];

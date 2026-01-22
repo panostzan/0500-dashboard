@@ -128,9 +128,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Initialize HUD elements (globe arcs)
         const hud = initHUD();
 
+        // Calculate initial globe size based on container
+        const globeContainer = document.querySelector('.globe-section');
+        const getGlobeSize = () => {
+            if (window.innerWidth <= 768) {
+                // Mobile: fit within container
+                return Math.min(globeContainer.offsetWidth, globeContainer.offsetHeight, 180);
+            }
+            return 450; // Desktop size
+        };
+
         // Initialize globes
         const mainGlobe = new DottedGlobe(document.getElementById('globe-canvas'), {
-            size: 450,
+            size: getGlobeSize(),
             highlightLocation: CONFIG.location,
             rotationSpeed: 0.001,
             dotSpacing: 2.0,
@@ -157,6 +167,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Handle window resize
         window.addEventListener('resize', () => {
+            const newSize = getGlobeSize();
+            mainGlobe.size = newSize;
             mainGlobe.resize();
             timerGlobe.resize();
         });
