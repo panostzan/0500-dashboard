@@ -610,6 +610,105 @@ function updateSleepDisplay() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// DATA EXPORT / IMPORT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function exportSleepData() {
+    const settings = loadSleepSettings();
+    const log = loadSleepLog();
+
+    const exportData = {
+        version: '1.0',
+        exportedAt: new Date().toISOString(),
+        settings,
+        log
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `0500-sleep-data-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    // Show feedback
+    const exportBtn = document.getElementById('btn-export-sleep');
+    if (exportBtn) {
+        const originalText = exportBtn.innerHTML;
+        exportBtn.innerHTML = '<span class="btn-icon">✓</span> Exported!';
+        setTimeout(() => {
+            exportBtn.innerHTML = originalText;
+        }, 2000);
+    }
+}
+
+function importSleepData() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const data = JSON.parse(event.target.result);
+
+                // Validate data structure
+                if (!data.settings || !data.log) {
+                    alert('Invalid sleep data file');
+                    return;
+                }
+
+                // Confirm import
+                const logCount = data.log.length;
+                if (confirm(`Import ${logCount} sleep records? This will replace your current data.`)) {
+                    saveSleepSettings(data.settings);
+                    saveSleepLog(data.log);
+
+                    // Update UI
+                    updateSleepDisplay();
+                    updateSleepDashboard();
+
+                    // Update input values
+                    const wakeInput = document.getElementById('sleep-wake-input');
+                    const hoursInput = document.getElementById('sleep-hours-input');
+                    if (wakeInput) {
+                        const h = data.settings.wakeHour.toString().padStart(2, '0');
+                        const m = data.settings.wakeMinute.toString().padStart(2, '0');
+                        wakeInput.value = `${h}:${m}`;
+                    }
+                    if (hoursInput) {
+                        hoursInput.value = data.settings.targetSleepHours;
+                    }
+
+                    // Show feedback
+                    const importBtn = document.getElementById('btn-import-sleep');
+                    if (importBtn) {
+                        const originalText = importBtn.innerHTML;
+                        importBtn.innerHTML = '<span class="btn-icon">✓</span> Imported!';
+                        setTimeout(() => {
+                            importBtn.innerHTML = originalText;
+                        }, 2000);
+                    }
+                }
+            } catch (err) {
+                alert('Error reading file: ' + err.message);
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    input.click();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // MODAL FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -639,6 +738,8 @@ function initSleepCard() {
     const hoursInput = document.getElementById('sleep-hours-input');
     const goingToBedBtn = document.getElementById('btn-going-to-bed');
     const wokeUpBtn = document.getElementById('btn-woke-up');
+    const exportBtn = document.getElementById('btn-export-sleep');
+    const importBtn = document.getElementById('btn-import-sleep');
 
     // Load settings into inputs
     const settings = loadSleepSettings();
@@ -696,6 +797,14 @@ function initSleepCard() {
                 }, 2000);
             }
         });
+    }
+
+    // Export/Import buttons
+    if (exportBtn) {
+        exportBtn.addEventListener('click', exportSleepData);
+    }
+    if (importBtn) {
+        importBtn.addEventListener('click', importSleepData);
     }
 
     // Save settings on change

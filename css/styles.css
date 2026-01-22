@@ -1718,6 +1718,43 @@ html, body {
     background: rgba(40, 30, 25, 0.9);
 }
 
+/* Sleep Data Backup Buttons */
+.sleep-data-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(212, 145, 92, 0.15);
+}
+
+.sleep-data-btn {
+    flex: 1;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid rgba(212, 145, 92, 0.2);
+    border-radius: 8px;
+    background: rgba(212, 145, 92, 0.08);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #a08060;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+}
+
+.sleep-data-btn:hover {
+    background: rgba(212, 145, 92, 0.15);
+    border-color: rgba(212, 145, 92, 0.35);
+    color: #d4915c;
+}
+
+.sleep-data-btn .btn-icon {
+    font-size: 0.9rem;
+}
+
 .sleep-setting input[type="time"]::-webkit-calendar-picker-indicator {
     filter: invert(70%) sepia(50%) saturate(300%) hue-rotate(350deg);
     opacity: 0.8;
@@ -2271,5 +2308,225 @@ html, body {
     .globe-section {
         grid-column: 1 / -1;
         height: 250px;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   MOBILE / PWA STYLES
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* PWA safe area support for notched devices */
+@supports (padding: env(safe-area-inset-top)) {
+    .dashboard {
+        padding-top: calc(1.5rem + env(safe-area-inset-top));
+        padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+        padding-left: calc(1.5rem + env(safe-area-inset-left));
+        padding-right: calc(1.5rem + env(safe-area-inset-right));
+    }
+}
+
+/* Mobile layout */
+@media (max-width: 768px) {
+    html, body {
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .dashboard {
+        height: auto;
+        min-height: 100vh;
+        padding: 1rem;
+    }
+
+    .top-bar {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 0.5rem 0 1rem;
+    }
+
+    .top-bar-spacer {
+        display: none;
+    }
+
+    .clock-container {
+        order: -1;
+    }
+
+    .clock {
+        font-size: 4rem;
+    }
+
+    .clock-period {
+        font-size: 1.2rem;
+    }
+
+    .clock-hud-line {
+        width: 60px;
+    }
+
+    .weather-display {
+        width: auto;
+        align-items: center;
+        text-align: center;
+    }
+
+    .weather-temp {
+        font-size: 2rem;
+    }
+
+    .main-content {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+        gap: 1.5rem;
+    }
+
+    .globe-section {
+        display: none; /* Hide globe on mobile for performance */
+    }
+
+    .goals-section {
+        order: 1;
+    }
+
+    .schedule-section {
+        order: 2;
+        max-height: 300px;
+    }
+
+    .timer-bar {
+        padding: 1rem 0;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+    }
+
+    .timer-preset {
+        width: 40px;
+        height: 40px;
+        font-size: 0.8rem;
+    }
+
+    .bottom-chips {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 0.5rem 0;
+    }
+
+    .chip {
+        padding: 0.5rem 0.8rem;
+    }
+
+    /* Timer overlay mobile */
+    .timer-display {
+        font-size: 8rem;
+    }
+
+    .timer-controls {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .timer-btn {
+        width: 200px;
+    }
+
+    /* Modal mobile */
+    .modal-content {
+        width: 95vw !important;
+        max-height: 90vh;
+        margin: 1rem;
+    }
+
+    .modal-sleep {
+        width: 95vw !important;
+    }
+
+    .sleep-stats {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .sleep-countdown-large {
+        font-size: 3rem;
+    }
+
+    .sleep-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .weekly-chart {
+        height: 100px;
+    }
+
+    .bedtime-band {
+        height: 80px;
+    }
+
+    .sleep-bottom-row {
+        flex-direction: column;
+    }
+
+    /* Goal group mobile */
+    .goal-group {
+        padding: 0.75rem 1rem;
+    }
+
+    .goal-text {
+        font-size: 0.8rem;
+    }
+}
+
+/* Small mobile */
+@media (max-width: 380px) {
+    .clock {
+        font-size: 3.5rem;
+    }
+
+    .timer-display {
+        font-size: 6rem;
+    }
+
+    .sleep-countdown-large {
+        font-size: 2.5rem;
+    }
+}
+
+/* Standalone PWA mode (when installed) */
+@media (display-mode: standalone) {
+    body {
+        /* Prevent overscroll bounce */
+        overscroll-behavior: none;
+    }
+
+    /* Hide any browser-specific UI hints */
+    .install-prompt {
+        display: none;
+    }
+}
+
+/* Touch-friendly targets */
+@media (pointer: coarse) {
+    .goal-checkbox {
+        width: 20px;
+        height: 20px;
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .timer-preset {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .chip {
+        min-height: 44px;
+    }
+
+    .modal-close {
+        min-width: 44px;
+        min-height: 44px;
     }
 }
