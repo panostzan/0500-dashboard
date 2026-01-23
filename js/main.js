@@ -131,6 +131,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Update sleep tracking status
         updateSleepTrackingStatus();
 
+        // Initialize bedtime notifications
+        initBedtimeNotifications();
+
         // Initialize HUD elements (globe arcs)
         const hud = initHUD();
 
@@ -200,3 +203,69 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (loading) loading.style.display = 'none';
     }
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BEDTIME NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function initBedtimeNotifications() {
+    const NOTIFICATION_KEY = '0500_notifications_enabled';
+    const LAST_NOTIFICATION_KEY = '0500_last_bedtime_notification';
+
+    function getNotificationsEnabled() {
+        return localStorage.getItem(NOTIFICATION_KEY) === 'true';
+    }
+
+    function checkBedtimeNotification() {
+        if (!getNotificationsEnabled()) return;
+        if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+        // Use sleep.js functions if available
+        if (typeof loadSleepSettings !== 'function' || typeof getTimeUntilBedtime !== 'function') return;
+
+        const settings = loadSleepSettings();
+        const msUntilBedtime = getTimeUntilBedtime(settings);
+        const minutesUntil = msUntilBedtime / 1000 / 60;
+
+        // Check if we're in the 30-31 minute window
+        if (minutesUntil > 29 && minutesUntil <= 31) {
+            const today = new Date().toISOString().split('T')[0];
+            const lastNotification = localStorage.getItem(LAST_NOTIFICATION_KEY);
+
+            // Only show once per day
+            if (lastNotification !== today) {
+                showBedtimeNotification();
+                localStorage.setItem(LAST_NOTIFICATION_KEY, today);
+            }
+        }
+    }
+
+    function showBedtimeNotification() {
+        if (typeof loadSleepSettings !== 'function' || typeof calculateBedtime !== 'function') return;
+
+        const settings = loadSleepSettings();
+        const bedtime = calculateBedtime(settings);
+        const period = bedtime.hour >= 12 ? 'p' : 'a';
+        const displayHour = bedtime.hour % 12 || 12;
+        const bedtimeStr = `${displayHour}:${bedtime.minute.toString().padStart(2, '0')}${period}`;
+
+        new Notification('Time to wind down', {
+            body: `Bedtime is at ${bedtimeStr}. Put your phone away and prepare for sleep.`,
+            icon: '/icons/icon-192.png',
+            badge: '/icons/icon-192.png',
+            tag: 'bedtime-reminder',
+            requireInteraction: false
+        });
+
+        // Haptic feedback
+        if ('vibrate' in navigator) {
+            navigator.vibrate([100, 50, 100]);
+        }
+    }
+
+    // Check every minute
+    setInterval(checkBedtimeNotification, 60000);
+
+    // Also check shortly after page load
+    setTimeout(checkBedtimeNotification, 3000);
+}

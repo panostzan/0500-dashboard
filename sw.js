@@ -2,14 +2,16 @@
 // SERVICE WORKER - Offline Support for 0500 PWA
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = '0500-v6';
+const CACHE_NAME = '0500-v7';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache for offline use
 const STATIC_ASSETS = [
     '/',
     '/index.html',
+    '/sleep.html',
     '/css/styles.css',
+    '/css/sleep-theme.css',
     '/js/config.js',
     '/js/supabase.js',
     '/js/data.js',

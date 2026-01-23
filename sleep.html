@@ -1077,6 +1077,101 @@
                 padding-bottom: 100px;
             }
         }
+
+        /* Pull to Refresh */
+        .pull-indicator {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%) translateY(-60px);
+            width: 40px;
+            height: 40px;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
+            z-index: 999;
+        }
+
+        .pull-indicator.visible {
+            transform: translateX(-50%) translateY(20px);
+        }
+
+        .pull-indicator.refreshing {
+            transform: translateX(-50%) translateY(20px);
+        }
+
+        .pull-indicator svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--accent);
+            transition: transform 0.2s;
+        }
+
+        .pull-indicator.refreshing svg {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Notification Settings */
+        .notification-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .notification-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .notification-toggle {
+            position: relative;
+            width: 50px;
+            height: 28px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+
+        .notification-toggle.active {
+            background: var(--accent);
+        }
+
+        .notification-toggle::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 22px;
+            height: 22px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .notification-toggle.active::after {
+            transform: translateX(22px);
+        }
+
+        .notification-status {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
     </style>
 </head>
 <body>
@@ -1090,6 +1185,14 @@
         </linearGradient>
     </defs>
 </svg>
+
+<!-- Pull to Refresh Indicator -->
+<div class="pull-indicator" id="pull-indicator">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 4v6h-6M1 20v-6h6"/>
+        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+    </svg>
+</div>
 
 <!-- Phone Frame -->
 <div class="phone-frame">
@@ -1226,6 +1329,11 @@
                     <input type="number" id="hours-input" value="7.5" min="4" max="12" step="0.5">
                 </div>
             </div>
+            <div class="notification-row">
+                <span class="notification-label">Bedtime reminder (30 min before)</span>
+                <button class="notification-toggle" id="notification-toggle"></button>
+            </div>
+            <div class="notification-status" id="notification-status"></div>
         </div>
 
         <!-- Hint -->
@@ -1805,7 +1913,232 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         renderHeatmap();
     });
+
+    // Initialize polish features
+    initHaptics();
+    initPullToRefresh();
+    initNotifications();
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HAPTIC FEEDBACK
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function vibrate(pattern = 10) {
+    if ('vibrate' in navigator) {
+        navigator.vibrate(pattern);
+    }
+}
+
+function initHaptics() {
+    // Add haptic feedback to all interactive elements
+    const buttons = document.querySelectorAll('.log-btn, .period-btn, .heatmap-nav, .heatmap-cell, .timeline-btn, .notification-toggle, .mobile-tab');
+
+    buttons.forEach(btn => {
+        btn.addEventListener('click', () => vibrate(10));
+    });
+
+    // Stronger feedback for important actions
+    document.getElementById('timeline-save')?.addEventListener('click', () => vibrate([10, 50, 10]));
+    document.getElementById('btn-going-to-bed')?.addEventListener('click', () => vibrate([10, 30, 10]));
+    document.getElementById('btn-woke-up')?.addEventListener('click', () => vibrate([10, 30, 10]));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PULL TO REFRESH
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function initPullToRefresh() {
+    let startY = 0;
+    let currentY = 0;
+    let isPulling = false;
+    let isRefreshing = false;
+    const threshold = 80;
+    const indicator = document.getElementById('pull-indicator');
+
+    // Only on mobile
+    if (window.innerWidth > 768) return;
+
+    document.addEventListener('touchstart', (e) => {
+        if (window.scrollY === 0 && !isRefreshing) {
+            startY = e.touches[0].clientY;
+            isPulling = true;
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!isPulling || isRefreshing) return;
+
+        currentY = e.touches[0].clientY;
+        const pullDistance = currentY - startY;
+
+        if (pullDistance > 0 && window.scrollY === 0) {
+            const progress = Math.min(pullDistance / threshold, 1);
+            indicator.style.transform = `translateX(-50%) translateY(${-60 + (80 * progress)}px)`;
+            indicator.querySelector('svg').style.transform = `rotate(${progress * 180}deg)`;
+
+            if (pullDistance > 20) {
+                indicator.classList.add('visible');
+            }
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchend', async () => {
+        if (!isPulling) return;
+        isPulling = false;
+
+        const pullDistance = currentY - startY;
+
+        if (pullDistance >= threshold && !isRefreshing) {
+            isRefreshing = true;
+            indicator.classList.add('refreshing');
+            vibrate([10, 20, 10]);
+
+            // Sync data from cloud
+            if (typeof loadSleepLogAsync === 'function' && typeof isSignedIn === 'function' && isSignedIn()) {
+                await loadSleepLogAsync();
+                await loadSleepSettingsAsync();
+            }
+
+            refreshAll();
+
+            setTimeout(() => {
+                indicator.classList.remove('visible', 'refreshing');
+                indicator.style.transform = 'translateX(-50%) translateY(-60px)';
+                isRefreshing = false;
+            }, 500);
+        } else {
+            indicator.classList.remove('visible');
+            indicator.style.transform = 'translateX(-50%) translateY(-60px)';
+        }
+
+        startY = 0;
+        currentY = 0;
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BEDTIME NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const NOTIFICATION_KEY = '0500_notifications_enabled';
+const LAST_NOTIFICATION_KEY = '0500_last_bedtime_notification';
+
+function getNotificationsEnabled() {
+    return localStorage.getItem(NOTIFICATION_KEY) === 'true';
+}
+
+function setNotificationsEnabled(enabled) {
+    localStorage.setItem(NOTIFICATION_KEY, enabled ? 'true' : 'false');
+}
+
+function updateNotificationUI() {
+    const toggle = document.getElementById('notification-toggle');
+    const status = document.getElementById('notification-status');
+    const enabled = getNotificationsEnabled();
+
+    toggle.classList.toggle('active', enabled);
+
+    if (!('Notification' in window)) {
+        status.textContent = 'Notifications not supported in this browser';
+    } else if (Notification.permission === 'denied') {
+        status.textContent = 'Notifications blocked. Enable in browser settings.';
+    } else if (enabled) {
+        status.textContent = 'You\'ll get a reminder 30 min before bedtime';
+    } else {
+        status.textContent = '';
+    }
+}
+
+async function requestNotificationPermission() {
+    if (!('Notification' in window)) {
+        return false;
+    }
+
+    if (Notification.permission === 'granted') {
+        return true;
+    }
+
+    if (Notification.permission === 'denied') {
+        return false;
+    }
+
+    const permission = await Notification.requestPermission();
+    return permission === 'granted';
+}
+
+function showBedtimeNotification() {
+    if (!('Notification' in window) || Notification.permission !== 'granted') {
+        return;
+    }
+
+    const settings = loadSleepSettings();
+    const bedtime = calculateBedtime(settings);
+    const bedtimeStr = formatTime12HourShort(bedtime.hour, bedtime.minute);
+
+    new Notification('Time to wind down', {
+        body: `Bedtime is at ${bedtimeStr}. Put your phone away and prepare for sleep.`,
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
+        tag: 'bedtime-reminder',
+        requireInteraction: false
+    });
+
+    vibrate([100, 50, 100]);
+}
+
+function checkBedtimeNotification() {
+    if (!getNotificationsEnabled()) return;
+    if (Notification.permission !== 'granted') return;
+
+    const settings = loadSleepSettings();
+    const msUntilBedtime = getTimeUntilBedtime(settings);
+    const minutesUntil = msUntilBedtime / 1000 / 60;
+
+    // Check if we're in the 30-31 minute window
+    if (minutesUntil > 29 && minutesUntil <= 31) {
+        const today = new Date().toISOString().split('T')[0];
+        const lastNotification = localStorage.getItem(LAST_NOTIFICATION_KEY);
+
+        // Only show once per day
+        if (lastNotification !== today) {
+            showBedtimeNotification();
+            localStorage.setItem(LAST_NOTIFICATION_KEY, today);
+        }
+    }
+}
+
+function initNotifications() {
+    const toggle = document.getElementById('notification-toggle');
+
+    // Initial UI state
+    updateNotificationUI();
+
+    toggle.addEventListener('click', async () => {
+        vibrate(10);
+
+        const currentlyEnabled = getNotificationsEnabled();
+
+        if (!currentlyEnabled) {
+            // Trying to enable
+            const granted = await requestNotificationPermission();
+            if (granted) {
+                setNotificationsEnabled(true);
+            }
+        } else {
+            // Disabling
+            setNotificationsEnabled(false);
+        }
+
+        updateNotificationUI();
+    });
+
+    // Check every minute for bedtime notification
+    setInterval(checkBedtimeNotification, 60000);
+
+    // Also check on page load (in case user just opened the app)
+    setTimeout(checkBedtimeNotification, 2000);
+}
 </script>
 
 </body>
