@@ -1,43 +1,32 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// GOALS — Seamless inline editing with localStorage persistence
+// GOALS — Seamless inline editing with cloud sync
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const GOALS_STORAGE_KEY = '0500_goals';
-const GOALS_COLLAPSED_KEY = '0500_goals_collapsed';
+let goalsCache = null;
+
+async function loadGoals() {
+    if (!goalsCache) {
+        goalsCache = await DataService.loadGoals();
+    }
+    return goalsCache;
+}
+
+async function saveGoals(goals) {
+    goalsCache = goals;
+    await DataService.saveGoals(goals);
+}
 
 function loadCollapsedState() {
-    const saved = localStorage.getItem(GOALS_COLLAPSED_KEY);
-    if (saved) {
-        return JSON.parse(saved);
-    }
-    // Default: all sections start expanded on first load
-    return { daily: false, midTerm: true, longTerm: true };
+    return DataService.loadCollapsedState();
 }
 
 function saveCollapsedState(state) {
-    localStorage.setItem(GOALS_COLLAPSED_KEY, JSON.stringify(state));
+    DataService.saveCollapsedState(state);
 }
 
-function loadGoals() {
-    const saved = localStorage.getItem(GOALS_STORAGE_KEY);
-    if (saved) {
-        return JSON.parse(saved);
-    }
-    // First time: convert from CONFIG format
-    return {
-        daily: CONFIG.daily.map(text => ({ text, checked: false })),
-        midTerm: CONFIG.midTerm.map(text => ({ text, checked: false })),
-        longTerm: CONFIG.longTerm.map(text => ({ text, checked: false }))
-    };
-}
-
-function saveGoals(goals) {
-    localStorage.setItem(GOALS_STORAGE_KEY, JSON.stringify(goals));
-}
-
-function renderGoals() {
+async function renderGoals() {
     const container = document.getElementById('goals-section');
-    const goals = loadGoals();
+    const goals = await loadGoals();
     const collapsed = loadCollapsedState();
 
     const sections = [
@@ -98,15 +87,15 @@ function renderGoals() {
 
         // Checkbox toggle
         group.querySelectorAll('.goal-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('click', (e) => {
+            checkbox.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const item = checkbox.closest('.goal-item');
                 if (item.classList.contains('new-goal')) return;
 
                 const index = parseInt(item.dataset.index);
-                const goals = loadGoals();
+                const goals = await loadGoals();
                 goals[sectionKey][index].checked = !goals[sectionKey][index].checked;
-                saveGoals(goals);
+                await saveGoals(goals);
                 item.classList.toggle('checked');
             });
         });
@@ -114,17 +103,17 @@ function renderGoals() {
         // Text editing
         group.querySelectorAll('.goal-text').forEach(textEl => {
             // Save on blur
-            textEl.addEventListener('blur', () => {
+            textEl.addEventListener('blur', async () => {
                 const item = textEl.closest('.goal-item');
                 const isNew = item.classList.contains('new-goal');
                 const text = textEl.textContent.trim();
-                const goals = loadGoals();
+                const goals = await loadGoals();
 
                 if (isNew) {
                     // Add new goal if text entered
                     if (text) {
                         goals[sectionKey].push({ text, checked: false });
-                        saveGoals(goals);
+                        await saveGoals(goals);
                         renderGoals();
                     }
                 } else {
@@ -132,11 +121,11 @@ function renderGoals() {
                     if (text) {
                         // Update existing goal
                         goals[sectionKey][index].text = text;
-                        saveGoals(goals);
+                        await saveGoals(goals);
                     } else {
                         // Delete goal if empty
                         goals[sectionKey].splice(index, 1);
-                        saveGoals(goals);
+                        await saveGoals(goals);
                         renderGoals();
                     }
                 }
@@ -153,6 +142,12 @@ function renderGoals() {
     });
 }
 
-function initGoals() {
-    renderGoals();
+async function initGoals() {
+    await renderGoals();
+
+    // Re-render when user changes
+    window.addEventListener('userChanged', async () => {
+        goalsCache = null;
+        await renderGoals();
+    });
 }

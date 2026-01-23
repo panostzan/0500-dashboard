@@ -2,6 +2,47 @@
 // WEATHER — Open-Meteo API (no key required)
 // ═══════════════════════════════════════════════════════════════════════════════
 
+const LOCATION_STORAGE_KEY = '0500_user_location';
+
+// Get user location: localStorage > geolocation > default
+async function getUserLocation() {
+    // Check localStorage first
+    const saved = localStorage.getItem(LOCATION_STORAGE_KEY);
+    if (saved) {
+        return JSON.parse(saved);
+    }
+
+    // Try browser geolocation
+    if ('geolocation' in navigator) {
+        try {
+            const position = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, {
+                    timeout: 10000,
+                    maximumAge: 3600000 // 1 hour cache
+                });
+            });
+
+            const location = {
+                lat: position.coords.latitude,
+                lon: position.coords.longitude,
+                name: 'Current Location'
+            };
+
+            // Save to localStorage
+            localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(location));
+            return location;
+        } catch (err) {
+            console.log('Geolocation unavailable, using default');
+        }
+    }
+
+    // Fallback to default
+    return CONFIG.defaultLocation;
+}
+
+// Expose location globally for globe.js
+window.userLocation = null;
+
 const WEATHER_CODES = {
     0: { label: 'CLEAR', icon: '○' },
     1: { label: 'MOSTLY CLEAR', icon: '○' },
@@ -30,7 +71,9 @@ const WEATHER_CODES = {
 };
 
 async function fetchWeather() {
-    const { lat, lon } = CONFIG.location;
+    const location = await getUserLocation();
+    window.userLocation = location; // Share with globe.js
+    const { lat, lon } = location;
 
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&daily=sunrise,sunset&timezone=auto`;
 

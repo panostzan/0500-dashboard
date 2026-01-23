@@ -117,6 +117,10 @@ class DottedGlobe {
         this.resize();
     }
 
+    setHighlightLocation(location) {
+        this.highlightLocation = location;
+    }
+
     async loadLandData() {
         const loading = document.getElementById('globe-loading');
 
@@ -250,22 +254,32 @@ class DottedGlobe {
             if (dot.isHighlight) {
                 // Breathing animation
                 const breathScale = 1 + Math.sin(this.breathPhase) * 0.3;
-                const breathOpacity = 0.6 + Math.sin(this.breathPhase) * 0.4;
+                const breathOpacity = 0.7 + Math.sin(this.breathPhase) * 0.3;
 
-                const glowRadius = dotRadius * 5 * breathScale;
+                // Large outer glow
+                const outerGlowRadius = dotRadius * 12 * breathScale;
+                const outerGradient = this.ctx.createRadialGradient(
+                    dot.x, dot.y, 0,
+                    dot.x, dot.y, outerGlowRadius
+                );
+                outerGradient.addColorStop(0, `rgba(255, 176, 144, ${breathOpacity * 0.5})`);
+                outerGradient.addColorStop(0.4, `rgba(255, 176, 144, ${breathOpacity * 0.2})`);
+                outerGradient.addColorStop(1, 'transparent');
 
-                // Outer glow (breathing)
+                this.ctx.beginPath();
+                this.ctx.arc(dot.x, dot.y, outerGlowRadius, 0, Math.PI * 2);
+                this.ctx.fillStyle = outerGradient;
+                this.ctx.fill();
+
+                // Inner glow ring
+                const glowRadius = dotRadius * 6 * breathScale;
                 const gradient = this.ctx.createRadialGradient(
                     dot.x, dot.y, 0,
                     dot.x, dot.y, glowRadius
                 );
-                const alpha1 = Math.floor(breathOpacity * 255).toString(16).padStart(2, '0');
-                const alpha2 = Math.floor(breathOpacity * 0.6 * 255).toString(16).padStart(2, '0');
-                const alpha3 = Math.floor(breathOpacity * 0.2 * 255).toString(16).padStart(2, '0');
-
-                gradient.addColorStop(0, this.highlightColor + alpha1);
-                gradient.addColorStop(0.3, this.highlightColor + alpha2);
-                gradient.addColorStop(0.6, this.highlightColor + alpha3);
+                gradient.addColorStop(0, `rgba(255, 255, 255, ${breathOpacity})`);
+                gradient.addColorStop(0.2, `rgba(255, 200, 170, ${breathOpacity * 0.8})`);
+                gradient.addColorStop(0.5, `rgba(255, 150, 100, ${breathOpacity * 0.4})`);
                 gradient.addColorStop(1, 'transparent');
 
                 this.ctx.beginPath();
@@ -273,10 +287,16 @@ class DottedGlobe {
                 this.ctx.fillStyle = gradient;
                 this.ctx.fill();
 
-                // Inner solid dot (also pulses slightly)
-                const coreSize = dotRadius * (1.6 + Math.sin(this.breathPhase) * 0.2);
+                // Bright white core
+                const coreSize = dotRadius * (2 + Math.sin(this.breathPhase) * 0.3);
                 this.ctx.beginPath();
                 this.ctx.arc(dot.x, dot.y, coreSize, 0, Math.PI * 2);
+                this.ctx.fillStyle = '#ffffff';
+                this.ctx.fill();
+
+                // Inner color ring
+                this.ctx.beginPath();
+                this.ctx.arc(dot.x, dot.y, coreSize * 0.6, 0, Math.PI * 2);
                 this.ctx.fillStyle = this.highlightColor;
                 this.ctx.fill();
             } else {

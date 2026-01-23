@@ -95,6 +95,12 @@ function updateSleepTrackingStatus() {
 // Initialize all components when DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        // Initialize Supabase and check auth state first
+        await initSupabase();
+
+        // Initialize auth UI
+        initAuth();
+
         // Initialize status indicator system
         initSyncIndicator();
 
@@ -138,24 +144,30 @@ document.addEventListener('DOMContentLoaded', async () => {
             return 450; // Desktop size
         };
 
+        // Get initial location (may be from localStorage or default)
+        const savedLocation = localStorage.getItem('0500_user_location');
+        const initialLocation = savedLocation
+            ? JSON.parse(savedLocation)
+            : CONFIG.defaultLocation;
+
         // Initialize globes
         const mainGlobe = new DottedGlobe(document.getElementById('globe-canvas'), {
             size: getGlobeSize(),
-            highlightLocation: CONFIG.location,
+            highlightLocation: initialLocation,
             rotationSpeed: 0.001,
             dotSpacing: 2.0,
-            dotColor: '#2d2d2d',
-            highlightColor: '#e67635',
+            dotColor: 'rgba(255, 180, 150, 0.5)',
+            highlightColor: '#ffb090',
             initialRotation: 1.4
         });
 
         const timerGlobe = new DottedGlobe(document.getElementById('timer-globe-canvas'), {
             size: 650,
-            highlightLocation: CONFIG.location,
+            highlightLocation: initialLocation,
             rotationSpeed: 0.0006,
             dotSpacing: 2.5,
-            dotColor: '#4a4a4a',
-            highlightColor: '#e67635',
+            dotColor: 'rgba(255, 180, 150, 0.35)',
+            highlightColor: '#ffb090',
             initialRotation: 1.4
         });
 
@@ -164,6 +176,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             mainGlobe.loadLandData(),
             timerGlobe.loadLandData()
         ]);
+
+        // Update globe location when weather fetches actual location
+        const checkLocation = setInterval(() => {
+            if (window.userLocation) {
+                mainGlobe.setHighlightLocation(window.userLocation);
+                timerGlobe.setHighlightLocation(window.userLocation);
+                clearInterval(checkLocation);
+            }
+        }, 500);
 
         // Handle window resize
         window.addEventListener('resize', () => {

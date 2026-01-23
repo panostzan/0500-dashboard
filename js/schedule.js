@@ -1,25 +1,24 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// SCHEDULE - Notebook Style
+// SCHEDULE - Notebook Style with cloud sync
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const SCHEDULE_STORAGE_KEY = '0500_schedule_entries';
+let scheduleCache = null;
 
-function loadScheduleEntries() {
-    const saved = localStorage.getItem(SCHEDULE_STORAGE_KEY);
-    if (saved) {
-        return JSON.parse(saved);
+async function loadScheduleEntries() {
+    if (!scheduleCache) {
+        scheduleCache = await DataService.loadSchedule();
     }
-    // Default empty entries for the day
-    return Array(20).fill(null).map(() => ({ time: '', activity: '' }));
+    return scheduleCache;
 }
 
-function saveScheduleEntries(entries) {
-    localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(entries));
+async function saveScheduleEntries(entries) {
+    scheduleCache = entries;
+    await DataService.saveSchedule(entries);
 }
 
-function renderSchedule() {
+async function renderSchedule() {
     const container = document.getElementById('schedule-scroll');
-    const entries = loadScheduleEntries();
+    const entries = await loadScheduleEntries();
 
     let html = '<div class="schedule-notebook">';
 
@@ -100,10 +99,10 @@ function attachScheduleListeners() {
     // Add row button
     const addBtn = document.getElementById('add-schedule-row');
     if (addBtn) {
-        addBtn.addEventListener('click', () => {
-            const entries = loadScheduleEntries();
+        addBtn.addEventListener('click', async () => {
+            const entries = await loadScheduleEntries();
             entries.push({ time: '', activity: '' });
-            saveScheduleEntries(entries);
+            await saveScheduleEntries(entries);
             renderSchedule();
             // Focus the new row
             const rows = document.querySelectorAll('.schedule-row');
@@ -158,7 +157,7 @@ function formatTimeInput(value) {
     return value;
 }
 
-function saveCurrentSchedule() {
+async function saveCurrentSchedule() {
     const rows = document.querySelectorAll('.schedule-row');
     const entries = [];
 
@@ -168,9 +167,15 @@ function saveCurrentSchedule() {
         entries.push({ time, activity });
     });
 
-    saveScheduleEntries(entries);
+    await saveScheduleEntries(entries);
 }
 
-function initSchedule() {
-    renderSchedule();
+async function initSchedule() {
+    await renderSchedule();
+
+    // Re-render when user changes
+    window.addEventListener('userChanged', async () => {
+        scheduleCache = null;
+        await renderSchedule();
+    });
 }

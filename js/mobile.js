@@ -19,6 +19,16 @@ function initMobileNav() {
         tab.addEventListener('click', () => {
             const targetPanel = tab.dataset.tab;
 
+            // Sleep tab navigates to dedicated sleep page
+            if (targetPanel === 'sleep') {
+                if (window.SleepRedirect) {
+                    window.SleepRedirect.go();
+                } else {
+                    window.location.href = 'sleep.html';
+                }
+                return;
+            }
+
             // Update active tab
             tabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
@@ -66,6 +76,91 @@ function initMobileTimerButtons() {
 // MOBILE SLEEP PANEL
 // ═══════════════════════════════════════════════════════════════════════════════
 
+function updateMobileSleepScore() {
+    const container = document.getElementById('mobile-sleep-score');
+    if (!container || !isMobileView()) return;
+
+    const last14 = getLastNDaysLog(14);
+    const score = calculateSleepScore(last14);
+    const streak = calculateSleepStreak();
+
+    if (!score) {
+        container.innerHTML = `
+            <div class="mobile-score-gauge">
+                <span class="mobile-score-value">--</span>
+                <span class="mobile-score-label">SCORE</span>
+            </div>
+            <div class="mobile-streak">
+                <span class="mobile-streak-flame">🔥</span>
+                <span class="mobile-streak-value">0</span>
+            </div>
+        `;
+        return;
+    }
+
+    let colorClass = 'score-poor';
+    if (score.total >= 85) colorClass = 'score-ideal';
+    else if (score.total >= 70) colorClass = 'score-good';
+    else if (score.total >= 50) colorClass = 'score-ok';
+
+    container.innerHTML = `
+        <div class="mobile-score-gauge ${colorClass}">
+            <span class="mobile-score-value">${score.total}</span>
+            <span class="mobile-score-label">SCORE</span>
+        </div>
+        <div class="mobile-streak">
+            <span class="mobile-streak-flame ${streak.current > 0 ? 'active' : ''}">🔥</span>
+            <span class="mobile-streak-value">${streak.current}</span>
+        </div>
+    `;
+}
+
+function updateMobileSleepStats() {
+    const container = document.getElementById('mobile-sleep-extra-stats');
+    if (!container || !isMobileView()) return;
+
+    const days = getLastNDaysLog(7);
+    const stats = calculatePeriodStats(days);
+    const debt = calculateCumulativeSleepDebt(7);
+
+    container.innerHTML = `
+        <div class="mobile-extra-stat">
+            <span class="mobile-extra-value">${stats.avgDuration ? stats.avgDuration.toFixed(1) + 'h' : '--'}</span>
+            <span class="mobile-extra-label">AVG</span>
+        </div>
+        <div class="mobile-extra-stat">
+            <span class="mobile-extra-value ${debt.total < 0 ? 'debt-negative' : 'debt-positive'}">${debt.total >= 0 ? '+' : ''}${debt.total.toFixed(1)}h</span>
+            <span class="mobile-extra-label">DEBT</span>
+        </div>
+        <div class="mobile-extra-stat">
+            <span class="mobile-extra-value">${stats.bestNight ? stats.bestNight.duration.toFixed(1) + 'h' : '--'}</span>
+            <span class="mobile-extra-label">BEST</span>
+        </div>
+    `;
+}
+
+function updateMobileSleepInsight() {
+    const container = document.getElementById('mobile-sleep-insight');
+    if (!container || !isMobileView()) return;
+
+    const insights = generateSleepInsights();
+
+    if (insights.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+
+    const insight = insights[0];
+    const icon = insight.type === 'success' ? '✓' : insight.type === 'warning' ? '!' : 'i';
+
+    container.innerHTML = `
+        <div class="mobile-insight mobile-insight-${insight.type}">
+            <span class="mobile-insight-icon">${icon}</span>
+            <span class="mobile-insight-text">${insight.text}</span>
+        </div>
+    `;
+}
+
 function updateMobileSleepPanel() {
     if (!isMobileView()) return;
 
@@ -76,6 +171,11 @@ function updateMobileSleepPanel() {
     const state = getSleepState(msUntilBedtime);
     const progress = getProgressPercent(settings);
     const qualityPercent = getQualityPercent(msIfSleepNow / 1000 / 60 / 60);
+
+    // Update new mobile features
+    updateMobileSleepScore();
+    updateMobileSleepStats();
+    updateMobileSleepInsight();
 
     // Update countdown
     const countdown = document.getElementById('mobile-sleep-countdown');
@@ -235,21 +335,70 @@ function initMobileSleepPanel() {
         });
     }
 
-    // Export/Import buttons
-    const exportBtn = document.getElementById('mobile-export');
-    const importBtn = document.getElementById('mobile-import');
+    // Mobile manual entry
+    const mobileManualDate = document.getElementById('mobile-manual-date');
+    const mobileManualBed = document.getElementById('mobile-manual-bed');
+    const mobileManualWake = document.getElementById('mobile-manual-wake');
+    const mobileAddBtn = document.getElementById('mobile-btn-add-sleep');
 
-    if (exportBtn) {
-        exportBtn.addEventListener('click', exportSleepData);
+    if (mobileManualDate) {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        mobileManualDate.value = yesterday.toISOString().split('T')[0];
+        mobileManualDate.max = new Date().toISOString().split('T')[0];
     }
 
-    if (importBtn) {
-        importBtn.addEventListener('click', () => {
-            importSleepData();
+    if (mobileAddBtn) {
+        mobileAddBtn.addEventListener('click', () => {
+            const date = mobileManualDate.value;
+            const bedTime = mobileManualBed.value;
+            const wakeTime = mobileManualWake.value;
+
+            if (!date || !bedTime || !wakeTime) return;
+
+            const bedDate = new Date(date);
+            const [bedH, bedM] = bedTime.split(':').map(Number);
+            bedDate.setHours(bedH, bedM, 0, 0);
+
+            const wakeDate = new Date(date);
+            const [wakeH, wakeM] = wakeTime.split(':').map(Number);
+            wakeDate.setHours(wakeH, wakeM, 0, 0);
+
+            if (wakeDate <= bedDate) {
+                bedDate.setDate(bedDate.getDate() - 1);
+            }
+
+            const duration = (wakeDate - bedDate) / 1000 / 60 / 60;
+
+            const log = loadSleepLog();
+            const existingIdx = log.findIndex(e => e.date === date);
+            const entry = {
+                date: date,
+                bedtime: bedDate.toISOString(),
+                wakeTime: wakeDate.toISOString(),
+                duration: duration
+            };
+
+            if (existingIdx >= 0) {
+                log[existingIdx] = entry;
+            } else {
+                log.push(entry);
+                log.sort((a, b) => new Date(a.date) - new Date(b.date));
+            }
+
+            saveSleepLog(log);
+            updateMobileSleepPanel();
+            renderMobileWeeklyChart();
+
+            mobileAddBtn.textContent = '✓';
+            mobileAddBtn.style.background = 'var(--check-green)';
             setTimeout(() => {
-                updateMobileSleepPanel();
-                renderMobileWeeklyChart();
-            }, 500);
+                mobileAddBtn.textContent = '+';
+                mobileAddBtn.style.background = '';
+                const nextDate = new Date(date);
+                nextDate.setDate(nextDate.getDate() - 1);
+                mobileManualDate.value = nextDate.toISOString().split('T')[0];
+            }, 1000);
         });
     }
 

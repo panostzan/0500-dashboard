@@ -1,19 +1,28 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// NOTES — Modal with localStorage persistence
+// NOTES — Modal with cloud sync
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const NOTES_STORAGE_KEY = '0500_notes';
+let notesCache = null;
+let saveTimeout = null;
 
-function loadNotes() {
-    return localStorage.getItem(NOTES_STORAGE_KEY) || '';
+async function loadNotesContent() {
+    if (notesCache === null) {
+        notesCache = await DataService.loadNotes();
+    }
+    return notesCache;
 }
 
-function saveNotes(content) {
-    localStorage.setItem(NOTES_STORAGE_KEY, content);
+async function saveNotesContent(content) {
+    notesCache = content;
+    // Debounce saves to avoid too many API calls
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(async () => {
+        await DataService.saveNotes(content);
+    }, 500);
 }
 
-function getNotesPreview() {
-    const notes = loadNotes();
+async function getNotesPreview() {
+    const notes = await loadNotesContent();
     if (!notes.trim()) return '';
 
     // Count lines or show character count
@@ -24,19 +33,22 @@ function getNotesPreview() {
     return '';
 }
 
-function updateNotesChip() {
+async function updateNotesChip() {
     const chipValue = document.getElementById('chip-notes-count');
     if (chipValue) {
-        chipValue.textContent = getNotesPreview();
+        chipValue.textContent = await getNotesPreview();
     }
 }
 
-function openNotesModal() {
+async function openNotesModal() {
     const modal = document.getElementById('notes-modal');
     const input = document.getElementById('notes-input');
 
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
+
+    // Load content
+    input.value = await loadNotesContent();
 
     // Focus input after animation
     setTimeout(() => input.focus(), 300);
@@ -49,7 +61,7 @@ function closeNotesModal() {
     updateNotesChip();
 }
 
-function initNotes() {
+async function initNotes() {
     const chip = document.getElementById('chip-notes');
     const modal = document.getElementById('notes-modal');
     const backdrop = modal.querySelector('.modal-backdrop');
@@ -57,8 +69,8 @@ function initNotes() {
     const input = document.getElementById('notes-input');
 
     // Load saved content
-    input.value = loadNotes();
-    updateNotesChip();
+    input.value = await loadNotesContent();
+    await updateNotesChip();
 
     // Open modal on chip click
     chip.addEventListener('click', openNotesModal);
@@ -76,6 +88,13 @@ function initNotes() {
 
     // Auto-save on input
     input.addEventListener('input', () => {
-        saveNotes(input.value);
+        saveNotesContent(input.value);
+    });
+
+    // Re-load when user changes
+    window.addEventListener('userChanged', async () => {
+        notesCache = null;
+        input.value = await loadNotesContent();
+        await updateNotesChip();
     });
 }

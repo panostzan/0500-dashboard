@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sleep Dashboard - Aurora Variations</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Simplified data colors - traffic light system */
+        :root {
+            --data-good: #4ade80;
+            --data-ok: #fbbf24;
+            --data-poor: #f87171;
+            --data-none: rgba(255,255,255,0.08);
+        }
+
+        /* ==========================================
+           THEME 1: AURORA WARM - Original
+           ========================================== */
+        .theme-aurora-warm {
+            --bg-gradient:
+                radial-gradient(ellipse at 20% 0%, rgba(255, 150, 100, 0.3) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(200, 100, 150, 0.25) 0%, transparent 45%),
+                radial-gradient(ellipse at 40% 80%, rgba(255, 180, 100, 0.2) 0%, transparent 50%),
+                linear-gradient(170deg, #0f0a12 0%, #1a1018 40%, #201520 70%, #151015 100%);
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --card-border: rgba(255, 180, 150, 0.15);
+            --text-primary: #fff;
+            --text-secondary: rgba(255, 255, 255, 0.8);
+            --text-muted: rgba(255, 255, 255, 0.45);
+            --accent: #ffb090;
+            --accent-glow: rgba(255, 176, 144, 0.4);
+            --score-gradient: linear-gradient(135deg, #c87090, #ffb090);
+        }
+
+        /* ==========================================
+           THEME 2: AURORA DEEP - Richer purples
+           ========================================== */
+        .theme-aurora-deep {
+            --bg-gradient:
+                radial-gradient(ellipse at 15% 10%, rgba(180, 100, 200, 0.25) 0%, transparent 45%),
+                radial-gradient(ellipse at 85% 30%, rgba(255, 140, 100, 0.2) 0%, transparent 40%),
+                radial-gradient(ellipse at 50% 90%, rgba(200, 120, 180, 0.15) 0%, transparent 45%),
+                linear-gradient(165deg, #0a0812 0%, #150f1a 35%, #1a1220 60%, #120a14 100%);
+            --card-bg: rgba(255, 255, 255, 0.04);
+            --card-border: rgba(200, 150, 255, 0.12);
+            --text-primary: #fff;
+            --text-secondary: rgba(255, 255, 255, 0.8);
+            --text-muted: rgba(255, 255, 255, 0.4);
+            --accent: #d4a0c0;
+            --accent-glow: rgba(212, 160, 192, 0.35);
+            --score-gradient: linear-gradient(135deg, #a080c0, #f0b0a0);
+        }
+
+        /* ==========================================
+           THEME 3: AURORA COPPER - Warmer, earthier
+           ========================================== */
+        .theme-aurora-copper {
+            --bg-gradient:
+                radial-gradient(ellipse at 25% 5%, rgba(255, 160, 100, 0.28) 0%, transparent 50%),
+                radial-gradient(ellipse at 75% 25%, rgba(200, 130, 100, 0.22) 0%, transparent 45%),
+                radial-gradient(ellipse at 45% 85%, rgba(255, 180, 120, 0.18) 0%, transparent 50%),
+                linear-gradient(170deg, #100a08 0%, #1a1210 40%, #201815 65%, #151010 100%);
+            --card-bg: rgba(255, 200, 180, 0.04);
+            --card-border: rgba(255, 180, 140, 0.14);
+            --text-primary: #fff;
+            --text-secondary: rgba(255, 255, 255, 0.82);
+            --text-muted: rgba(255, 255, 255, 0.45);
+            --accent: #f0a070;
+            --accent-glow: rgba(240, 160, 112, 0.4);
+            --score-gradient: linear-gradient(135deg, #d08060, #f0c080);
+        }
+
+        /* ==========================================
+           THEME 4: AURORA ROSE - Pink/coral focus
+           ========================================== */
+        .theme-aurora-rose {
+            --bg-gradient:
+                radial-gradient(ellipse at 20% 15%, rgba(255, 130, 150, 0.22) 0%, transparent 45%),
+                radial-gradient(ellipse at 80% 10%, rgba(255, 180, 160, 0.18) 0%, transparent 40%),
+                radial-gradient(ellipse at 50% 80%, rgba(200, 100, 140, 0.2) 0%, transparent 50%),
+                linear-gradient(165deg, #100a0c 0%, #1a1015 40%, #201218 65%, #150c10 100%);
+            --card-bg: rgba(255, 200, 200, 0.04);
+            --card-border: rgba(255, 160, 170, 0.14);
+            --text-primary: #fff;
+            --text-secondary: rgba(255, 255, 255, 0.82);
+            --text-muted: rgba(255, 255, 255, 0.45);
+            --accent: #ffa0a0;
+            --accent-glow: rgba(255, 160, 160, 0.35);
+            --score-gradient: linear-gradient(135deg, #e08090, #ffb0a0);
+        }
+
+        /* ==========================================
+           THEME 5: AURORA DUSK - More contrast
+           ========================================== */
+        .theme-aurora-dusk {
+            --bg-gradient:
+                radial-gradient(ellipse at 10% 0%, rgba(255, 140, 100, 0.35) 0%, transparent 40%),
+                radial-gradient(ellipse at 90% 20%, rgba(180, 80, 140, 0.25) 0%, transparent 45%),
+                radial-gradient(ellipse at 30% 70%, rgba(255, 200, 120, 0.2) 0%, transparent 50%),
+                linear-gradient(175deg, #080610 0%, #12101a 30%, #1a1420 55%, #0f0a12 100%);
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --card-border: rgba(255, 160, 130, 0.16);
+            --text-primary: #fff;
+            --text-secondary: rgba(255, 255, 255, 0.85);
+            --text-muted: rgba(255, 255, 255, 0.45);
+            --accent: #ffa080;
+            --accent-glow: rgba(255, 160, 128, 0.45);
+            --score-gradient: linear-gradient(135deg, #c06080, #ffc080);
+        }
+
+        /* ==========================================
+           THEME 6: AURORA SOFT - Gentler, dreamier
+           ========================================== */
+        .theme-aurora-soft {
+            --bg-gradient:
+                radial-gradient(ellipse at 30% 10%, rgba(220, 160, 180, 0.18) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 30%, rgba(255, 190, 160, 0.15) 0%, transparent 45%),
+                radial-gradient(ellipse at 40% 75%, rgba(200, 140, 170, 0.12) 0%, transparent 50%),
+                linear-gradient(170deg, #0c0a0e 0%, #141014 40%, #181418 65%, #100c10 100%);
+            --card-bg: rgba(255, 255, 255, 0.035);
+            --card-border: rgba(220, 180, 200, 0.1);
+            --text-primary: rgba(255, 255, 255, 0.95);
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-muted: rgba(255, 255, 255, 0.38);
+            --accent: #e0b0c0;
+            --accent-glow: rgba(224, 176, 192, 0.3);
+            --score-gradient: linear-gradient(135deg, #c0a0b0, #e0c0b0);
+        }
+
+        body {
+            font-family: 'Outfit', -apple-system, sans-serif;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: background 0.8s ease;
+        }
+
+        /* Theme Selector */
+        .theme-selector {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 14px 20px;
+            z-index: 100;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .theme-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.5);
+            letter-spacing: 0.15em;
+            margin-right: 10px;
+        }
+
+        .theme-btn {
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255,255,255,0.65);
+            font-family: 'Outfit', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .theme-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+        .theme-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #000;
+            font-weight: 600;
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        /* Phone Frame */
+        .phone-frame {
+            max-width: 400px;
+            margin: 90px auto 40px;
+            min-height: calc(100vh - 130px);
+            position: relative;
+        }
+
+        /* Floating orbs */
+        .phone-frame::before,
+        .phone-frame::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.6;
+            animation: float 10s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        .phone-frame::before {
+            width: 180px;
+            height: 180px;
+            background: var(--accent-glow);
+            top: 5%;
+            left: -15%;
+        }
+
+        .phone-frame::after {
+            width: 140px;
+            height: 140px;
+            background: var(--accent-glow);
+            bottom: 25%;
+            right: -10%;
+            animation-delay: -5s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(15px, -20px) scale(1.05); }
+            66% { transform: translate(-10px, 10px) scale(0.95); }
+        }
+
+        .view {
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Glass Card */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 30px var(--accent-glow);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        /* Score Hero */
+        .score-hero {
+            text-align: center;
+            padding: 32px 24px 36px;
+            margin-bottom: 16px;
+        }
+
+        .score-ring-container {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin: 0 auto 28px;
+        }
+
+        .score-ring {
+            transform: rotate(-90deg);
+            filter: drop-shadow(0 0 25px var(--accent-glow));
+        }
+
+        .score-ring-bg {
+            fill: none;
+            stroke: rgba(255,255,255,0.08);
+            stroke-width: 12;
+        }
+
+        .score-ring-fill {
+            fill: none;
+            stroke: url(#scoreGradient);
+            stroke-width: 12;
+            stroke-linecap: round;
+            stroke-dasharray: 0 999;
+            transition: stroke-dasharray 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .score-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .score-number {
+            font-size: 68px;
+            font-weight: 700;
+            line-height: 1;
+            background: var(--score-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .score-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.2em;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        /* Key Stats */
+        .key-stats {
+            display: flex;
+            justify-content: center;
+            gap: 36px;
+            margin-bottom: 24px;
+        }
+
+        .key-stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+            color: var(--text-secondary);
+        }
+
+        .key-stat .icon {
+            font-size: 24px;
+        }
+
+        .key-stat .value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Insight Bubble */
+        .insight-bubble {
+            display: inline-block;
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 30px;
+            padding: 12px 26px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* Quick Log */
+        .quick-log {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .log-btn {
+            flex: 1;
+            padding: 20px 16px;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .log-btn:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px var(--accent-glow);
+        }
+
+        .log-btn .emoji {
+            font-size: 26px;
+        }
+
+        /* Mini Week - SIMPLIFIED COLORS */
+        .mini-week {
+            padding: 22px;
+            margin-bottom: 16px;
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            color: var(--text-muted);
+            margin-bottom: 18px;
+        }
+
+        .mini-bars {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            height: 85px;
+            gap: 10px;
+        }
+
+        .mini-bar-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mini-bar {
+            width: 100%;
+            max-width: 40px;
+            border-radius: 8px 8px 4px 4px;
+            transition: all 0.3s ease;
+        }
+
+        /* Simplified traffic light colors */
+        .mini-bar.good { background: linear-gradient(180deg, var(--data-good), rgba(74, 222, 128, 0.3)); }
+        .mini-bar.ok { background: linear-gradient(180deg, var(--data-ok), rgba(251, 191, 36, 0.3)); }
+        .mini-bar.poor { background: linear-gradient(180deg, var(--data-poor), rgba(248, 113, 113, 0.3)); }
+        .mini-bar.none { background: var(--data-none); }
+
+        .mini-bar-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .mini-bar-label.today {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* Stats Grid */
+        .stats-section {
+            padding: 22px;
+            margin-bottom: 16px;
+        }
+
+        .stats-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .period-toggle {
+            display: flex;
+            gap: 4px;
+            background: rgba(255,255,255,0.04);
+            padding: 4px;
+            border-radius: 12px;
+        }
+
+        .period-btn {
+            padding: 6px 14px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-family: 'Outfit', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .period-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .period-btn.active {
+            background: var(--accent);
+            color: #000;
+            font-weight: 600;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .stat-item {
+            background: rgba(255,255,255,0.03);
+            border-radius: 16px;
+            padding: 18px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.04);
+            transition: all 0.3s ease;
+        }
+
+        .stat-item:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(255,255,255,0.1);
+        }
+
+        .stat-value {
+            font-size: 26px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Heatmap - SIMPLIFIED COLORS */
+        .heatmap-section {
+            padding: 22px;
+            margin-bottom: 16px;
+        }
+
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+        }
+
+        .heatmap-cell {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.15);
+            z-index: 1;
+        }
+
+        /* Simplified traffic light colors */
+        .heatmap-cell.none { background: var(--data-none); color: var(--text-muted); }
+        .heatmap-cell.poor { background: var(--data-poor); color: #fff; }
+        .heatmap-cell.ok { background: var(--data-ok); color: #333; }
+        .heatmap-cell.good { background: var(--data-good); color: #333; }
+        .heatmap-cell.today {
+            box-shadow: 0 0 0 2px var(--accent), 0 0 20px var(--accent-glow);
+        }
+
+        /* View Full Link */
+        .view-full-link {
+            display: block;
+            text-align: center;
+            padding: 18px;
+            color: var(--accent);
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-decoration: none;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .view-full-link:hover {
+            background: rgba(255,255,255,0.08);
+            box-shadow: 0 0 30px var(--accent-glow);
+            transform: translateY(-2px);
+        }
+
+        /* Color legend */
+        .color-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+        }
+
+        .legend-dot.good { background: var(--data-good); }
+        .legend-dot.ok { background: var(--data-ok); }
+        .legend-dot.poor { background: var(--data-poor); }
+    </style>
+</head>
+<body class="theme-aurora-warm">
+
+<!-- Theme Selector -->
+<div class="theme-selector">
+    <span class="theme-label">AURORA</span>
+    <button class="theme-btn active" onclick="setTheme('aurora-warm')">Warm</button>
+    <button class="theme-btn" onclick="setTheme('aurora-deep')">Deep</button>
+    <button class="theme-btn" onclick="setTheme('aurora-copper')">Copper</button>
+    <button class="theme-btn" onclick="setTheme('aurora-rose')">Rose</button>
+    <button class="theme-btn" onclick="setTheme('aurora-dusk')">Dusk</button>
+    <button class="theme-btn" onclick="setTheme('aurora-soft')">Soft</button>
+</div>
+
+<!-- Phone Frame -->
+<div class="phone-frame">
+    <div class="view">
+
+        <!-- Score Hero Card -->
+        <div class="glass-card score-hero">
+            <div class="score-ring-container">
+                <svg class="score-ring" width="180" height="180" viewBox="0 0 180 180">
+                    <defs>
+                        <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" class="gradient-start"/>
+                            <stop offset="100%" class="gradient-end"/>
+                        </linearGradient>
+                    </defs>
+                    <circle class="score-ring-bg" cx="90" cy="90" r="78" />
+                    <circle class="score-ring-fill" cx="90" cy="90" r="78"
+                        stroke-dasharray="382 490" />
+                </svg>
+                <div class="score-value">
+                    <div class="score-number">78</div>
+                    <div class="score-label">SLEEP SCORE</div>
+                </div>
+            </div>
+
+            <div class="key-stats">
+                <div class="key-stat">
+                    <span class="icon">&#128293;</span>
+                    <span class="value">7</span> day streak
+                </div>
+                <div class="key-stat">
+                    <span class="value">7.2h</span> avg
+                </div>
+            </div>
+
+            <div class="insight-bubble">
+                Great consistency this week!
+            </div>
+        </div>
+
+        <!-- Quick Log -->
+        <div class="quick-log">
+            <button class="log-btn">
+                <span class="emoji">&#127769;</span>
+                Going to bed
+            </button>
+            <button class="log-btn">
+                <span class="emoji">&#9728;&#65039;</span>
+                Just woke up
+            </button>
+        </div>
+
+        <!-- Mini Week - Simplified Colors -->
+        <div class="glass-card mini-week">
+            <div class="section-header">LAST 7 NIGHTS</div>
+            <div class="mini-bars">
+                <div class="mini-bar-group">
+                    <div class="mini-bar ok" style="height: 45px;"></div>
+                    <span class="mini-bar-label">M</span>
+                </div>
+                <div class="mini-bar-group">
+                    <div class="mini-bar good" style="height: 58px;"></div>
+                    <span class="mini-bar-label">T</span>
+                </div>
+                <div class="mini-bar-group">
+                    <div class="mini-bar good" style="height: 72px;"></div>
+                    <span class="mini-bar-label">W</span>
+                </div>
+                <div class="mini-bar-group">
+                    <div class="mini-bar good" style="height: 65px;"></div>
+                    <span class="mini-bar-label">T</span>
+                </div>
+                <div class="mini-bar-group">
+                    <div class="mini-bar ok" style="height: 50px;"></div>
+                    <span class="mini-bar-label">F</span>
+                </div>
+                <div class="mini-bar-group">
+                    <div class="mini-bar good" style="height: 75px;"></div>
+                    <span class="mini-bar-label">S</span>
+                </div>
+                <div class="mini-bar-group">
+                    <div class="mini-bar good" style="height: 60px;"></div>
+                    <span class="mini-bar-label today">S</span>
+                </div>
+            </div>
+            <div class="color-legend">
+                <div class="legend-item"><span class="legend-dot good"></span> 7+ hrs</div>
+                <div class="legend-item"><span class="legend-dot ok"></span> 5-7 hrs</div>
+                <div class="legend-item"><span class="legend-dot poor"></span> &lt;5 hrs</div>
+            </div>
+        </div>
+
+        <!-- Stats Section -->
+        <div class="glass-card stats-section">
+            <div class="stats-header">
+                <span class="section-header">STATISTICS</span>
+                <div class="period-toggle">
+                    <button class="period-btn active">7d</button>
+                    <button class="period-btn">30d</button>
+                </div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value">7.2h</div>
+                    <div class="stat-label">Avg Duration</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">10:24p</div>
+                    <div class="stat-label">Avg Bedtime</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">5:42a</div>
+                    <div class="stat-label">Avg Wake</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">14</div>
+                    <div class="stat-label">Nights Logged</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Heatmap - Simplified Colors -->
+        <div class="glass-card heatmap-section">
+            <div class="section-header">JANUARY 2026</div>
+            <div class="heatmap-grid">
+                <div class="heatmap-cell none">1</div>
+                <div class="heatmap-cell ok">2</div>
+                <div class="heatmap-cell good">3</div>
+                <div class="heatmap-cell good">4</div>
+                <div class="heatmap-cell good">5</div>
+                <div class="heatmap-cell good">6</div>
+                <div class="heatmap-cell good">7</div>
+                <div class="heatmap-cell good">8</div>
+                <div class="heatmap-cell ok">9</div>
+                <div class="heatmap-cell poor">10</div>
+                <div class="heatmap-cell ok">11</div>
+                <div class="heatmap-cell good">12</div>
+                <div class="heatmap-cell good">13</div>
+                <div class="heatmap-cell good">14</div>
+                <div class="heatmap-cell good">15</div>
+                <div class="heatmap-cell good">16</div>
+                <div class="heatmap-cell good">17</div>
+                <div class="heatmap-cell good">18</div>
+                <div class="heatmap-cell good">19</div>
+                <div class="heatmap-cell ok">20</div>
+                <div class="heatmap-cell good">21</div>
+                <div class="heatmap-cell today good">22</div>
+                <div class="heatmap-cell none">23</div>
+                <div class="heatmap-cell none">24</div>
+                <div class="heatmap-cell none">25</div>
+                <div class="heatmap-cell none">26</div>
+                <div class="heatmap-cell none">27</div>
+                <div class="heatmap-cell none">28</div>
+            </div>
+        </div>
+
+        <a href="#" class="view-full-link">VIEW FULL DASHBOARD &rarr;</a>
+
+    </div>
+</div>
+
+<script>
+    const gradientColors = {
+        'aurora-warm': ['#c87090', '#ffb090'],
+        'aurora-deep': ['#a080c0', '#f0b0a0'],
+        'aurora-copper': ['#d08060', '#f0c080'],
+        'aurora-rose': ['#e08090', '#ffb0a0'],
+        'aurora-dusk': ['#c06080', '#ffc080'],
+        'aurora-soft': ['#c0a0b0', '#e0c0b0']
+    };
+
+    function setTheme(theme) {
+        document.body.className = 'theme-' + theme;
+
+        // Update gradient colors
+        const colors = gradientColors[theme];
+        document.querySelector('.gradient-start').style.stopColor = colors[0];
+        document.querySelector('.gradient-end').style.stopColor = colors[1];
+
+        // Update active button
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+
+        // Re-trigger ring animation
+        const ring = document.querySelector('.score-ring-fill');
+        ring.style.strokeDasharray = '0 490';
+        setTimeout(() => {
+            ring.style.strokeDasharray = '382 490';
+        }, 100);
+    }
+
+    // Initialize gradient colors
+    document.addEventListener('DOMContentLoaded', () => {
+        const colors = gradientColors['aurora-warm'];
+        document.querySelector('.gradient-start').style.stopColor = colors[0];
+        document.querySelector('.gradient-end').style.stopColor = colors[1];
+    });
+</script>
+
+</body>
+</html>

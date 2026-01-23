@@ -6,7 +6,7 @@
     <title>0500</title>
 
     <!-- PWA Meta Tags -->
-    <meta name="description" content="Iron Man-inspired personal productivity dashboard">
+    <meta name="description" content="Aurora-themed personal productivity dashboard">
     <meta name="theme-color" content="#d4915c">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -37,7 +37,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&family=Inter:wght@200;300;400;500&display=swap" rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/styles.css?v=6">
 </head>
 <body>
 
@@ -117,6 +117,9 @@
         <!-- Mobile Sleep Panel (hidden on desktop, shown as tab on mobile) -->
         <div class="mobile-sleep-panel mobile-panel" data-panel="sleep" id="mobile-sleep-panel">
             <div class="mobile-sleep-content">
+                <!-- Score & Streak Row -->
+                <div class="mobile-score-streak-row" id="mobile-sleep-score"></div>
+
                 <!-- Main countdown -->
                 <div class="mobile-sleep-main">
                     <div class="mobile-sleep-status" id="mobile-sleep-status">TIME UNTIL BED</div>
@@ -136,6 +139,9 @@
                     </button>
                 </div>
 
+                <!-- Insight -->
+                <div id="mobile-sleep-insight"></div>
+
                 <!-- Stats -->
                 <div class="mobile-sleep-stats">
                     <div class="mobile-stat">
@@ -151,6 +157,9 @@
                         <span class="mobile-stat-label">WAKE</span>
                     </div>
                 </div>
+
+                <!-- Extra Stats Row -->
+                <div class="mobile-extra-stats-row" id="mobile-sleep-extra-stats"></div>
 
                 <!-- Quality bar -->
                 <div class="mobile-sleep-quality">
@@ -181,10 +190,15 @@
                     </div>
                 </div>
 
-                <!-- Data buttons -->
-                <div class="mobile-data-actions">
-                    <button class="mobile-data-btn" id="mobile-export">↓ Export</button>
-                    <button class="mobile-data-btn" id="mobile-import">↑ Import</button>
+                <!-- Manual Entry (Mobile) -->
+                <div class="mobile-manual-entry">
+                    <div class="mobile-section-label">ADD PAST ENTRY</div>
+                    <div class="mobile-manual-row">
+                        <input type="date" id="mobile-manual-date" class="mobile-manual-input">
+                        <input type="time" id="mobile-manual-bed" value="22:00" class="mobile-manual-input">
+                        <input type="time" id="mobile-manual-wake" value="06:00" class="mobile-manual-input">
+                        <button class="mobile-manual-add" id="mobile-btn-add-sleep">+</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -251,6 +265,18 @@
                     </button>
                 </div>
 
+                <!-- Sleep Score & Streak Row -->
+                <div class="sleep-score-streak-row">
+                    <div class="sleep-score-section" id="sleep-score-section"></div>
+                    <div class="sleep-streak-section" id="sleep-streak-section"></div>
+                </div>
+
+                <!-- Smart Insights -->
+                <div class="sleep-section">
+                    <div class="sleep-section-header">INSIGHTS</div>
+                    <div class="sleep-insights" id="sleep-insights"></div>
+                </div>
+
                 <!-- Main countdown -->
                 <div class="sleep-main">
                     <div class="sleep-status" id="sleep-status">TIME UNTIL BED</div>
@@ -287,6 +313,24 @@
                     <div class="sleep-quality-marker" id="sleep-quality-marker"></div>
                 </div>
 
+                <!-- Enhanced Stats Section -->
+                <div class="sleep-section">
+                    <div class="sleep-section-header">STATISTICS</div>
+                    <div class="sleep-enhanced-stats" id="sleep-enhanced-stats"></div>
+                </div>
+
+                <!-- Monthly Heatmap -->
+                <div class="sleep-section">
+                    <div class="sleep-section-header">MONTHLY VIEW</div>
+                    <div class="sleep-heatmap" id="sleep-heatmap"></div>
+                </div>
+
+                <!-- Enhanced Sleep Debt -->
+                <div class="sleep-section">
+                    <div class="sleep-section-header">SLEEP DEBT</div>
+                    <div class="sleep-debt-enhanced" id="sleep-debt-enhanced"></div>
+                </div>
+
                 <!-- Weekly Chart Section -->
                 <div class="sleep-section">
                     <div class="sleep-section-header">THIS WEEK</div>
@@ -299,7 +343,7 @@
                     <div class="bedtime-band" id="bedtime-band"></div>
                 </div>
 
-                <!-- Sleep Debt & Weekly Average -->
+                <!-- Sleep Debt & Weekly Average (Original) -->
                 <div class="sleep-bottom-row">
                     <div class="sleep-debt-card" id="sleep-debt"></div>
                     <div class="weekly-avg-card" id="weekly-avg-zone"></div>
@@ -317,14 +361,24 @@
                     </div>
                 </div>
 
-                <!-- Data Backup -->
-                <div class="sleep-data-actions">
-                    <button class="sleep-data-btn" id="btn-export-sleep">
-                        <span class="btn-icon">↓</span> Export Data
-                    </button>
-                    <button class="sleep-data-btn" id="btn-import-sleep">
-                        <span class="btn-icon">↑</span> Import Data
-                    </button>
+                <!-- Manual Entry -->
+                <div class="sleep-manual-entry">
+                    <div class="sleep-section-header">ADD PAST ENTRY</div>
+                    <div class="sleep-manual-row">
+                        <div class="sleep-manual-field">
+                            <label>Date</label>
+                            <input type="date" id="manual-sleep-date">
+                        </div>
+                        <div class="sleep-manual-field">
+                            <label>Bed</label>
+                            <input type="time" id="manual-sleep-bed" value="22:00">
+                        </div>
+                        <div class="sleep-manual-field">
+                            <label>Wake</label>
+                            <input type="time" id="manual-sleep-wake" value="06:00">
+                        </div>
+                        <button class="sleep-manual-add" id="btn-add-manual-sleep">+</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -341,21 +395,28 @@
     </div>
 </div>
 
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <!-- Scripts -->
-<script src="js/config.js"></script>
-<script src="js/animations.js"></script>
-<script src="js/lava-lamp.js"></script>
-<script src="js/clock.js"></script>
-<script src="js/goals.js"></script>
-<script src="js/schedule.js"></script>
-<script src="js/timer.js"></script>
-<script src="js/globe.js"></script>
-<script src="js/hud.js"></script>
-<script src="js/weather.js"></script>
-<script src="js/notes.js"></script>
-<script src="js/sleep.js"></script>
-<script src="js/mobile.js"></script>
-<script src="js/main.js"></script>
+<script src="js/config.js?v=4"></script>
+<script src="js/supabase.js?v=4"></script>
+<script src="js/data.js?v=4"></script>
+<script src="js/auth.js?v=4"></script>
+<script src="js/animations.js?v=4"></script>
+<script src="js/lava-lamp.js?v=4"></script>
+<script src="js/clock.js?v=4"></script>
+<script src="js/goals.js?v=4"></script>
+<script src="js/schedule.js?v=4"></script>
+<script src="js/timer.js?v=4"></script>
+<script src="js/globe.js?v=4"></script>
+<script src="js/hud.js?v=4"></script>
+<script src="js/weather.js?v=4"></script>
+<script src="js/notes.js?v=4"></script>
+<script src="js/sleep-redirect.js?v=1"></script>
+<script src="js/sleep.js?v=6"></script>
+<script src="js/mobile.js?v=5"></script>
+<script src="js/main.js?v=4"></script>
 
 </body>
 </html>
