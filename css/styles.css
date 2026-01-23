@@ -2453,29 +2453,26 @@ html, body {
         backdrop-filter: blur(24px);
         -webkit-backdrop-filter: blur(24px);
         border-top: 1px solid var(--card-border);
-        padding: 0.5rem;
+        padding: 0.5rem 1rem;
         padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0));
-        justify-content: space-between;
+        justify-content: center;
         align-items: center;
-        gap: 0.5rem;
     }
 
     .mobile-nav-tabs {
         display: flex;
-        gap: 0.25rem;
-        flex: 1;
+        gap: 0.5rem;
     }
 
     .mobile-tab {
-        flex: 1;
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 0.2rem;
-        padding: 0.5rem 0.25rem;
+        padding: 0.6rem 1.5rem;
         border: none;
         background: transparent;
-        border-radius: 10px;
+        border-radius: 12px;
         cursor: pointer;
         transition: all 0.2s ease;
     }
@@ -2617,13 +2614,16 @@ html, body {
     }
 
     .globe-section {
-        order: 1;
-        display: flex !important;
-        justify-content: center;
-        align-items: center;
-        height: 220px;
-        min-height: 220px;
-        margin-bottom: 0.5rem;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 0;
+        pointer-events: none;
+        opacity: 0.15;
+        height: auto;
+        min-height: 0;
+        margin: 0;
         overflow: visible;
     }
 
@@ -2631,14 +2631,19 @@ html, body {
         display: flex;
         justify-content: center;
         align-items: center;
-        width: 200px;
-        height: 200px;
+        width: 350px;
+        height: 350px;
         position: relative;
     }
 
     #globe-canvas {
-        width: 200px !important;
-        height: 200px !important;
+        width: 350px !important;
+        height: 350px !important;
+    }
+
+    .goals-section {
+        position: relative;
+        z-index: 1;
     }
 
     .globe-loading {
