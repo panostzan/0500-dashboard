@@ -1547,14 +1547,9 @@ function initSleepCard() {
         hoursInput.value = settings.targetSleepHours;
     }
 
-    // Navigate to sleep page on chip click (uses redirect for device detection)
+    // Navigate to sleep page on chip click
     chip.addEventListener('click', () => {
-        if (window.SleepRedirect) {
-            window.SleepRedirect.go();
-        } else {
-            // Fallback if redirect script not loaded
-            window.location.href = window.innerWidth <= 768 ? 'sleep.html' : 'sleep-desktop.html';
-        }
+        window.location.href = 'sleep.html';
     });
 
     // Close modal

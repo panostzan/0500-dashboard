@@ -78,6 +78,29 @@
             }
         }
 
+        /* Desktop back button */
+        .desktop-back-btn {
+            display: none;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 12px 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            transition: all 0.2s;
+        }
+        .desktop-back-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+        @media (min-width: 769px) {
+            .desktop-back-btn {
+                display: inline-block;
+            }
+        }
+
         /* Floating orbs */
         .phone-frame::before,
         .phone-frame::after {
@@ -962,6 +985,8 @@
 <div class="phone-frame">
     <div class="view">
 
+        <!-- Desktop Back Button -->
+        <a href="index.html" class="desktop-back-btn">← Back to Dashboard</a>
 
         <!-- Quick Log -->
         <div class="quick-log">
