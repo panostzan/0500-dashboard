@@ -1134,11 +1134,8 @@ document.addEventListener('DOMContentLoaded', () => {
     wakeInput.value = `${settings.wakeHour.toString().padStart(2, '0')}:${settings.wakeMinute.toString().padStart(2, '0')}`;
     hoursInput.value = settings.targetSleepHours;
 
-    const manualDate = document.getElementById('manual-date');
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    manualDate.value = yesterday.toISOString().split('T')[0];
-    manualDate.max = new Date().toISOString().split('T')[0];
+    // Initialize date pills for manual entry
+    renderDatePills();
 
     refreshAll();
     setInterval(updateCountdown, 1000);
