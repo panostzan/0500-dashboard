@@ -19,16 +19,6 @@ function initMobileNav() {
         tab.addEventListener('click', () => {
             const targetPanel = tab.dataset.tab;
 
-            // Sleep tab navigates to dedicated sleep page
-            if (targetPanel === 'sleep') {
-                if (window.SleepRedirect) {
-                    window.SleepRedirect.go();
-                } else {
-                    window.location.href = 'sleep.html';
-                }
-                return;
-            }
-
             // Update active tab
             tabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
