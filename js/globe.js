@@ -121,6 +121,7 @@ class DottedGlobe {
         this.highlightLocation = location;
     }
 
+
     async loadLandData() {
         const loading = document.getElementById('globe-loading');
 

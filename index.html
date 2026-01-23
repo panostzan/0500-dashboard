@@ -37,7 +37,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&family=Inter:wght@200;300;400;500&display=swap" rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/styles.css?v=8">
+    <link rel="stylesheet" href="css/styles.css?v=11">
 </head>
 <body>
 
@@ -94,6 +94,13 @@
                 <canvas id="globe-canvas"></canvas>
                 <canvas id="globe-hud-canvas"></canvas>
             </div>
+        </div>
+
+        <!-- Mobile location indicator (separate from globe for visibility) -->
+        <div class="mobile-location-indicator" id="mobile-location-indicator">
+            <div class="location-dot"></div>
+            <div class="location-ring"></div>
+            <div class="location-ring delay"></div>
         </div>
 
         <div class="schedule-section hud-frame mobile-panel" data-panel="schedule">
@@ -404,7 +411,7 @@
 <script src="js/goals.js?v=5"></script>
 <script src="js/schedule.js?v=4"></script>
 <script src="js/timer.js?v=4"></script>
-<script src="js/globe.js?v=4"></script>
+<script src="js/globe.js?v=8"></script>
 <script src="js/hud.js?v=4"></script>
 <script src="js/weather.js?v=4"></script>
 <script src="js/notes.js?v=4"></script>
