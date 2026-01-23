@@ -1333,7 +1333,11 @@ let selectedManualDate = null;
 
 function renderDaySelector() {
     const container = document.getElementById('day-selector');
-    const log = loadSleepLog();
+    if (!container) {
+        console.error('day-selector container not found');
+        return;
+    }
+    const log = loadSleepLog() || [];
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     let html = '';
