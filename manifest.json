@@ -1,11 +1,11 @@
 {
   "name": "0500 Morning Dashboard",
   "short_name": "0500",
-  "description": "Iron Man-inspired personal productivity dashboard",
+  "description": "Personal productivity dashboard",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffc9a8",
-  "theme_color": "#d4915c",
+  "background_color": "#0f0a12",
+  "theme_color": "#ffb090",
   "orientation": "portrait-primary",
   "scope": "/",
   "icons": [
@@ -16,14 +16,8 @@
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-512.png",
-      "sizes": "512x512",
+      "src": "/icons/icon-180.png",
+      "sizes": "180x180",
       "type": "image/png",
       "purpose": "any maskable"
     }
