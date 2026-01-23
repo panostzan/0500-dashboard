@@ -645,50 +645,116 @@
             margin-bottom: 16px;
         }
 
-        .manual-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+        .day-selector {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
         }
 
-        .manual-field {
+        .day-selector::-webkit-scrollbar {
+            display: none;
+        }
+
+        .day-chip {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            min-width: 52px;
+        }
+
+        .day-chip:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        .day-chip.selected {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .day-chip.selected .day-name,
+        .day-chip.selected .day-date {
+            color: #000;
+        }
+
+        .day-chip.has-data {
+            border-color: var(--data-good-start);
+        }
+
+        .day-chip.has-data .day-date::after {
+            content: '•';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--data-good-start);
+            font-size: 8px;
+        }
+
+        .day-name {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .day-date {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            position: relative;
+        }
+
+        .time-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .time-field {
+            flex: 1;
             display: flex;
             flex-direction: column;
             gap: 6px;
         }
 
-        .manual-field.full-width {
-            grid-column: span 2;
-        }
-
-        .manual-field label {
+        .time-field label {
             font-size: 10px;
             font-weight: 600;
             letter-spacing: 0.1em;
             color: var(--text-muted);
         }
 
-        .manual-field input {
+        .time-field input {
             background: rgba(255,255,255,0.06);
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 10px;
-            padding: 12px 10px;
+            padding: 14px 12px;
             color: var(--text-primary);
             font-family: 'Outfit', sans-serif;
-            font-size: 14px;
+            font-size: 16px;
             outline: none;
             width: 100%;
         }
 
-        .manual-field input:focus {
+        .time-field input:focus {
             border-color: var(--accent);
         }
 
         .manual-add-btn {
-            grid-column: span 2;
+            width: 100%;
             background: var(--accent);
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             color: #000;
             padding: 14px;
             font-size: 15px;
@@ -1022,21 +1088,20 @@
         <!-- Manual Entry -->
         <div class="glass-card manual-section">
             <div class="section-header">ADD PAST ENTRY</div>
-            <div class="manual-row">
-                <div class="manual-field full-width">
-                    <label>DATE</label>
-                    <input type="date" id="manual-date">
-                </div>
-                <div class="manual-field">
+            <div class="day-selector" id="day-selector">
+                <!-- Populated by JS -->
+            </div>
+            <div class="time-row">
+                <div class="time-field">
                     <label>BEDTIME</label>
                     <input type="time" id="manual-bed" value="22:00">
                 </div>
-                <div class="manual-field">
+                <div class="time-field">
                     <label>WAKE UP</label>
                     <input type="time" id="manual-wake" value="06:00">
                 </div>
-                <button class="manual-add-btn" id="manual-add">Add Entry</button>
             </div>
+            <button class="manual-add-btn" id="manual-add">Add Entry</button>
         </div>
 
     </div>
@@ -1263,6 +1328,55 @@ function refreshAll() {
 // EVENT LISTENERS
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// Track selected day for manual entry
+let selectedManualDate = null;
+
+function renderDaySelector() {
+    const container = document.getElementById('day-selector');
+    const log = loadSleepLog();
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    let html = '';
+
+    // Generate last 7 days (yesterday to 7 days ago)
+    for (let i = 1; i <= 7; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayName = dayNames[date.getDay()];
+        const dayNum = date.getDate();
+        const hasData = log.some(e => e.date === dateStr);
+        const isSelected = selectedManualDate === dateStr;
+
+        html += `
+            <div class="day-chip ${isSelected ? 'selected' : ''} ${hasData ? 'has-data' : ''}"
+                 data-date="${dateStr}">
+                <span class="day-name">${dayName}</span>
+                <span class="day-date">${dayNum}</span>
+            </div>
+        `;
+    }
+
+    container.innerHTML = html;
+
+    // Add click handlers
+    container.querySelectorAll('.day-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            container.querySelectorAll('.day-chip').forEach(c => c.classList.remove('selected'));
+            chip.classList.add('selected');
+            selectedManualDate = chip.dataset.date;
+        });
+    });
+
+    // Select yesterday by default
+    if (!selectedManualDate) {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        selectedManualDate = yesterday.toISOString().split('T')[0];
+        container.querySelector(`[data-date="${selectedManualDate}"]`)?.classList.add('selected');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Load settings into inputs
     const settings = loadSleepSettings();
@@ -1272,12 +1386,8 @@ document.addEventListener('DOMContentLoaded', () => {
     wakeInput.value = `${settings.wakeHour.toString().padStart(2, '0')}:${settings.wakeMinute.toString().padStart(2, '0')}`;
     hoursInput.value = settings.targetSleepHours;
 
-    // Set manual date to yesterday
-    const manualDate = document.getElementById('manual-date');
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    manualDate.value = yesterday.toISOString().split('T')[0];
-    manualDate.max = new Date().toISOString().split('T')[0];
+    // Render day selector
+    renderDaySelector();
 
     // Initial render
     refreshAll();
@@ -1357,7 +1467,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Manual entry
     document.getElementById('manual-add').addEventListener('click', () => {
-        const date = document.getElementById('manual-date').value;
+        const date = selectedManualDate;
         const bedTime = document.getElementById('manual-bed').value;
         const wakeTime = document.getElementById('manual-wake').value;
 
@@ -1405,12 +1515,10 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             btn.textContent = 'Add Entry';
             btn.style.background = '';
-            // Move date back
-            const nextDate = new Date(date);
-            nextDate.setDate(nextDate.getDate() - 1);
-            document.getElementById('manual-date').value = nextDate.toISOString().split('T')[0];
         }, 1000);
 
+        // Re-render to update the day selector and charts
+        renderDaySelector();
         refreshAll();
     });
 });
