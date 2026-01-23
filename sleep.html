@@ -670,133 +670,243 @@
             box-shadow: 0 0 0 3px var(--accent-glow);
         }
 
-        /* Manual Entry */
-        .manual-section {
-            padding: 22px;
-            margin-bottom: 16px;
-        }
-
-        .day-selector {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 16px;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-        }
-
-        .day-selector::-webkit-scrollbar {
-            display: none;
-        }
-
-        .day-chip {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 10px 12px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-            flex-shrink: 0;
-            min-width: 52px;
-        }
-
-        .day-chip:hover {
-            background: rgba(255,255,255,0.08);
-        }
-
-        .day-chip.selected {
-            background: var(--accent);
-            border-color: var(--accent);
-        }
-
-        .day-chip.selected .day-name,
-        .day-chip.selected .day-date {
-            color: #000;
-        }
-
-        .day-chip.has-data {
-            border-color: var(--data-good-start);
-        }
-
-        .day-chip.has-data .day-date::after {
-            content: '•';
-            position: absolute;
-            bottom: -2px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: var(--data-good-start);
-            font-size: 8px;
-        }
-
-        .day-name {
-            font-size: 11px;
-            font-weight: 600;
+        /* Calendar Hint */
+        .calendar-hint {
+            text-align: center;
             color: var(--text-muted);
-            text-transform: uppercase;
+            font-size: 0.85rem;
+            font-style: italic;
+            padding: 16px;
+            margin-bottom: 16px;
         }
 
-        .day-date {
-            font-size: 18px;
+        /* Timeline Modal */
+        .timeline-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            padding: 20px;
+        }
+
+        .timeline-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .timeline-modal {
+            background: linear-gradient(145deg, rgba(40, 30, 45, 0.95), rgba(25, 20, 30, 0.98));
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 24px;
+            width: 100%;
+            max-width: 400px;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .timeline-overlay.active .timeline-modal {
+            transform: translateY(0);
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .timeline-date {
+            font-size: 1.1rem;
             font-weight: 600;
             color: var(--text-primary);
-            position: relative;
         }
 
-        .time-row {
+        .timeline-close {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: var(--text-muted);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .timeline-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--text-primary);
+        }
+
+        .timeline-times {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .timeline-time {
+            text-align: center;
+        }
+
+        .timeline-label {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            letter-spacing: 0.1em;
+            margin-bottom: 4px;
+        }
+
+        .timeline-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .timeline-track-container {
+            margin-bottom: 20px;
+        }
+
+        .timeline-track {
+            position: relative;
+            height: 56px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 28px;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+
+        .timeline-range {
+            position: absolute;
+            top: 4px;
+            bottom: 4px;
+            background: linear-gradient(90deg, var(--accent), #c87090);
+            border-radius: 24px;
+            transition: left 0.05s, right 0.05s;
+        }
+
+        .timeline-handle {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 28px;
+            height: 28px;
+            background: #fff;
+            border-radius: 50%;
+            cursor: grab;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            z-index: 2;
+            transition: transform 0.1s;
+        }
+
+        .timeline-handle:hover {
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .timeline-handle:active {
+            cursor: grabbing;
+            transform: translateY(-50%) scale(1.15);
+        }
+
+        .timeline-handle::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+        }
+
+        .timeline-labels {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 14px;
+        }
+
+        .timeline-labels span {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .timeline-duration {
+            text-align: center;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+        }
+
+        .duration-icon {
+            font-size: 1.2rem;
+            margin-right: 8px;
+        }
+
+        .duration-value {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .timeline-hint {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        .timeline-actions {
             display: flex;
             gap: 12px;
-            margin-bottom: 12px;
         }
 
-        .time-field {
+        .timeline-btn {
             flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .time-field label {
-            font-size: 10px;
-            font-weight: 600;
-            letter-spacing: 0.1em;
-            color: var(--text-muted);
-        }
-
-        .time-field input {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 10px;
-            padding: 14px 12px;
-            color: var(--text-primary);
-            font-family: 'Outfit', sans-serif;
-            font-size: 16px;
-            outline: none;
-            width: 100%;
-        }
-
-        .time-field input:focus {
-            border-color: var(--accent);
-        }
-
-        .manual-add-btn {
-            width: 100%;
-            background: var(--accent);
+            padding: 14px;
             border: none;
             border-radius: 12px;
-            color: #000;
-            padding: 14px;
-            font-size: 15px;
+            font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            font-family: 'Outfit', sans-serif;
         }
 
-        .manual-add-btn:hover {
+        .timeline-btn.save {
+            background: var(--accent);
+            color: #000;
+        }
+
+        .timeline-btn.save:hover {
             transform: scale(1.02);
             box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        .timeline-btn.delete {
+            background: rgba(255, 100, 100, 0.2);
+            color: #ff8080;
+        }
+
+        .timeline-btn.delete:hover {
+            background: rgba(255, 100, 100, 0.3);
+        }
+
+        .timeline-btn.delete:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
         }
 
         /* Countdown Section */
@@ -1118,25 +1228,56 @@
             </div>
         </div>
 
-        <!-- Manual Entry -->
-        <div class="glass-card manual-section">
-            <div class="section-header">ADD PAST ENTRY</div>
-            <div class="day-selector" id="day-selector">
-                <!-- Populated by JS -->
-            </div>
-            <div class="time-row">
-                <div class="time-field">
-                    <label>BEDTIME</label>
-                    <input type="time" id="manual-bed" value="22:00">
-                </div>
-                <div class="time-field">
-                    <label>WAKE UP</label>
-                    <input type="time" id="manual-wake" value="06:00">
-                </div>
-            </div>
-            <button class="manual-add-btn" id="manual-add">Add Entry</button>
+        <!-- Hint -->
+        <div class="calendar-hint">
+            Tap any day on the calendar to add or edit sleep data
         </div>
 
+    </div>
+</div>
+
+<!-- Timeline Modal -->
+<div class="timeline-overlay" id="timeline-overlay">
+    <div class="timeline-modal">
+        <div class="timeline-header">
+            <span class="timeline-date" id="timeline-date">Saturday, Jan 10</span>
+            <button class="timeline-close" id="timeline-close">&times;</button>
+        </div>
+        <div class="timeline-times">
+            <div class="timeline-time">
+                <span class="timeline-label">BEDTIME</span>
+                <span class="timeline-value" id="timeline-bed-display">10:00p</span>
+            </div>
+            <div class="timeline-time">
+                <span class="timeline-label">WAKE UP</span>
+                <span class="timeline-value" id="timeline-wake-display">6:00a</span>
+            </div>
+        </div>
+        <div class="timeline-track-container">
+            <div class="timeline-track" id="timeline-track">
+                <div class="timeline-range" id="timeline-range"></div>
+                <div class="timeline-handle handle-left" id="handle-left"></div>
+                <div class="timeline-handle handle-right" id="handle-right"></div>
+            </div>
+            <div class="timeline-labels">
+                <span>9p</span>
+                <span>11p</span>
+                <span>1a</span>
+                <span>3a</span>
+                <span>5a</span>
+                <span>7a</span>
+                <span>9a</span>
+            </div>
+        </div>
+        <div class="timeline-duration">
+            <span class="duration-icon">💤</span>
+            <span class="duration-value" id="timeline-duration">8h 0m</span>
+        </div>
+        <div class="timeline-hint">Drag handles to adjust times</div>
+        <div class="timeline-actions">
+            <button class="timeline-btn delete" id="timeline-delete">Delete</button>
+            <button class="timeline-btn save" id="timeline-save">Save</button>
+        </div>
     </div>
 </div>
 
@@ -1291,6 +1432,7 @@ function renderHeatmap() {
 
         html += `
             <div class="heatmap-cell ${color} ${isToday ? 'today' : ''} ${isFuture ? 'future' : ''}"
+                 data-date="${day.date}"
                  title="${day.duration ? day.duration.toFixed(1) + 'h' : 'No data'}">
                 ${day.day}
             </div>
@@ -1298,6 +1440,14 @@ function renderHeatmap() {
     });
 
     container.innerHTML = html;
+
+    // Add click handlers to cells
+    container.querySelectorAll('.heatmap-cell:not(.empty):not(.future)').forEach(cell => {
+        cell.style.cursor = 'pointer';
+        cell.addEventListener('click', () => {
+            openTimelineModal(cell.dataset.date);
+        });
+    });
 }
 
 function updateCountdown() {
@@ -1361,58 +1511,211 @@ function refreshAll() {
 // ═══════════════════════════════════════════════════════════════════════════════
 // EVENT LISTENERS
 // ═══════════════════════════════════════════════════════════════════════════════
+// TIMELINE MODAL
+// ═══════════════════════════════════════════════════════════════════════════════
 
-// Track selected day for manual entry
-let selectedManualDate = null;
+const TIMELINE_START = 21; // 9pm
+const TIMELINE_END = 34;   // 10am next day (21 + 13)
+const TIMELINE_SPAN = TIMELINE_END - TIMELINE_START;
 
-function renderDaySelector() {
-    const container = document.getElementById('day-selector');
-    if (!container) {
-        console.error('day-selector container not found');
-        return;
+let timelineDate = null;
+let timelineBedHour = 22;
+let timelineBedMin = 0;
+let timelineWakeHour = 6;
+let timelineWakeMin = 0;
+let isDragging = null;
+
+function timeToPercent(hour, min) {
+    let totalHours = hour + min / 60;
+    if (totalHours < TIMELINE_START) totalHours += 24;
+    return ((totalHours - TIMELINE_START) / TIMELINE_SPAN) * 100;
+}
+
+function percentToTime(percent) {
+    let totalHours = TIMELINE_START + (percent / 100) * TIMELINE_SPAN;
+    const totalMinutes = Math.round(totalHours * 60 / 15) * 15; // Snap to 15 min
+    let hour = Math.floor(totalMinutes / 60);
+    const min = totalMinutes % 60;
+    if (hour >= 24) hour -= 24;
+    return { hour, min };
+}
+
+function formatTimeShort(hour, min) {
+    const period = hour >= 12 ? 'a' : 'p';
+    const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
+    return `${displayHour}:${min.toString().padStart(2, '0')}${period}`;
+}
+
+function updateTimelineDisplay() {
+    const bedPercent = timeToPercent(timelineBedHour, timelineBedMin);
+    const wakePercent = timeToPercent(timelineWakeHour, timelineWakeMin);
+
+    document.getElementById('handle-left').style.left = `calc(${bedPercent}% - 14px)`;
+    document.getElementById('handle-right').style.left = `calc(${wakePercent}% - 14px)`;
+    document.getElementById('timeline-range').style.left = `${bedPercent}%`;
+    document.getElementById('timeline-range').style.right = `${100 - wakePercent}%`;
+
+    document.getElementById('timeline-bed-display').textContent = formatTimeShort(timelineBedHour, timelineBedMin);
+    document.getElementById('timeline-wake-display').textContent = formatTimeShort(timelineWakeHour, timelineWakeMin);
+
+    // Calculate duration
+    let bedTotal = timelineBedHour + timelineBedMin / 60;
+    let wakeTotal = timelineWakeHour + timelineWakeMin / 60;
+    if (wakeTotal < bedTotal) wakeTotal += 24;
+    const duration = wakeTotal - bedTotal;
+    const hours = Math.floor(duration);
+    const mins = Math.round((duration - hours) * 60);
+    document.getElementById('timeline-duration').textContent = `${hours}h ${mins}m`;
+}
+
+function openTimelineModal(dateStr) {
+    timelineDate = dateStr;
+    const date = new Date(dateStr + 'T12:00:00');
+    const dayName = date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+    document.getElementById('timeline-date').textContent = dayName;
+
+    // Check for existing entry
+    const log = loadSleepLog();
+    const existing = log.find(e => e.date === dateStr);
+
+    if (existing && existing.bedtime && existing.wakeTime) {
+        const bed = new Date(existing.bedtime);
+        const wake = new Date(existing.wakeTime);
+        timelineBedHour = bed.getHours();
+        timelineBedMin = bed.getMinutes();
+        timelineWakeHour = wake.getHours();
+        timelineWakeMin = wake.getMinutes();
+        document.getElementById('timeline-delete').disabled = false;
+    } else {
+        // Default: 10pm - 6am
+        timelineBedHour = 22;
+        timelineBedMin = 0;
+        timelineWakeHour = 6;
+        timelineWakeMin = 0;
+        document.getElementById('timeline-delete').disabled = true;
     }
-    const log = loadSleepLog() || [];
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-    let html = '';
+    updateTimelineDisplay();
+    document.getElementById('timeline-overlay').classList.add('active');
+}
 
-    // Generate last 7 days (yesterday to 7 days ago)
-    for (let i = 1; i <= 7; i++) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toISOString().split('T')[0];
-        const dayName = dayNames[date.getDay()];
-        const dayNum = date.getDate();
-        const hasData = log.some(e => e.date === dateStr);
-        const isSelected = selectedManualDate === dateStr;
+function closeTimelineModal() {
+    document.getElementById('timeline-overlay').classList.remove('active');
+}
 
-        html += `
-            <div class="day-chip ${isSelected ? 'selected' : ''} ${hasData ? 'has-data' : ''}"
-                 data-date="${dateStr}">
-                <span class="day-name">${dayName}</span>
-                <span class="day-date">${dayNum}</span>
-            </div>
-        `;
+function saveTimelineEntry() {
+    const bedDate = new Date(timelineDate + 'T00:00:00');
+    bedDate.setHours(timelineBedHour, timelineBedMin, 0, 0);
+    if (timelineBedHour >= 12) {
+        bedDate.setDate(bedDate.getDate() - 1);
     }
 
-    container.innerHTML = html;
+    const wakeDate = new Date(timelineDate + 'T00:00:00');
+    wakeDate.setHours(timelineWakeHour, timelineWakeMin, 0, 0);
 
-    // Add click handlers
-    container.querySelectorAll('.day-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-            container.querySelectorAll('.day-chip').forEach(c => c.classList.remove('selected'));
-            chip.classList.add('selected');
-            selectedManualDate = chip.dataset.date;
-        });
+    const duration = (wakeDate - bedDate) / 1000 / 60 / 60;
+
+    const log = loadSleepLog();
+    const existingIdx = log.findIndex(e => e.date === timelineDate);
+    const entry = {
+        date: timelineDate,
+        bedtime: bedDate.toISOString(),
+        wakeTime: wakeDate.toISOString(),
+        duration: duration
+    };
+
+    if (existingIdx >= 0) {
+        log[existingIdx] = entry;
+    } else {
+        log.push(entry);
+        log.sort((a, b) => new Date(a.date) - new Date(b.date));
+    }
+
+    saveSleepLog(log);
+    closeTimelineModal();
+    refreshAll();
+}
+
+function deleteTimelineEntry() {
+    const log = loadSleepLog();
+    const idx = log.findIndex(e => e.date === timelineDate);
+    if (idx >= 0) {
+        log.splice(idx, 1);
+        saveSleepLog(log);
+    }
+    closeTimelineModal();
+    refreshAll();
+}
+
+function initTimelineModal() {
+    const overlay = document.getElementById('timeline-overlay');
+    const track = document.getElementById('timeline-track');
+    const handleLeft = document.getElementById('handle-left');
+    const handleRight = document.getElementById('handle-right');
+
+    // Close modal
+    document.getElementById('timeline-close').addEventListener('click', closeTimelineModal);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeTimelineModal();
     });
 
-    // Select yesterday by default
-    if (!selectedManualDate) {
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        selectedManualDate = yesterday.toISOString().split('T')[0];
-        container.querySelector(`[data-date="${selectedManualDate}"]`)?.classList.add('selected');
+    // Save/Delete buttons
+    document.getElementById('timeline-save').addEventListener('click', saveTimelineEntry);
+    document.getElementById('timeline-delete').addEventListener('click', deleteTimelineEntry);
+
+    // Drag handling
+    function getPercentFromEvent(e) {
+        const rect = track.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        let percent = ((clientX - rect.left) / rect.width) * 100;
+        return Math.max(0, Math.min(100, percent));
     }
+
+    function startDrag(handle) {
+        return function(e) {
+            e.preventDefault();
+            isDragging = handle;
+            document.body.style.cursor = 'grabbing';
+        };
+    }
+
+    function onDrag(e) {
+        if (!isDragging) return;
+        e.preventDefault();
+
+        const percent = getPercentFromEvent(e);
+        const time = percentToTime(percent);
+
+        if (isDragging === 'left') {
+            const wakePercent = timeToPercent(timelineWakeHour, timelineWakeMin);
+            if (percent < wakePercent - 5) {
+                timelineBedHour = time.hour;
+                timelineBedMin = time.min;
+            }
+        } else {
+            const bedPercent = timeToPercent(timelineBedHour, timelineBedMin);
+            if (percent > bedPercent + 5) {
+                timelineWakeHour = time.hour;
+                timelineWakeMin = time.min;
+            }
+        }
+
+        updateTimelineDisplay();
+    }
+
+    function endDrag() {
+        isDragging = null;
+        document.body.style.cursor = '';
+    }
+
+    handleLeft.addEventListener('mousedown', startDrag('left'));
+    handleLeft.addEventListener('touchstart', startDrag('left'), { passive: false });
+    handleRight.addEventListener('mousedown', startDrag('right'));
+    handleRight.addEventListener('touchstart', startDrag('right'), { passive: false });
+    document.addEventListener('mousemove', onDrag);
+    document.addEventListener('mouseup', endDrag);
+    document.addEventListener('touchmove', onDrag, { passive: false });
+    document.addEventListener('touchend', endDrag);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1424,8 +1727,8 @@ document.addEventListener('DOMContentLoaded', () => {
     wakeInput.value = `${settings.wakeHour.toString().padStart(2, '0')}:${settings.wakeMinute.toString().padStart(2, '0')}`;
     hoursInput.value = settings.targetSleepHours;
 
-    // Render day selector
-    renderDaySelector();
+    // Initialize timeline modal
+    initTimelineModal();
 
     // Initial render
     refreshAll();
@@ -1501,63 +1804,6 @@ document.addEventListener('DOMContentLoaded', () => {
             heatmapYear++;
         }
         renderHeatmap();
-    });
-
-    // Manual entry
-    document.getElementById('manual-add').addEventListener('click', () => {
-        const date = selectedManualDate;
-        const bedTime = document.getElementById('manual-bed').value;
-        const wakeTime = document.getElementById('manual-wake').value;
-
-        if (!date || !bedTime || !wakeTime) return;
-
-        // Create bedtime datetime
-        const bedDate = new Date(date);
-        const [bedH, bedM] = bedTime.split(':').map(Number);
-        bedDate.setHours(bedH, bedM, 0, 0);
-
-        // Create wake datetime
-        const wakeDate = new Date(date);
-        const [wakeH, wakeM] = wakeTime.split(':').map(Number);
-        wakeDate.setHours(wakeH, wakeM, 0, 0);
-
-        // If wake is before bed, bed was previous day
-        if (wakeDate <= bedDate) {
-            bedDate.setDate(bedDate.getDate() - 1);
-        }
-
-        const duration = (wakeDate - bedDate) / 1000 / 60 / 60;
-
-        const log = loadSleepLog();
-        const existingIdx = log.findIndex(e => e.date === date);
-        const entry = {
-            date: date,
-            bedtime: bedDate.toISOString(),
-            wakeTime: wakeDate.toISOString(),
-            duration: duration
-        };
-
-        if (existingIdx >= 0) {
-            log[existingIdx] = entry;
-        } else {
-            log.push(entry);
-            log.sort((a, b) => new Date(a.date) - new Date(b.date));
-        }
-
-        saveSleepLog(log);
-
-        // Feedback
-        const btn = document.getElementById('manual-add');
-        btn.textContent = 'Added!';
-        btn.style.background = 'var(--data-good-start)';
-        setTimeout(() => {
-            btn.textContent = 'Add Entry';
-            btn.style.background = '';
-        }, 1000);
-
-        // Re-render to update the day selector and charts
-        renderDaySelector();
-        refreshAll();
     });
 });
 </script>
