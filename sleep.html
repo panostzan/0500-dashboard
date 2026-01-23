@@ -62,12 +62,20 @@
 
         /* Phone Frame */
         .phone-frame {
-            max-width: 430px;
+            max-width: 500px;
             margin: 0 auto;
             min-height: 100vh;
             min-height: 100dvh;
             position: relative;
             padding-bottom: 40px;
+        }
+
+        /* Desktop: wider layout */
+        @media (min-width: 769px) {
+            .phone-frame {
+                max-width: 600px;
+                padding: 40px 20px;
+            }
         }
 
         /* Floating orbs */

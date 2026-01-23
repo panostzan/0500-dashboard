@@ -21,11 +21,7 @@ function initMobileNav() {
 
             // Sleep tab navigates to dedicated sleep page
             if (targetPanel === 'sleep') {
-                if (window.SleepRedirect) {
-                    window.SleepRedirect.go();
-                } else {
-                    window.location.href = 'sleep.html';
-                }
+                window.location.href = 'sleep.html';
                 return;
             }
 
