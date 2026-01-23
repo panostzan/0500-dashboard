@@ -19,6 +19,16 @@ function initMobileNav() {
         tab.addEventListener('click', () => {
             const targetPanel = tab.dataset.tab;
 
+            // Sleep tab navigates to dedicated sleep page
+            if (targetPanel === 'sleep') {
+                if (window.SleepRedirect) {
+                    window.SleepRedirect.go();
+                } else {
+                    window.location.href = 'sleep.html';
+                }
+                return;
+            }
+
             // Update active tab
             tabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
@@ -37,11 +47,31 @@ function initMobileNav() {
         });
     });
 
-    // Set initial state - goals active by default
+    // Check for URL parameter to set initial tab
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+
+    // Set initial state based on URL param or default to goals
     if (isMobileView()) {
-        panels.forEach(panel => {
-            panel.classList.toggle('active', panel.dataset.panel === 'goals');
+        let initialTab = 'goals';
+        if (tabParam === 'schedule') {
+            initialTab = 'schedule';
+        }
+
+        // Update tab active state
+        tabs.forEach(t => {
+            t.classList.toggle('active', t.dataset.tab === initialTab);
         });
+
+        // Update panel visibility
+        panels.forEach(panel => {
+            panel.classList.toggle('active', panel.dataset.panel === initialTab);
+        });
+
+        // Clean up URL (remove the param so it doesn't persist on refresh)
+        if (tabParam) {
+            window.history.replaceState({}, '', window.location.pathname);
+        }
     }
 }
 

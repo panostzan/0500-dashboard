@@ -794,6 +794,80 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
+
+        /* Mobile Bottom Nav - Only show on mobile */
+        .mobile-nav {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-nav {
+                display: flex;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 1000;
+                background: rgba(26, 16, 24, 0.95);
+                backdrop-filter: blur(24px);
+                -webkit-backdrop-filter: blur(24px);
+                border-top: 1px solid var(--card-border);
+                padding: 0.5rem 1rem;
+                padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0));
+                justify-content: center;
+                align-items: center;
+            }
+        }
+
+        .mobile-nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .mobile-tab {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.2rem;
+            padding: 0.6rem 1.5rem;
+            border: none;
+            background: transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .mobile-tab .tab-icon {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        .mobile-tab .tab-label {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.2s ease;
+        }
+
+        .mobile-tab.active {
+            background: rgba(255, 176, 144, 0.15);
+        }
+
+        .mobile-tab.active .tab-icon,
+        .mobile-tab.active .tab-label {
+            color: var(--accent);
+        }
+
+        @media (max-width: 768px) {
+            .phone-frame {
+                padding-bottom: 100px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -812,13 +886,6 @@
 <div class="phone-frame">
     <div class="view">
 
-        <!-- Back Button -->
-        <a href="index.html" class="back-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
-            Dashboard
-        </a>
 
         <!-- Quick Log -->
         <div class="quick-log">
@@ -972,6 +1039,24 @@
 
     </div>
 </div>
+
+<!-- Mobile Navigation -->
+<nav class="mobile-nav">
+    <div class="mobile-nav-tabs">
+        <a href="index.html" class="mobile-tab">
+            <span class="tab-icon">◎</span>
+            <span class="tab-label">Goals</span>
+        </a>
+        <a href="index.html?tab=schedule" class="mobile-tab">
+            <span class="tab-icon">▤</span>
+            <span class="tab-label">Schedule</span>
+        </a>
+        <a href="sleep.html" class="mobile-tab active">
+            <span class="tab-icon">◐</span>
+            <span class="tab-label">Sleep</span>
+        </a>
+    </div>
+</nav>
 
 <!-- Scripts -->
 <script src="js/config.js?v=4"></script>
