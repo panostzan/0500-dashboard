@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goals Styles Demo - 0500</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&family=Inter:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient:
+                radial-gradient(ellipse at 20% 0%, rgba(255, 150, 100, 0.3) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(200, 100, 150, 0.25) 0%, transparent 45%),
+                radial-gradient(ellipse at 40% 80%, rgba(255, 180, 100, 0.2) 0%, transparent 50%),
+                linear-gradient(170deg, #0f0a12 0%, #1a1018 40%, #201520 70%, #151015 100%);
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --card-bg-hover: rgba(255, 255, 255, 0.08);
+            --card-border: rgba(255, 180, 150, 0.15);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.8);
+            --text-muted: rgba(255, 255, 255, 0.45);
+            --accent: #ffb090;
+            --accent-soft: rgba(255, 176, 144, 0.15);
+            --check-green: #6ab04c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            color: var(--text-primary);
+            padding: 2rem;
+        }
+
+        h1 {
+            font-family: 'Inter', sans-serif;
+            font-weight: 300;
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            color: var(--accent);
+            letter-spacing: 0.1em;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 1400px;
+        }
+
+        .demo-card {
+            padding: 1.5rem;
+            border-radius: 16px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .demo-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(255, 176, 144, 0.2);
+        }
+
+        /* Shared goal item styles */
+        .goal-checkbox {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--text-muted);
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .goal-checkbox.checked {
+            background: var(--check-green);
+            border-color: var(--check-green);
+        }
+
+        .goal-checkbox.checked::after {
+            content: '';
+            width: 5px;
+            height: 5px;
+            background: white;
+            border-radius: 50%;
+        }
+
+        .goal-text {
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+
+        .goal-text.checked {
+            opacity: 0.4;
+            text-decoration: line-through;
+            text-decoration-color: var(--text-muted);
+        }
+
+        .section-title {
+            font-size: 0.7rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 0.75rem;
+        }
+
+        /* ============================================
+           STYLE 1: MINIMAL (no boxes, just spacing)
+           ============================================ */
+        .style-minimal .goal-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .style-minimal .goal-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+        }
+
+        .style-minimal .section-title {
+            color: var(--text-muted);
+            font-weight: 400;
+            font-size: 0.65rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* ============================================
+           STYLE 2: SOFT CARDS (rounded, gentle)
+           ============================================ */
+        .style-soft .goal-section {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .style-soft .goal-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.45rem 0;
+        }
+
+        .style-soft .section-title {
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+
+        /* ============================================
+           STYLE 3: UNDERLINE SECTIONS
+           ============================================ */
+        .style-underline .goal-section {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .style-underline .goal-section:last-child {
+            border-bottom: none;
+        }
+
+        .style-underline .section-title {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.8rem;
+            letter-spacing: 0.02em;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+        }
+
+        .style-underline .goal-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.4rem 0;
+        }
+
+        /* ============================================
+           STYLE 4: LEFT ACCENT BAR
+           ============================================ */
+        .style-accent-bar .goal-section {
+            border-left: 2px solid var(--accent);
+            padding-left: 1rem;
+            margin-bottom: 1.5rem;
+            margin-left: 0.25rem;
+        }
+
+        .style-accent-bar .goal-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.4rem 0;
+        }
+
+        .style-accent-bar .section-title {
+            font-weight: 500;
+            color: var(--accent);
+        }
+
+        /* ============================================
+           STYLE 5: PILL CHIPS
+           ============================================ */
+        .style-pills .goal-section {
+            margin-bottom: 1.25rem;
+        }
+
+        .style-pills .goals-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .style-pills .goal-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.85rem;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.2s ease;
+        }
+
+        .style-pills .goal-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .style-pills .goal-checkbox {
+            width: 14px;
+            height: 14px;
+        }
+
+        .style-pills .goal-text {
+            font-size: 0.8rem;
+        }
+
+        /* ============================================
+           STYLE 6: STACKED ROWS (alternating)
+           ============================================ */
+        .style-rows .goal-section {
+            margin-bottom: 1.25rem;
+        }
+
+        .style-rows .goal-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0.85rem;
+            border-radius: 8px;
+            transition: background 0.2s ease;
+        }
+
+        .style-rows .goal-item:nth-child(odd) {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .style-rows .goal-item:hover {
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        /* ============================================
+           STYLE 7: COMPACT LIST
+           ============================================ */
+        .style-compact .goal-section {
+            margin-bottom: 1rem;
+        }
+
+        .style-compact .section-title {
+            display: inline-block;
+            background: var(--accent-soft);
+            color: var(--accent);
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.6rem;
+            margin-bottom: 0.6rem;
+        }
+
+        .style-compact .goal-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.35rem 0;
+        }
+
+        .style-compact .goal-text {
+            font-size: 0.8rem;
+        }
+
+        .style-compact .goal-checkbox {
+            width: 14px;
+            height: 14px;
+            border-width: 1.5px;
+        }
+
+        /* ============================================
+           STYLE 8: NOTION-STYLE (clean, spacious)
+           ============================================ */
+        .style-notion .goal-section {
+            margin-bottom: 1.75rem;
+        }
+
+        .style-notion .section-title {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.85rem;
+            letter-spacing: 0;
+            text-transform: none;
+            color: var(--text-primary);
+            margin-bottom: 0.6rem;
+        }
+
+        .style-notion .goal-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0.5rem;
+            margin: 0 -0.5rem;
+            border-radius: 6px;
+            transition: background 0.15s ease;
+        }
+
+        .style-notion .goal-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .style-notion .goal-checkbox {
+            border-radius: 4px;
+            border-width: 1.5px;
+        }
+
+        /* ============================================
+           STYLE 9: TIMELINE DOT
+           ============================================ */
+        .style-timeline .goal-section {
+            margin-bottom: 1.5rem;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .style-timeline .goal-section::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 1.5rem;
+            bottom: 0;
+            width: 1px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .style-timeline .goal-section:last-child::before {
+            display: none;
+        }
+
+        .style-timeline .section-title {
+            position: relative;
+        }
+
+        .style-timeline .section-title::before {
+            content: '';
+            position: absolute;
+            left: -1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 10px;
+            height: 10px;
+            background: var(--accent);
+            border-radius: 50%;
+        }
+
+        .style-timeline .goal-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.4rem 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>GOALS UI STYLES</h1>
+
+    <div class="demo-grid">
+        <!-- Style 1: Minimal -->
+        <div class="demo-card">
+            <div class="demo-label">1. Minimal</div>
+            <div class="style-minimal">
+                <div class="goal-section">
+                    <div class="section-title">Daily</div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox checked"></div>
+                        <span class="goal-text checked">Morning workout</span>
+                    </div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Review lecture notes</span>
+                    </div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Work on project</span>
+                    </div>
+                </div>
+                <div class="goal-section">
+                    <div class="section-title">Mid-term</div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Finish capstone</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Style 2: Soft Cards -->
+        <div class="demo-card">
+            <div class="demo-label">2. Soft Cards</div>
+            <div class="style-soft">
+                <div class="goal-section">
+                    <div class="section-title">Daily</div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox checked"></div>
+                        <span class="goal-text checked">Morning workout</span>
+                    </div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Review lecture notes</span>
+                    </div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Work on project</span>
+                    </div>
+                </div>
+                <div class="goal-section">
+                    <div class="section-title">Mid-term</div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Finish capstone</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Style 3: Underline Sections -->
+        <div class="demo-card">
+            <div class="demo-label">3. Underline Sections</div>
+            <div class="style-underline">
+                <div class="goal-section">
+                    <div class="section-title">Daily</div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox checked"></div>
+                        <span class="goal-text checked">Morning workout</span>
+                    </div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Review lecture notes</span>
+                    </div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Work on project</span>
+                    </div>
+                </div>
+                <div class="goal-section">
+                    <div class="section-title">Mid-term</div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Finish capstone</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Style 4: Left Accent Bar -->
+        <div class="demo-card">
+            <div class="demo-label">4. Left Accent Bar</div>
+            <div class="style-accent-bar">
+                <div class="goal-section">
+                    <div class="section-title">Daily</div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox checked"></div>
+                        <span class="goal-text checked">Morning workout</span>
+                    </div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Review lecture notes</span>
+                    </div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Work on project</span>
+                    </div>
+                </div>
+                <div class="goal-section">
+                    <div class="section-title">Mid-term</div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Finish capstone</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Style 5: Pill Chips -->
+        <div class="demo-card">
+            <div class="demo-label">5. Pill Chips</div>
+            <div class="style-pills">
+                <div class="goal-section">
+                    <div class="section-title">Daily</div>
+                    <div class="goals-list">
+                        <div class="goal-item">
+                            <div class="goal-checkbox checked"></div>
+                            <span class="goal-text checked">Morning workout</span>
+                        </div>
+                        <div class="goal-item">
+                            <div class="goal-checkbox"></div>
+                            <span class="goal-text">Review notes</span>
+                        </div>
+                        <div class="goal-item">
+                            <div class="goal-checkbox"></div>
+                            <span class="goal-text">Work on project</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="goal-section">
+                    <div class="section-title">Mid-term</div>
+                    <div class="goals-list">
+                        <div class="goal-item">
+                            <div class="goal-checkbox"></div>
+                            <span class="goal-text">Finish capstone</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Style 6: Stacked Rows -->
+        <div class="demo-card">
+            <div class="demo-label">6. Stacked Rows</div>
+            <div class="style-rows">
+                <div class="goal-section">
+                    <div class="section-title">Daily</div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox checked"></div>
+                        <span class="goal-text checked">Morning workout</span>
+                    </div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Review lecture notes</span>
+                    </div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Work on project</span>
+                    </div>
+                </div>
+                <div class="goal-section">
+                    <div class="section-title">Mid-term</div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Finish capstone</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Style 7: Compact List -->
+        <div class="demo-card">
+            <div class="demo-label">7. Compact with Tags</div>
+            <div class="style-compact">
+                <div class="goal-section">
+                    <div class="section-title">Daily</div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox checked"></div>
+                        <span class="goal-text checked">Morning workout</span>
+                    </div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Review lecture notes</span>
+                    </div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Work on project</span>
+                    </div>
+                </div>
+                <div class="goal-section">
+                    <div class="section-title">Mid-term</div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Finish capstone</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Style 8: Notion-style -->
+        <div class="demo-card">
+            <div class="demo-label">8. Notion Style</div>
+            <div class="style-notion">
+                <div class="goal-section">
+                    <div class="section-title">Daily</div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox checked"></div>
+                        <span class="goal-text checked">Morning workout</span>
+                    </div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Review lecture notes</span>
+                    </div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Work on project</span>
+                    </div>
+                </div>
+                <div class="goal-section">
+                    <div class="section-title">Mid-term</div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Finish capstone</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Style 9: Timeline -->
+        <div class="demo-card">
+            <div class="demo-label">9. Timeline</div>
+            <div class="style-timeline">
+                <div class="goal-section">
+                    <div class="section-title">Daily</div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox checked"></div>
+                        <span class="goal-text checked">Morning workout</span>
+                    </div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Review lecture notes</span>
+                    </div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Work on project</span>
+                    </div>
+                </div>
+                <div class="goal-section">
+                    <div class="section-title">Mid-term</div>
+                    <div class="goal-item">
+                        <div class="goal-checkbox"></div>
+                        <span class="goal-text">Finish capstone</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

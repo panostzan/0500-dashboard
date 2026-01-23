@@ -40,8 +40,7 @@ async function renderGoals() {
         const totalCount = section.items.length;
 
         return `
-            <div class="goal-group hud-frame ${section.collapsible ? 'collapsible' : ''} ${isCollapsed ? 'collapsed' : ''}" data-section="${section.key}">
-                <div class="hud-corners"></div>
+            <div class="goal-group ${section.collapsible ? 'collapsible' : ''} ${isCollapsed ? 'collapsed' : ''}" data-section="${section.key}">
                 <h3 class="${section.collapsible ? 'goal-header-toggle' : ''}">
                     ${section.title}
                     ${section.collapsible ? `

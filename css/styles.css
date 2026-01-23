@@ -606,27 +606,24 @@ html, body {
 }
 
 .goal-group {
-    background: var(--card-bg);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid var(--card-border);
-    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 20px;
     padding: 1rem 1.25rem;
     transition: all 0.3s ease;
 }
 
 .goal-group:hover {
-    background: var(--card-bg-hover);
-    border-color: var(--card-border-hover);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .goal-group h3 {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 0.7rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
     font-weight: 500;
-    letter-spacing: 0.12em;
-    color: var(--hud-amber);
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
     margin-bottom: 0.75rem;
 }
 
@@ -2569,8 +2566,7 @@ html, body {
     }
 
     .weather-status-wrapper {
-        order: 2;
-        justify-content: center;
+        display: none;
     }
 
     .clock-container {
@@ -2586,7 +2582,13 @@ html, body {
     }
 
     .clock-hud-line {
-        width: 40px;
+        display: none;
+    }
+
+    .user-menu {
+        position: absolute;
+        top: 0.5rem;
+        right: 1rem;
     }
 
     .weather-display {
