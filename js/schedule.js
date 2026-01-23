@@ -2,7 +2,43 @@
 // SCHEDULE - Notebook Style with cloud sync
 // ═══════════════════════════════════════════════════════════════════════════════
 
+const SCHEDULE_DATE_KEY = '0500_schedule_date';
 let scheduleCache = null;
+
+function getTodayDateString() {
+    return new Date().toISOString().split('T')[0];
+}
+
+function checkAndResetSchedule() {
+    const lastDate = localStorage.getItem(SCHEDULE_DATE_KEY);
+    const today = getTodayDateString();
+
+    if (lastDate && lastDate !== today) {
+        // New day - reset the schedule
+        scheduleCache = null;
+        return true; // Indicates reset is needed
+    }
+
+    // Update the date
+    localStorage.setItem(SCHEDULE_DATE_KEY, today);
+    return false;
+}
+
+async function resetScheduleForNewDay() {
+    const entries = await DataService.loadSchedule();
+
+    // Keep the time slots but clear activities
+    const resetEntries = entries.map(entry => ({
+        time: entry.time,
+        activity: ''
+    }));
+
+    scheduleCache = resetEntries;
+    await DataService.saveSchedule(resetEntries);
+    localStorage.setItem(SCHEDULE_DATE_KEY, getTodayDateString());
+
+    return resetEntries;
+}
 
 async function loadScheduleEntries() {
     if (!scheduleCache) {
@@ -171,6 +207,16 @@ async function saveCurrentSchedule() {
 }
 
 async function initSchedule() {
+    // Check if we need to reset for a new day
+    if (checkAndResetSchedule()) {
+        await resetScheduleForNewDay();
+    } else {
+        // First time - set today's date
+        if (!localStorage.getItem(SCHEDULE_DATE_KEY)) {
+            localStorage.setItem(SCHEDULE_DATE_KEY, getTodayDateString());
+        }
+    }
+
     await renderSchedule();
 
     // Re-render when user changes
@@ -178,4 +224,39 @@ async function initSchedule() {
         scheduleCache = null;
         await renderSchedule();
     });
+
+    // Schedule midnight reset check
+    scheduleMidnightReset();
+}
+
+function scheduleMidnightReset() {
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+
+    const msUntilMidnight = tomorrow - now;
+
+    // Set timeout for midnight
+    setTimeout(async () => {
+        await resetScheduleForNewDay();
+        await renderSchedule();
+
+        // Show a subtle indicator that schedule was reset
+        const container = document.getElementById('schedule-scroll');
+        if (container) {
+            const notice = document.createElement('div');
+            notice.style.cssText = 'text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 8px; opacity: 0; transition: opacity 0.5s;';
+            notice.textContent = 'Schedule reset for new day';
+            container.insertBefore(notice, container.firstChild);
+            setTimeout(() => notice.style.opacity = '1', 10);
+            setTimeout(() => {
+                notice.style.opacity = '0';
+                setTimeout(() => notice.remove(), 500);
+            }, 3000);
+        }
+
+        // Schedule next midnight reset
+        scheduleMidnightReset();
+    }, msUntilMidnight);
 }
