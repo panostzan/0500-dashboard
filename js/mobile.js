@@ -19,12 +19,6 @@ function initMobileNav() {
         tab.addEventListener('click', () => {
             const targetPanel = tab.dataset.tab;
 
-            // Sleep tab navigates to dedicated sleep page
-            if (targetPanel === 'sleep') {
-                window.location.href = 'sleep.html';
-                return;
-            }
-
             // Update active tab
             tabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
@@ -52,6 +46,8 @@ function initMobileNav() {
         let initialTab = 'goals';
         if (tabParam === 'schedule') {
             initialTab = 'schedule';
+        } else if (tabParam === 'sleep') {
+            initialTab = 'sleep';
         }
 
         // Update tab active state
@@ -321,6 +317,9 @@ function initMobileSleepPanel() {
         const settings = loadSleepSettings();
         wakeInput.value = `${settings.wakeHour.toString().padStart(2, '0')}:${settings.wakeMinute.toString().padStart(2, '0')}`;
 
+        // Remove readonly on focus (prevents iOS autofill)
+        wakeInput.addEventListener('focus', () => wakeInput.removeAttribute('readonly'));
+
         wakeInput.addEventListener('change', () => {
             const [h, m] = wakeInput.value.split(':').map(Number);
             const settings = loadSleepSettings();
@@ -338,6 +337,9 @@ function initMobileSleepPanel() {
     if (hoursInput) {
         const settings = loadSleepSettings();
         hoursInput.value = settings.targetSleepHours;
+
+        // Remove readonly on focus (prevents iOS autofill)
+        hoursInput.addEventListener('focus', () => hoursInput.removeAttribute('readonly'));
 
         hoursInput.addEventListener('change', () => {
             const settings = loadSleepSettings();
@@ -362,6 +364,17 @@ function initMobileSleepPanel() {
         yesterday.setDate(yesterday.getDate() - 1);
         mobileManualDate.value = yesterday.toISOString().split('T')[0];
         mobileManualDate.max = new Date().toISOString().split('T')[0];
+
+        // Remove readonly on focus (prevents iOS autofill)
+        mobileManualDate.addEventListener('focus', () => mobileManualDate.removeAttribute('readonly'));
+    }
+
+    if (mobileManualBed) {
+        mobileManualBed.addEventListener('focus', () => mobileManualBed.removeAttribute('readonly'));
+    }
+
+    if (mobileManualWake) {
+        mobileManualWake.addEventListener('focus', () => mobileManualWake.removeAttribute('readonly'));
     }
 
     if (mobileAddBtn) {
