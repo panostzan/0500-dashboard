@@ -136,7 +136,12 @@ function clearAuthMessages() {
 }
 
 function showAuthModal() {
-    const modal = document.getElementById('auth-modal');
+    let modal = document.getElementById('auth-modal');
+    if (!modal) {
+        // Recreate modal if it was removed
+        createAuthModal();
+        modal = document.getElementById('auth-modal');
+    }
     if (modal) {
         modal.classList.add('active');
     }
@@ -146,6 +151,12 @@ function hideAuthModal() {
     const modal = document.getElementById('auth-modal');
     if (modal) {
         modal.classList.remove('active');
+        // Remove from DOM to prevent iOS autofill detection
+        setTimeout(() => {
+            if (!modal.classList.contains('active')) {
+                modal.remove();
+            }
+        }, 300);
     }
 }
 
@@ -203,7 +214,6 @@ function updateUserMenu() {
 }
 
 function initAuth() {
-    createAuthModal();
     createUserMenu();
 
     // Listen for auth changes
@@ -214,8 +224,9 @@ function initAuth() {
     // Initial state
     updateUserMenu();
 
-    // Show auth modal if not signed in
+    // Only create and show auth modal if not signed in
     if (!isSignedIn()) {
+        createAuthModal();
         showAuthModal();
     }
 }
