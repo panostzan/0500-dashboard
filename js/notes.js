@@ -86,6 +86,11 @@ async function initNotes() {
         }
     });
 
+    // Remove readonly on focus (prevents iOS autofill popup)
+    input.addEventListener('focus', () => {
+        input.removeAttribute('readonly');
+    });
+
     // Auto-save on input
     input.addEventListener('input', () => {
         saveNotesContent(input.value);

@@ -70,6 +70,7 @@ async function renderSchedule() {
                     maxlength="7"
                     autocomplete="off"
                     data-form-type="other"
+                    readonly
                 >
                 <div class="schedule-row-divider"></div>
                 <input
@@ -80,6 +81,7 @@ async function renderSchedule() {
                     data-field="activity"
                     autocomplete="off"
                     data-form-type="other"
+                    readonly
                 >
             </div>
         `;
@@ -103,6 +105,11 @@ function attachScheduleListeners() {
         const inputs = row.querySelectorAll('input');
 
         inputs.forEach(input => {
+            // Remove readonly on focus (prevents iOS autofill popup)
+            input.addEventListener('focus', () => {
+                input.removeAttribute('readonly');
+            });
+
             // Save on input change
             input.addEventListener('input', () => {
                 saveCurrentSchedule();
