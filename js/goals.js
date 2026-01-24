@@ -52,12 +52,12 @@ async function renderGoals() {
                     ${section.items.map((item, idx) => `
                         <div class="goal-item ${item.checked ? 'checked' : ''}" data-index="${idx}">
                             <div class="goal-checkbox"></div>
-                            <span class="goal-text" contenteditable="true" spellcheck="false">${item.text}</span>
+                            <span class="goal-text" contenteditable="true" spellcheck="false" autocomplete="off" data-form-type="other">${item.text}</span>
                         </div>
                     `).join('')}
                     <div class="goal-item new-goal">
                         <div class="goal-checkbox"></div>
-                        <span class="goal-text" contenteditable="true" spellcheck="false" data-placeholder="+ add goal"></span>
+                        <span class="goal-text" contenteditable="true" spellcheck="false" autocomplete="off" data-form-type="other" data-placeholder="+ add goal"></span>
                     </div>
                 </div>
             </div>
