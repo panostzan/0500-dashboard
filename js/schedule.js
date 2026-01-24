@@ -68,6 +68,8 @@ async function renderSchedule() {
                     value="${entry.time}"
                     data-field="time"
                     maxlength="7"
+                    autocomplete="off"
+                    data-form-type="other"
                 >
                 <div class="schedule-row-divider"></div>
                 <input
@@ -76,6 +78,8 @@ async function renderSchedule() {
                     placeholder="..."
                     value="${entry.activity}"
                     data-field="activity"
+                    autocomplete="off"
+                    data-form-type="other"
                 >
             </div>
         `;

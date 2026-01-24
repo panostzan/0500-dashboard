@@ -76,7 +76,8 @@ html, body {
     overflow: hidden;
     font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
     color: var(--text-primary);
-    background: var(--bg-gradient);
+    background-color: #0f0a12;
+    background-image: var(--bg-gradient);
     background-attachment: fixed;
 }
 
@@ -2441,6 +2442,7 @@ html, body {
     html, body {
         overflow-x: hidden;
         overflow-y: auto;
+        background-color: #0f0a12;
     }
 
     /* ═══════════════════════════════════════════════════════════════════
