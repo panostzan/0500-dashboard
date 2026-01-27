@@ -144,12 +144,12 @@ if (typeof window !== 'undefined') {
 // LOGGING FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function logBedtime() {
+async function logBedtime() {
     const now = new Date();
     // Add 20 minutes for fall asleep buffer
     const bedtime = new Date(now.getTime() + 20 * 60 * 1000);
 
-    const log = loadSleepLog();
+    const log = await loadSleepLogAsync();
 
     // Check if there's an incomplete entry (bedtime without wake)
     const lastEntry = log[log.length - 1];
@@ -177,10 +177,10 @@ function logBedtime() {
     return bedtime;
 }
 
-function logWakeUp() {
+async function logWakeUp() {
     // Subtract 10 minutes (user typically presses ~10 min after waking)
     const now = new Date(Date.now() - 10 * 60 * 1000);
-    const log = loadSleepLog();
+    const log = await loadSleepLogAsync();
 
     // Find the most recent entry with bedtime but no wake time
     const lastEntry = log[log.length - 1];
@@ -1522,7 +1522,7 @@ function closeSleepModal() {
 // INITIALIZATION
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function initSleepCard() {
+async function initSleepCard() {
     const chip = document.getElementById('chip-rest');
     const modal = document.getElementById('sleep-modal');
     const backdrop = modal.querySelector('.modal-backdrop');
@@ -1535,6 +1535,10 @@ function initSleepCard() {
     const manualBedInput = document.getElementById('manual-sleep-bed');
     const manualWakeInput = document.getElementById('manual-sleep-wake');
     const manualAddBtn = document.getElementById('btn-add-manual-sleep');
+
+    // Load cloud data first (populates cache for sync functions)
+    await loadSleepLogAsync();
+    await loadSleepSettingsAsync();
 
     // Load settings into inputs
     const settings = loadSleepSettings();
@@ -1565,9 +1569,9 @@ function initSleepCard() {
 
     // Quick action buttons
     if (goingToBedBtn) {
-        goingToBedBtn.addEventListener('click', () => {
+        goingToBedBtn.addEventListener('click', async () => {
             if (!goingToBedBtn.classList.contains('disabled')) {
-                const bedtime = logBedtime();
+                const bedtime = await logBedtime();
                 goingToBedBtn.classList.add('disabled');
                 wokeUpBtn.classList.remove('disabled');
 
@@ -1581,9 +1585,9 @@ function initSleepCard() {
     }
 
     if (wokeUpBtn) {
-        wokeUpBtn.addEventListener('click', () => {
+        wokeUpBtn.addEventListener('click', async () => {
             if (!wokeUpBtn.classList.contains('disabled')) {
-                const wakeTime = logWakeUp();
+                const wakeTime = await logWakeUp();
                 wokeUpBtn.classList.add('disabled');
                 goingToBedBtn.classList.remove('disabled');
 

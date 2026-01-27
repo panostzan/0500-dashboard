@@ -125,8 +125,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Initialize notes
         initNotes();
 
-        // Initialize sleep card
-        initSleepCard();
+        // Initialize sleep card (async - loads cloud data)
+        await initSleepCard();
 
         // Update sleep tracking status
         updateSleepTrackingStatus();

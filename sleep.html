@@ -675,6 +675,257 @@
             box-shadow: 0 0 0 3px var(--accent-glow);
         }
 
+        /* ═══════════════════════════════════════════════════════════════════════
+           SLEEP DEBT METER
+           ═══════════════════════════════════════════════════════════════════════ */
+        .debt-meter-section {
+            padding: 22px;
+            margin-bottom: 16px;
+        }
+
+        .debt-meter-value {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .debt-meter-number {
+            font-size: 3.2rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .debt-meter-number.negative { color: #ff6b6b; }
+        .debt-meter-number.positive { color: #7dd4a0; }
+        .debt-meter-number.neutral { color: var(--data-ok-start); }
+
+        .debt-meter-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        .debt-meter-track {
+            position: relative;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 5px;
+            margin-bottom: 8px;
+            overflow: visible;
+        }
+
+        .debt-meter-fill {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            border-radius: 5px;
+            transition: all 0.5s ease;
+        }
+
+        .debt-meter-fill.negative {
+            right: 50%;
+            background: linear-gradient(90deg, #ff6b6b, rgba(255, 107, 107, 0.4));
+        }
+
+        .debt-meter-fill.positive {
+            left: 50%;
+            background: linear-gradient(90deg, rgba(125, 212, 160, 0.4), #7dd4a0);
+        }
+
+        .debt-meter-center {
+            position: absolute;
+            left: 50%;
+            top: -3px;
+            bottom: -3px;
+            width: 3px;
+            background: var(--text-primary);
+            border-radius: 2px;
+            transform: translateX(-50%);
+        }
+
+        .debt-meter-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.6rem;
+            color: var(--text-muted);
+        }
+
+        .debt-meter-labels span:nth-child(2) {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .debt-meter-recovery {
+            text-align: center;
+            margin-top: 18px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .debt-meter-recovery-text {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .debt-meter-recovery-text strong {
+            font-weight: 600;
+        }
+
+        .debt-meter-recovery-text strong.negative { color: #ff6b6b; }
+        .debt-meter-recovery-text strong.positive { color: #7dd4a0; }
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           HEALTH IMPACT SECTION
+           ═══════════════════════════════════════════════════════════════════════ */
+        .health-impact-section {
+            margin-bottom: 16px;
+        }
+
+        .health-impact-section:empty {
+            display: none;
+        }
+
+        .health-impact-section .section-header {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            padding-left: 4px;
+        }
+
+        /* Warning colors */
+        .health-impact-section {
+            --warning-severe: #ff6b6b;
+            --warning-severe-bg: rgba(255, 107, 107, 0.12);
+            --warning-severe-border: rgba(255, 107, 107, 0.3);
+            --warning-moderate: #ffa94d;
+            --warning-moderate-bg: rgba(255, 169, 77, 0.12);
+            --warning-moderate-border: rgba(255, 169, 77, 0.3);
+        }
+
+        /* Hero Warning (Primary) */
+        .health-hero {
+            background: var(--warning-severe-bg);
+            border: 1px solid var(--warning-severe-border);
+            border-radius: 16px;
+            padding: 22px 18px;
+            text-align: center;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .health-hero.moderate {
+            background: var(--warning-moderate-bg);
+            border-color: var(--warning-moderate-border);
+        }
+
+        .health-hero-badge {
+            position: absolute;
+            top: -9px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--warning-severe);
+            color: #0f0a12;
+            font-size: 0.58rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+
+        .health-hero.moderate .health-hero-badge {
+            background: var(--warning-moderate);
+        }
+
+        .health-hero-stat {
+            font-size: 2.6rem;
+            font-weight: 700;
+            color: var(--warning-severe);
+            line-height: 1;
+        }
+
+        .health-hero.moderate .health-hero-stat {
+            color: var(--warning-moderate);
+        }
+
+        .health-hero-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .health-hero-message {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            line-height: 1.55;
+        }
+
+        /* Secondary Warnings */
+        .health-secondary {
+            background: var(--warning-moderate-bg);
+            border: 1px solid var(--warning-moderate-border);
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .health-secondary.severe {
+            background: var(--warning-severe-bg);
+            border-color: var(--warning-severe-border);
+        }
+
+        .health-secondary-stat {
+            min-width: 52px;
+            text-align: center;
+        }
+
+        .health-secondary-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--warning-moderate);
+            line-height: 1.2;
+        }
+
+        .health-secondary.severe .health-secondary-value {
+            color: var(--warning-severe);
+        }
+
+        .health-secondary-label {
+            font-size: 0.55rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .health-secondary-text {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.45;
+            flex: 1;
+        }
+
+        /* No warnings state */
+        .health-good {
+            background: rgba(125, 212, 160, 0.1);
+            border: 1px solid rgba(125, 212, 160, 0.25);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .health-good-text {
+            font-size: 0.85rem;
+            color: var(--data-good-start);
+        }
+
         /* Calendar Hint */
         .calendar-hint {
             text-align: center;
@@ -1177,6 +1428,189 @@
             color: var(--text-muted);
             margin-top: 8px;
         }
+
+        /* ═══════════════════════════════════════════════════════════════════════════
+           DESKTOP GRID LAYOUT (min-width: 900px)
+           Mobile stays exactly the same - single column phone-frame
+           ═══════════════════════════════════════════════════════════════════════════ */
+        @media (min-width: 900px) {
+            .phone-frame {
+                max-width: 1500px;
+                padding: 24px 40px 40px;
+            }
+
+            .phone-frame::before,
+            .phone-frame::after {
+                display: none;
+            }
+
+            .view {
+                display: grid;
+                grid-template-columns: 280px 1fr 1fr 1fr;
+                grid-template-rows: auto auto auto auto auto;
+                gap: 20px;
+                padding: 0;
+            }
+
+            /* Back button - full width row 1 */
+            .desktop-back-btn {
+                grid-column: 1 / -1;
+                grid-row: 1;
+                justify-self: start;
+                margin-bottom: 0;
+            }
+
+            /* Score Hero - left sidebar, spans rows 2-4 */
+            .score-hero {
+                grid-column: 1;
+                grid-row: 2 / 5;
+                margin-bottom: 0;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+
+            /* Quick Log buttons - row 2, col 2 */
+            .quick-log {
+                grid-column: 2;
+                grid-row: 2;
+                margin-bottom: 0;
+                flex-direction: column;
+                gap: 10px;
+                align-self: start;
+            }
+
+            .quick-log .log-btn {
+                padding: 14px 16px;
+            }
+
+            /* Countdown Section - row 2, col 3 */
+            .countdown-section {
+                grid-column: 3;
+                grid-row: 2;
+                margin-bottom: 0;
+            }
+
+            /* Debt Meter - row 2, col 4 */
+            .debt-meter-section {
+                grid-column: 4;
+                grid-row: 2;
+                margin-bottom: 0;
+            }
+
+            /* Mini Week (Weekly Chart) - row 3, cols 2-3 */
+            .mini-week {
+                grid-column: 2 / 4;
+                grid-row: 3;
+                margin-bottom: 0;
+            }
+
+            /* Desktop: enhanced weekly bars */
+            .mini-week .mini-bars {
+                height: 140px;
+                gap: 16px;
+                padding: 10px 20px;
+            }
+
+            .mini-week .mini-bar {
+                border-radius: 6px;
+                min-width: 40px;
+            }
+
+            .mini-week .color-legend {
+                justify-content: center;
+                gap: 24px;
+                padding-top: 12px;
+                border-top: 1px solid rgba(255,255,255,0.08);
+            }
+
+            /* Health Impact - row 3, col 4 */
+            .health-impact-section {
+                grid-column: 4;
+                grid-row: 3;
+                margin-bottom: 0;
+            }
+
+            /* Stats Section - row 4, cols 2-3 */
+            .stats-section {
+                grid-column: 2 / 4;
+                grid-row: 4;
+                margin-bottom: 0;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            /* Heatmap - rows 4, col 4 */
+            .heatmap-section {
+                grid-column: 4;
+                grid-row: 4;
+                margin-bottom: 0;
+            }
+
+            /* Desktop: heatmap with gradients */
+            .heatmap-section .heatmap-cell.poor {
+                background: linear-gradient(145deg, #ff9080, #d06060);
+            }
+
+            .heatmap-section .heatmap-cell.ok,
+            .heatmap-section .heatmap-cell.low {
+                background: linear-gradient(145deg, #ffc878, #e0a050);
+            }
+
+            .heatmap-section .heatmap-cell.good {
+                background: linear-gradient(145deg, #7dd4a0, #4ab078);
+            }
+
+            .heatmap-section .heatmap-cell.ideal {
+                background: linear-gradient(145deg, #60c8b0, #40a890);
+            }
+
+            /* Settings - full width, row 5 */
+            .settings-section {
+                grid-column: 1 / -1;
+                grid-row: 5;
+                margin-bottom: 0;
+            }
+
+            .settings-section .settings-row {
+                justify-content: flex-start;
+                gap: 40px;
+            }
+
+            .settings-section .setting-item {
+                flex: 0 0 auto;
+            }
+
+            .settings-section .notification-row {
+                margin-left: auto;
+            }
+
+            /* Calendar hint - full width, row 6 */
+            .calendar-hint {
+                grid-column: 1 / -1;
+                grid-row: 6;
+                margin-bottom: 0;
+            }
+        }
+
+        /* Larger desktops - more spacing */
+        @media (min-width: 1200px) {
+            .phone-frame {
+                max-width: 1600px;
+                padding: 30px 50px 50px;
+            }
+
+            .view {
+                gap: 24px;
+            }
+
+            .mini-week .mini-bars {
+                height: 160px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1290,6 +1724,17 @@
                 <div class="legend-item"><span class="legend-dot ok"></span> 5-7 hrs</div>
                 <div class="legend-item"><span class="legend-dot poor"></span> &lt;5 hrs</div>
             </div>
+        </div>
+
+        <!-- Sleep Debt Meter -->
+        <div class="glass-card debt-meter-section" id="debt-meter-section">
+            <div class="section-header">SLEEP DEBT</div>
+            <!-- Populated by JS -->
+        </div>
+
+        <!-- Health Impact Section -->
+        <div class="health-impact-section" id="health-impact">
+            <!-- Populated by JS based on sleep data -->
         </div>
 
         <!-- Stats Section -->
@@ -1463,9 +1908,15 @@ function renderMiniBars() {
     const maxHours = 10;
     const today = new Date().toISOString().split('T')[0];
 
+    // Use larger multiplier for more pronounced height differences
+    // Desktop has 140px container, mobile has smaller - this scales well for both
+    const isDesktop = window.innerWidth >= 900;
+    const heightMultiplier = isDesktop ? 120 : 90;
+    const minHeight = isDesktop ? 12 : 8;
+
     let html = '';
     weekData.forEach(day => {
-        const height = day.duration ? Math.max(8, (day.duration / maxHours) * 90) : 8;
+        const height = day.duration ? Math.max(minHeight, (day.duration / maxHours) * heightMultiplier) : minHeight;
         const colorClass = getBarColor(day.duration);
         const isToday = day.date === today;
 
@@ -1612,9 +2063,274 @@ function updateButtonStates() {
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// SLEEP DEBT METER
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function renderDebtMeter() {
+    const container = document.getElementById('debt-meter-section');
+    if (!container) return;
+
+    const settings = loadSleepSettings();
+    const last14 = getLastNDaysLog(14);
+    const daysWithData = last14.filter(d => d.duration);
+
+    // Need at least 3 days of data
+    if (daysWithData.length < 3) {
+        container.style.display = 'none';
+        return;
+    }
+    container.style.display = 'block';
+
+    // Calculate debt: sum of (actual - target) for each day
+    let totalDebt = 0;
+    daysWithData.forEach(day => {
+        totalDebt += day.duration - settings.targetSleepHours;
+    });
+
+    // Dynamic scale based on actual debt (minimum -30h to +10h)
+    const minDebt = Math.min(-30, Math.floor(totalDebt / 5) * 5 - 5);
+    const maxDebt = 10;
+    const displayDebt = Math.max(minDebt, Math.min(maxDebt, totalDebt));
+
+    // Calculate meter fill percentage - center at 0
+    const range = maxDebt - minDebt;
+    const zeroPoint = Math.abs(minDebt) / range;
+
+    let fillPercent;
+    let fillClass;
+    if (displayDebt < 0) {
+        // Negative: fill from center going left
+        fillPercent = (Math.abs(displayDebt) / Math.abs(minDebt)) * zeroPoint * 100;
+        fillClass = 'negative';
+    } else {
+        // Positive: fill from center going right
+        fillPercent = (displayDebt / maxDebt) * (1 - zeroPoint) * 100;
+        fillClass = 'positive';
+    }
+
+    // Determine number class (use actual totalDebt, not capped displayDebt)
+    let numberClass = 'neutral';
+    if (totalDebt <= -3) numberClass = 'negative';
+    else if (totalDebt >= 1) numberClass = 'positive';
+
+    // Calculate recovery days (assuming 30min extra sleep per day)
+    const recoveryDays = totalDebt < 0 ? Math.ceil(Math.abs(totalDebt) / 0.5) : 0;
+
+    // Format debt string (show actual debt, not capped)
+    const debtStr = (totalDebt >= 0 ? '+' : '') + totalDebt.toFixed(1) + 'h';
+
+    // Build HTML
+    let html = `
+        <div class="section-header">SLEEP DEBT</div>
+        <div class="debt-meter-value">
+            <div class="debt-meter-number ${numberClass}">${debtStr}</div>
+            <div class="debt-meter-label">Last ${daysWithData.length} Days</div>
+        </div>
+        <div class="debt-meter-track">
+            <div class="debt-meter-fill ${fillClass}" style="width: ${fillPercent}%;"></div>
+            <div class="debt-meter-center"></div>
+        </div>
+        <div class="debt-meter-labels">
+            <span>${minDebt}h</span>
+            <span>0</span>
+            <span>+${maxDebt}h</span>
+        </div>
+    `;
+
+    // Recovery message
+    if (totalDebt < -1) {
+        html += `
+            <div class="debt-meter-recovery">
+                <div class="debt-meter-recovery-text">
+                    At 30min extra per night, recovery takes <strong class="negative">${recoveryDays} days</strong>
+                </div>
+            </div>
+        `;
+    } else if (totalDebt >= 1) {
+        html += `
+            <div class="debt-meter-recovery">
+                <div class="debt-meter-recovery-text">
+                    <strong class="positive">Surplus.</strong> Your sleep is supporting recovery.
+                </div>
+            </div>
+        `;
+    } else {
+        html += `
+            <div class="debt-meter-recovery">
+                <div class="debt-meter-recovery-text">
+                    Near baseline. Maintain consistency.
+                </div>
+            </div>
+        `;
+    }
+
+    container.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HEALTH IMPACT WARNINGS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function renderHealthImpact() {
+    const container = document.getElementById('health-impact');
+    if (!container) return;
+
+    const log = loadSleepLog().filter(e => e.duration);
+    const settings = loadSleepSettings();
+
+    // Need at least 3 days of data
+    if (log.length < 3) {
+        container.innerHTML = '';
+        return;
+    }
+
+    // Calculate metrics
+    const last7 = getLastNDaysLog(7).filter(d => d.duration);
+    const avgDuration = last7.length > 0
+        ? last7.reduce((sum, d) => sum + d.duration, 0) / last7.length
+        : null;
+
+    // Count consecutive nights under 6h (from most recent)
+    let consecutiveUnder6 = 0;
+    const sortedLog = [...log].sort((a, b) => new Date(b.date) - new Date(a.date));
+    for (const entry of sortedLog) {
+        if (entry.duration < 6) {
+            consecutiveUnder6++;
+        } else {
+            break;
+        }
+    }
+
+    // Calculate bedtime variance
+    const bedtimes = last7.filter(d => d.bedtime).map(d => {
+        const bt = new Date(d.bedtime);
+        let mins = bt.getHours() * 60 + bt.getMinutes();
+        if (mins > 720) mins -= 1440;
+        return mins;
+    });
+    let bedtimeVariance = null;
+    if (bedtimes.length >= 3) {
+        const mean = bedtimes.reduce((a, b) => a + b, 0) / bedtimes.length;
+        const variance = bedtimes.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / bedtimes.length;
+        bedtimeVariance = Math.sqrt(variance);
+    }
+
+    // Calculate sleep debt
+    const debt = calculateSleepDebt(7);
+
+    // Build warnings array
+    const warnings = [];
+
+    // Severe: Average under 5.5h
+    if (avgDuration !== null && avgDuration < 5.5) {
+        warnings.push({
+            type: 'hero',
+            severity: 'severe',
+            badge: 'Critical',
+            stat: avgDuration.toFixed(1) + 'h',
+            label: 'Average This Week',
+            message: `Testosterone drops 10-15% at this level. Cortisol is elevated. Your body is in survival mode, not recovery mode.`
+        });
+    }
+    // Moderate: Average under 6.5h
+    else if (avgDuration !== null && avgDuration < 6.5) {
+        warnings.push({
+            type: 'hero',
+            severity: 'moderate',
+            badge: 'Warning',
+            stat: avgDuration.toFixed(1) + 'h',
+            label: 'Average This Week',
+            message: `Below 7 hours consistently impairs memory consolidation and immune function. Growth hormone secretion is reduced.`
+        });
+    }
+
+    // Consecutive nights under 6h
+    if (consecutiveUnder6 >= 3) {
+        warnings.push({
+            type: 'secondary',
+            severity: consecutiveUnder6 >= 4 ? 'severe' : 'moderate',
+            stat: consecutiveUnder6,
+            label: 'Nights',
+            message: `Consecutive nights under 6 hours. Cognitive performance equivalent to 0.05% blood alcohol level.`
+        });
+    }
+
+    // Bedtime variance
+    if (bedtimeVariance !== null && bedtimeVariance > 45) {
+        warnings.push({
+            type: 'secondary',
+            severity: bedtimeVariance > 60 ? 'severe' : 'moderate',
+            stat: '±' + Math.round(bedtimeVariance) + 'm',
+            label: 'Variance',
+            message: `Irregular bedtime disrupts insulin sensitivity and circadian rhythm. Hunger hormones become dysregulated.`
+        });
+    }
+
+    // Sleep debt
+    if (debt < -5) {
+        warnings.push({
+            type: 'secondary',
+            severity: debt < -8 ? 'severe' : 'moderate',
+            stat: debt.toFixed(1) + 'h',
+            label: 'Debt',
+            message: `Sleep debt this week. Inflammatory markers are elevated. This does not fully recover on weekends.`
+        });
+    }
+
+    // Render
+    if (warnings.length === 0) {
+        // Check if sleep is actually good
+        if (avgDuration !== null && avgDuration >= 7 && (bedtimeVariance === null || bedtimeVariance <= 30)) {
+            container.innerHTML = `
+                <div class="section-header">HEALTH STATUS</div>
+                <div class="health-good">
+                    <div class="health-good-text">Your sleep is supporting recovery and performance.</div>
+                </div>
+            `;
+        } else {
+            container.innerHTML = '';
+        }
+        return;
+    }
+
+    let html = '<div class="section-header">HEALTH IMPACT</div>';
+
+    // Find hero warning (first one with type 'hero')
+    const heroWarning = warnings.find(w => w.type === 'hero');
+    const secondaryWarnings = warnings.filter(w => w.type === 'secondary');
+
+    if (heroWarning) {
+        html += `
+            <div class="health-hero ${heroWarning.severity}">
+                <div class="health-hero-badge">${heroWarning.badge}</div>
+                <div class="health-hero-stat">${heroWarning.stat}</div>
+                <div class="health-hero-label">${heroWarning.label}</div>
+                <div class="health-hero-message">${heroWarning.message}</div>
+            </div>
+        `;
+    }
+
+    for (const warning of secondaryWarnings) {
+        html += `
+            <div class="health-secondary ${warning.severity}">
+                <div class="health-secondary-stat">
+                    <div class="health-secondary-value">${warning.stat}</div>
+                    <div class="health-secondary-label">${warning.label}</div>
+                </div>
+                <div class="health-secondary-text">${warning.message}</div>
+            </div>
+        `;
+    }
+
+    container.innerHTML = html;
+}
+
 function refreshAll() {
     renderScoreHero();
     renderMiniBars();
+    renderDebtMeter();
+    renderHealthImpact();
     renderStats();
     renderHeatmap();
     updateCountdown();
@@ -1831,7 +2547,11 @@ function initTimelineModal() {
     document.addEventListener('touchend', endDrag);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Load cloud data first (populates cache for sync functions)
+    await loadSleepLogAsync();
+    await loadSleepSettingsAsync();
+
     // Load settings into inputs
     const settings = loadSleepSettings();
     const wakeInput = document.getElementById('wake-input');
@@ -1846,13 +2566,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial render
     refreshAll();
 
+    // Re-render weekly chart bars on resize (debounced)
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            renderMiniBars();
+        }, 150);
+    });
+
     // Update countdown every second
     setInterval(updateCountdown, 1000);
 
     // Going to bed button
-    document.getElementById('btn-going-to-bed').addEventListener('click', function() {
+    document.getElementById('btn-going-to-bed').addEventListener('click', async function() {
         if (!this.classList.contains('disabled')) {
-            const bedtime = logBedtime();
+            const bedtime = await logBedtime();
             this.innerHTML = `Logged ${formatTime12HourShort(bedtime.getHours(), bedtime.getMinutes())}`;
             setTimeout(() => {
                 this.innerHTML = '<span class="emoji">&#127769;</span> Going to bed';
@@ -1862,9 +2591,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Woke up button
-    document.getElementById('btn-woke-up').addEventListener('click', function() {
+    document.getElementById('btn-woke-up').addEventListener('click', async function() {
         if (!this.classList.contains('disabled')) {
-            const wakeTime = logWakeUp();
+            const wakeTime = await logWakeUp();
             this.innerHTML = `Logged ${formatTime12HourShort(wakeTime.getHours(), wakeTime.getMinutes())}`;
             setTimeout(() => {
                 this.innerHTML = '<span class="emoji">&#9728;&#65039;</span> Just woke up';

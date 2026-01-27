@@ -171,7 +171,7 @@ const DataService = {
 
             // Upsert based on date
             for (const entry of log) {
-                const { error } = await supabase
+                const { error } = await supabaseClient
                     .from('sleep_log')
                     .upsert({
                         user_id: userId,

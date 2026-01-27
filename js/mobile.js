@@ -295,18 +295,18 @@ function initMobileSleepPanel() {
     const wakeBtn = document.getElementById('mobile-btn-wake');
 
     if (bedBtn) {
-        bedBtn.addEventListener('click', () => {
+        bedBtn.addEventListener('click', async () => {
             if (!bedBtn.classList.contains('disabled')) {
-                logBedtime();
+                await logBedtime();
                 updateMobileSleepPanel();
             }
         });
     }
 
     if (wakeBtn) {
-        wakeBtn.addEventListener('click', () => {
+        wakeBtn.addEventListener('click', async () => {
             if (!wakeBtn.classList.contains('disabled')) {
-                logWakeUp();
+                await logWakeUp();
                 updateMobileSleepPanel();
                 renderMobileWeeklyChart();
             }
