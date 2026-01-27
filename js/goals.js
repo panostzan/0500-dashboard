@@ -1,8 +1,9 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// GOALS — Seamless inline editing with cloud sync
+// GOALS — Seamless inline editing with smooth animations and cloud sync
 // ═══════════════════════════════════════════════════════════════════════════════
 
 let goalsCache = null;
+let swipeState = { el: null, startX: 0, currentX: 0 };
 
 async function loadGoals() {
     if (!goalsCache) {
@@ -22,6 +23,204 @@ function loadCollapsedState() {
 
 function saveCollapsedState(state) {
     DataService.saveCollapsedState(state);
+}
+
+// Create a single goal item element
+function createGoalItem(item, index, isNew = false) {
+    const div = document.createElement('div');
+    div.className = `goal-item ${item?.checked ? 'checked' : ''} ${isNew ? 'new-goal' : ''}`;
+    if (!isNew) div.dataset.index = index;
+
+    // Structure for swipe-to-delete support
+    div.innerHTML = `
+        <div class="swipe-delete-bg">Delete</div>
+        <div class="goal-content-wrapper">
+            <div class="goal-checkbox"></div>
+            <span class="goal-text" contenteditable="true" spellcheck="false" autocomplete="off" data-form-type="other" ${isNew ? 'data-placeholder="+ add goal"' : ''}>${item?.text || ''}</span>
+        </div>
+    `;
+
+    return div;
+}
+
+// Update header meta count
+function updateHeaderCount(group) {
+    const meta = group.querySelector('.goal-header-meta');
+    if (meta) {
+        const count = group.querySelectorAll('.goal-item:not(.new-goal):not(.removing)').length;
+        meta.textContent = count;
+    }
+}
+
+// Attach event listeners to a goal item
+function attachGoalListeners(item, sectionKey, group) {
+    const checkbox = item.querySelector('.goal-checkbox');
+    const textEl = item.querySelector('.goal-text');
+    const isNew = item.classList.contains('new-goal');
+
+    // Checkbox toggle with glow animation
+    checkbox.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (isNew) return;
+
+        const index = parseInt(item.dataset.index);
+        const goals = await loadGoals();
+        const wasChecked = goals[sectionKey][index].checked;
+        goals[sectionKey][index].checked = !wasChecked;
+        await saveGoals(goals);
+
+        item.classList.toggle('checked');
+    });
+
+    // Text editing - save on blur
+    textEl.addEventListener('blur', async () => {
+        const text = textEl.textContent.trim();
+        const goals = await loadGoals();
+
+        if (isNew) {
+            // Add new goal if text entered
+            if (text) {
+                goals[sectionKey].push({ text, checked: false });
+                await saveGoals(goals);
+
+                // Create new item with animation
+                const newItem = createGoalItem({ text, checked: false }, goals[sectionKey].length - 1);
+                newItem.classList.add('adding');
+                item.before(newItem);
+                attachGoalListeners(newItem, sectionKey, group);
+                attachSwipeListeners(newItem, sectionKey, group);
+
+                // Clear the "new goal" input
+                textEl.textContent = '';
+
+                // Update count
+                updateHeaderCount(group);
+
+                // Remove animation class after it completes
+                setTimeout(() => newItem.classList.remove('adding'), 200);
+
+                // Reindex all items
+                reindexGoalItems(group);
+            }
+        } else {
+            const index = parseInt(item.dataset.index);
+            if (text) {
+                // Update existing goal
+                goals[sectionKey][index].text = text;
+                await saveGoals(goals);
+            } else {
+                // Delete goal if empty (with animation)
+                removeGoalWithAnimation(item, sectionKey, index, group);
+            }
+        }
+    });
+
+    // Enter key = blur (save) and optionally focus next
+    textEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            textEl.blur();
+        }
+    });
+}
+
+// Reindex goal items after add/remove
+function reindexGoalItems(group) {
+    const items = group.querySelectorAll('.goal-item:not(.new-goal)');
+    items.forEach((item, idx) => {
+        item.dataset.index = idx;
+    });
+}
+
+// Remove goal with animation
+async function removeGoalWithAnimation(item, sectionKey, index, group) {
+    const goals = await loadGoals();
+    goals[sectionKey].splice(index, 1);
+    await saveGoals(goals);
+
+    item.classList.add('removing');
+    setTimeout(() => {
+        item.remove();
+        reindexGoalItems(group);
+        updateHeaderCount(group);
+    }, 200);
+}
+
+// Swipe-to-delete handlers (mobile)
+function attachSwipeListeners(item, sectionKey, group) {
+    if (item.classList.contains('new-goal')) return;
+
+    const isTouchDevice = 'ontouchstart' in window;
+
+    const startSwipe = (e) => {
+        // Only handle touch or left mouse button
+        if (e.type === 'mousedown' && e.button !== 0) return;
+
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        swipeState = { el: item, startX: clientX, currentX: clientX };
+
+        document.addEventListener(isTouchDevice ? 'touchmove' : 'mousemove', handleSwipe, { passive: false });
+        document.addEventListener(isTouchDevice ? 'touchend' : 'mouseup', endSwipe);
+    };
+
+    const handleSwipe = (e) => {
+        if (!swipeState.el) return;
+
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        swipeState.currentX = clientX;
+        const diff = swipeState.startX - clientX;
+
+        if (diff > 40) {
+            swipeState.el.classList.add('swiping');
+            e.preventDefault();
+        } else {
+            swipeState.el.classList.remove('swiping');
+        }
+    };
+
+    const endSwipe = async () => {
+        if (!swipeState.el) return;
+
+        const diff = swipeState.startX - swipeState.currentX;
+        const el = swipeState.el;
+
+        if (diff > 100) {
+            // Swiped far enough - delete
+            const index = parseInt(el.dataset.index);
+            el.classList.remove('swiping');
+            el.classList.add('swipe-deleting');
+
+            const goals = await loadGoals();
+            goals[sectionKey].splice(index, 1);
+            await saveGoals(goals);
+
+            setTimeout(() => {
+                el.remove();
+                reindexGoalItems(group);
+                updateHeaderCount(group);
+            }, 200);
+        } else {
+            // Not enough - cancel
+            el.classList.remove('swiping');
+        }
+
+        swipeState = { el: null, startX: 0, currentX: 0 };
+
+        document.removeEventListener('touchmove', handleSwipe);
+        document.removeEventListener('mousemove', handleSwipe);
+        document.removeEventListener('touchend', endSwipe);
+        document.removeEventListener('mouseup', endSwipe);
+    };
+
+    // Attach swipe start listener
+    if (isTouchDevice) {
+        item.addEventListener('touchstart', startSwipe, { passive: true });
+    } else {
+        // For desktop testing, only enable on narrow viewport
+        item.addEventListener('mousedown', (e) => {
+            if (window.innerWidth < 768) startSwipe(e);
+        });
+    }
 }
 
 async function renderGoals() {
@@ -48,25 +247,29 @@ async function renderGoals() {
                         <span class="goal-toggle-icon">${isCollapsed ? '+' : '−'}</span>
                     ` : ''}
                 </h3>
-                <div class="goal-list">
-                    ${section.items.map((item, idx) => `
-                        <div class="goal-item ${item.checked ? 'checked' : ''}" data-index="${idx}">
-                            <div class="goal-checkbox"></div>
-                            <span class="goal-text" contenteditable="true" spellcheck="false" autocomplete="off" data-form-type="other">${item.text}</span>
-                        </div>
-                    `).join('')}
-                    <div class="goal-item new-goal">
-                        <div class="goal-checkbox"></div>
-                        <span class="goal-text" contenteditable="true" spellcheck="false" autocomplete="off" data-form-type="other" data-placeholder="+ add goal"></span>
-                    </div>
-                </div>
+                <div class="goal-list"></div>
             </div>
         `;
     }).join('');
 
-    // Attach event listeners
-    container.querySelectorAll('.goal-group').forEach(group => {
-        const sectionKey = group.dataset.section;
+    // Populate each section with goal items
+    container.querySelectorAll('.goal-group').forEach((group, sectionIdx) => {
+        const sectionKey = sections[sectionIdx].key;
+        const goalList = group.querySelector('.goal-list');
+        const items = sections[sectionIdx].items;
+
+        // Add existing goals
+        items.forEach((item, idx) => {
+            const goalEl = createGoalItem(item, idx);
+            goalList.appendChild(goalEl);
+            attachGoalListeners(goalEl, sectionKey, group);
+            attachSwipeListeners(goalEl, sectionKey, group);
+        });
+
+        // Add "new goal" input
+        const newGoalEl = createGoalItem(null, -1, true);
+        goalList.appendChild(newGoalEl);
+        attachGoalListeners(newGoalEl, sectionKey, group);
 
         // Collapsible header toggle
         const headerToggle = group.querySelector('.goal-header-toggle');
@@ -83,61 +286,6 @@ async function renderGoals() {
                 }
             });
         }
-
-        // Checkbox toggle
-        group.querySelectorAll('.goal-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                const item = checkbox.closest('.goal-item');
-                if (item.classList.contains('new-goal')) return;
-
-                const index = parseInt(item.dataset.index);
-                const goals = await loadGoals();
-                goals[sectionKey][index].checked = !goals[sectionKey][index].checked;
-                await saveGoals(goals);
-                item.classList.toggle('checked');
-            });
-        });
-
-        // Text editing
-        group.querySelectorAll('.goal-text').forEach(textEl => {
-            // Save on blur
-            textEl.addEventListener('blur', async () => {
-                const item = textEl.closest('.goal-item');
-                const isNew = item.classList.contains('new-goal');
-                const text = textEl.textContent.trim();
-                const goals = await loadGoals();
-
-                if (isNew) {
-                    // Add new goal if text entered
-                    if (text) {
-                        goals[sectionKey].push({ text, checked: false });
-                        await saveGoals(goals);
-                        renderGoals();
-                    }
-                } else {
-                    const index = parseInt(item.dataset.index);
-                    if (text) {
-                        // Update existing goal
-                        goals[sectionKey][index].text = text;
-                        await saveGoals(goals);
-                    } else {
-                        // Delete goal if empty
-                        goals[sectionKey].splice(index, 1);
-                        await saveGoals(goals);
-                        renderGoals();
-                    }
-                }
-            });
-
-            // Enter key = blur (save)
-            textEl.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    textEl.blur();
-                }
-            });
-        });
     });
 }
 
