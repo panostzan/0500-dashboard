@@ -34,7 +34,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&family=Inter:wght@200;300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&family=Inter:wght@200;300;400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Styles -->
     <link rel="stylesheet" href="css/styles.css?v=11">
@@ -116,91 +116,191 @@
             </div>
         </div>
 
-        <!-- Mobile Sleep Panel (hidden on desktop, shown as tab on mobile) -->
-        <div class="mobile-sleep-panel mobile-panel" data-panel="sleep" id="mobile-sleep-panel">
-            <div class="mobile-sleep-content">
-                <!-- Score & Streak Row -->
-                <div class="mobile-score-streak-row" id="mobile-sleep-score"></div>
+        <!-- Sleep Panel (Aurora Theme) -->
+        <div class="sleep-panel mobile-panel" data-panel="sleep" id="sleep-panel">
+            <!-- Floating Orbs -->
+            <div class="sleep-orb orb-1"></div>
+            <div class="sleep-orb orb-2"></div>
 
-                <!-- Main countdown -->
-                <div class="mobile-sleep-main">
-                    <div class="mobile-sleep-status" id="mobile-sleep-status">TIME UNTIL BED</div>
-                    <div class="mobile-sleep-countdown" id="mobile-sleep-countdown">0:00:00</div>
-                    <div class="mobile-sleep-progress">
-                        <div class="mobile-sleep-progress-fill" id="mobile-sleep-progress-fill"></div>
-                    </div>
-                </div>
+            <!-- SVG Gradients -->
+            <svg width="0" height="0" style="position:absolute">
+                <defs>
+                    <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#c87090"/>
+                        <stop offset="100%" style="stop-color:#ffb090"/>
+                    </linearGradient>
+                </defs>
+            </svg>
 
-                <!-- Quick Actions -->
-                <div class="mobile-sleep-actions">
-                    <button class="mobile-sleep-btn" id="mobile-btn-bed">
-                        <span>🌙</span> Going to bed
+            <div class="sleep-panel-content">
+                <!-- Quick Log -->
+                <div class="sleep-quick-log">
+                    <button class="sleep-log-btn" id="sleep-btn-bed">
+                        <span class="sleep-emoji">&#127769;</span>
+                        Going to bed
                     </button>
-                    <button class="mobile-sleep-btn disabled" id="mobile-btn-wake">
-                        <span>☀️</span> Just woke up
+                    <button class="sleep-log-btn disabled" id="sleep-btn-wake">
+                        <span class="sleep-emoji">&#9728;&#65039;</span>
+                        Just woke up
                     </button>
                 </div>
 
-                <!-- Insight -->
-                <div id="mobile-sleep-insight"></div>
+                <!-- Score Hero Card -->
+                <div class="sleep-glass-card sleep-score-hero">
+                    <div class="sleep-score-ring-container">
+                        <svg class="sleep-score-ring" width="160" height="160" viewBox="0 0 180 180">
+                            <circle class="sleep-score-ring-bg" cx="90" cy="90" r="78" />
+                            <circle class="sleep-score-ring-fill" id="sleep-score-ring-fill" cx="90" cy="90" r="78" stroke="url(#scoreGradient)" stroke-dasharray="0 490" />
+                        </svg>
+                        <div class="sleep-score-value">
+                            <div class="sleep-score-number" id="sleep-score-number">--</div>
+                            <div class="sleep-score-label">SLEEP SCORE</div>
+                        </div>
+                    </div>
 
-                <!-- Stats -->
-                <div class="mobile-sleep-stats">
-                    <div class="mobile-stat">
-                        <span class="mobile-stat-value" id="mobile-sleep-bedtime">--:--</span>
-                        <span class="mobile-stat-label">BEDTIME</span>
-                    </div>
-                    <div class="mobile-stat">
-                        <span class="mobile-stat-value" id="mobile-sleep-if-now">--</span>
-                        <span class="mobile-stat-label">IF NOW</span>
-                    </div>
-                    <div class="mobile-stat">
-                        <span class="mobile-stat-value" id="mobile-sleep-wake">--:--</span>
-                        <span class="mobile-stat-label">WAKE</span>
+                    <div class="sleep-key-stats">
+                        <div class="sleep-key-stat">
+                            <span class="sleep-stat-icon" id="sleep-streak-icon">&#128293;</span>
+                            <span class="sleep-stat-val" id="sleep-streak-count">0</span> day streak
+                        </div>
+                        <div class="sleep-key-stat">
+                            <span class="sleep-stat-val" id="sleep-avg-hours">--</span> avg
+                        </div>
                     </div>
                 </div>
 
-                <!-- Extra Stats Row -->
-                <div class="mobile-extra-stats-row" id="mobile-sleep-extra-stats"></div>
+                <!-- Countdown Section -->
+                <div class="sleep-glass-card sleep-countdown-section">
+                    <div class="sleep-countdown-status" id="sleep-panel-countdown-status">TIME UNTIL BED</div>
+                    <div class="sleep-countdown-time" id="sleep-panel-countdown-time">0:00:00</div>
 
-                <!-- Quality bar -->
-                <div class="mobile-sleep-quality">
-                    <div class="mobile-quality-bar">
-                        <div class="mobile-quality-zone zone-poor"></div>
-                        <div class="mobile-quality-zone zone-ok"></div>
-                        <div class="mobile-quality-zone zone-good"></div>
-                        <div class="mobile-quality-zone zone-ideal"></div>
+                    <div class="sleep-countdown-stats">
+                        <div class="sleep-countdown-stat">
+                            <div class="sleep-countdown-stat-value" id="sleep-panel-bedtime">--:--</div>
+                            <div class="sleep-countdown-stat-label">Bedtime</div>
+                        </div>
+                        <div class="sleep-countdown-stat">
+                            <div class="sleep-countdown-stat-value" id="sleep-panel-if-now">--</div>
+                            <div class="sleep-countdown-stat-label">If Now</div>
+                        </div>
+                        <div class="sleep-countdown-stat">
+                            <div class="sleep-countdown-stat-value" id="sleep-panel-wake">--:--</div>
+                            <div class="sleep-countdown-stat-label">Wake</div>
+                        </div>
                     </div>
-                    <div class="mobile-quality-marker" id="mobile-quality-marker"></div>
+
+                    <div class="sleep-quality-container">
+                        <div class="sleep-quality-bar">
+                            <div class="sleep-quality-zone poor"></div>
+                            <div class="sleep-quality-zone ok"></div>
+                            <div class="sleep-quality-zone good"></div>
+                            <div class="sleep-quality-zone ideal"></div>
+                        </div>
+                        <div class="sleep-quality-marker" id="sleep-panel-quality-marker"></div>
+                        <div class="sleep-quality-labels">
+                            <span>Terrible</span>
+                            <span>Low</span>
+                            <span>Solid</span>
+                            <span>Ideal</span>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Weekly chart -->
-                <div class="mobile-weekly-section">
-                    <div class="mobile-section-label">THIS WEEK</div>
-                    <div class="mobile-weekly-chart" id="mobile-weekly-chart"></div>
-                </div>
-
-                <!-- Settings row -->
-                <div class="mobile-sleep-settings">
-                    <div class="mobile-setting">
-                        <label>WAKE</label>
-                        <input type="time" id="mobile-wake-input" value="05:00" autocomplete="off">
-                    </div>
-                    <div class="mobile-setting">
-                        <label>HOURS</label>
-                        <input type="number" id="mobile-hours-input" value="7.5" min="4" max="12" step="0.5" autocomplete="off">
+                <!-- Mini Week -->
+                <div class="sleep-glass-card sleep-mini-week">
+                    <div class="sleep-section-header">LAST 7 NIGHTS</div>
+                    <div class="sleep-mini-bars" id="sleep-panel-mini-bars"></div>
+                    <div class="sleep-color-legend">
+                        <div class="sleep-legend-item"><span class="sleep-legend-dot good"></span> 7+ hrs</div>
+                        <div class="sleep-legend-item"><span class="sleep-legend-dot ok"></span> 5-7 hrs</div>
+                        <div class="sleep-legend-item"><span class="sleep-legend-dot poor"></span> &lt;5 hrs</div>
                     </div>
                 </div>
 
-                <!-- Manual Entry (Mobile) -->
-                <div class="mobile-manual-entry">
-                    <div class="mobile-section-label">ADD PAST ENTRY</div>
-                    <div class="mobile-manual-row">
-                        <input type="date" id="mobile-manual-date" class="mobile-manual-input" autocomplete="off">
-                        <input type="time" id="mobile-manual-bed" value="22:00" class="mobile-manual-input" autocomplete="off">
-                        <input type="time" id="mobile-manual-wake" value="06:00" class="mobile-manual-input" autocomplete="off">
-                        <button class="mobile-manual-add" id="mobile-btn-add-sleep">+</button>
+                <!-- Sleep Debt -->
+                <div class="sleep-glass-card sleep-debt-section" id="sleep-panel-debt">
+                    <div class="sleep-section-header">SLEEP DEBT</div>
+                </div>
+
+                <!-- Stats Section -->
+                <div class="sleep-glass-card sleep-stats-section">
+                    <div class="sleep-stats-header">
+                        <span class="sleep-section-header">STATISTICS</span>
+                        <div class="sleep-period-toggle">
+                            <button class="sleep-period-btn active" data-period="7">7d</button>
+                            <button class="sleep-period-btn" data-period="30">30d</button>
+                        </div>
                     </div>
+                    <div class="sleep-stats-grid" id="sleep-panel-stats-grid"></div>
+                </div>
+
+                <!-- Heatmap -->
+                <div class="sleep-glass-card sleep-heatmap-section">
+                    <div class="sleep-heatmap-header">
+                        <button class="sleep-heatmap-nav" id="sleep-panel-heatmap-prev">&lt;</button>
+                        <span class="sleep-heatmap-month" id="sleep-panel-heatmap-month">January 2026</span>
+                        <button class="sleep-heatmap-nav" id="sleep-panel-heatmap-next">&gt;</button>
+                    </div>
+                    <div class="sleep-heatmap-weekdays">
+                        <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+                    </div>
+                    <div class="sleep-heatmap-grid" id="sleep-panel-heatmap-grid"></div>
+                </div>
+
+                <!-- Settings -->
+                <div class="sleep-glass-card sleep-settings-section">
+                    <div class="sleep-section-header">SETTINGS</div>
+                    <div class="sleep-settings-row">
+                        <div class="sleep-setting-item">
+                            <label>WAKE TIME</label>
+                            <input type="time" id="sleep-panel-wake-input" value="05:00" autocomplete="off">
+                        </div>
+                        <div class="sleep-setting-item">
+                            <label>TARGET HOURS</label>
+                            <input type="number" id="sleep-panel-hours-input" value="7.5" min="4" max="12" step="0.5" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sleep-hint">Tap any day on the calendar to add or edit sleep data</div>
+            </div>
+        </div>
+
+        <!-- Sleep Timeline Modal -->
+        <div class="sleep-timeline-overlay" id="sleep-timeline-overlay">
+            <div class="sleep-timeline-modal">
+                <div class="sleep-timeline-header">
+                    <span class="sleep-timeline-date" id="sleep-timeline-date">Saturday, Jan 10</span>
+                    <button class="sleep-timeline-close" id="sleep-timeline-close">&times;</button>
+                </div>
+                <div class="sleep-timeline-times">
+                    <div class="sleep-timeline-time">
+                        <span class="sleep-timeline-label">BEDTIME</span>
+                        <span class="sleep-timeline-value" id="sleep-timeline-bed-display">10:00p</span>
+                    </div>
+                    <div class="sleep-timeline-time">
+                        <span class="sleep-timeline-label">WAKE UP</span>
+                        <span class="sleep-timeline-value" id="sleep-timeline-wake-display">6:00a</span>
+                    </div>
+                </div>
+                <div class="sleep-timeline-track-container">
+                    <div class="sleep-timeline-track" id="sleep-timeline-track">
+                        <div class="sleep-timeline-range" id="sleep-timeline-range"></div>
+                        <div class="sleep-timeline-handle handle-left" id="sleep-handle-left"></div>
+                        <div class="sleep-timeline-handle handle-right" id="sleep-handle-right"></div>
+                    </div>
+                    <div class="sleep-timeline-labels">
+                        <span>9p</span><span>11p</span><span>1a</span><span>3a</span><span>5a</span><span>7a</span><span>9a</span>
+                    </div>
+                </div>
+                <div class="sleep-timeline-duration">
+                    <span class="sleep-duration-icon">&#128164;</span>
+                    <span class="sleep-duration-value" id="sleep-timeline-duration">8h 0m</span>
+                </div>
+                <div class="sleep-timeline-hint">Drag handles to adjust times</div>
+                <div class="sleep-timeline-actions">
+                    <button class="sleep-timeline-btn delete" id="sleep-timeline-delete">Delete</button>
+                    <button class="sleep-timeline-btn save" id="sleep-timeline-save">Save</button>
                 </div>
             </div>
         </div>
@@ -416,6 +516,7 @@
 <script src="js/weather.js?v=4"></script>
 <script src="js/notes.js?v=4"></script>
 <script src="js/sleep.js?v=7"></script>
+<script src="js/sleep-panel.js?v=1"></script>
 <script src="js/mobile.js?v=9"></script>
 <script src="js/main.js?v=4"></script>
 
