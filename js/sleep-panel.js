@@ -384,9 +384,10 @@ function renderSleepPanelAccount() {
     const container = document.getElementById('sleep-account-content');
     if (!container) return;
 
-    const debugInfo = container.getAttribute('data-debug') || `Log: ${sleepPanelLog.length} entries`;
+    const signedIn = typeof isSignedIn === 'function' && isSignedIn();
+    const debugInfo = `${sleepPanelLog.length} entries | ${signedIn ? 'signed in' : 'NOT signed in'}`;
 
-    if (typeof isSignedIn === 'function' && isSignedIn()) {
+    if (signedIn) {
         const email = currentUser?.email || 'Signed in';
         container.innerHTML = `
             <div class="sleep-account-info">
@@ -404,7 +405,7 @@ function renderSleepPanelAccount() {
     } else {
         container.innerHTML = `
             <div class="sleep-account-info">
-                <span class="sleep-account-status">Using local storage only</span>
+                <span class="sleep-account-status">${debugInfo}</span>
             </div>
             <button class="sleep-account-btn" id="sleep-signin-btn">Sign In to Sync</button>
         `;
