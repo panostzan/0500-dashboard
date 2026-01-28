@@ -645,11 +645,12 @@ async function initSleepPanel() {
     // Start countdown updates
     sleepPanelUpdateInterval = setInterval(renderSleepPanelCountdown, 1000);
 
-    // Listen for auth changes to reload data
-    window.addEventListener('authStateChange', async () => {
-        await loadSleepLogAsync();
-        await loadSleepSettingsAsync();
-        refreshSleepPanel();
+    // Listen for user changes to reload data (fires after sign in/out)
+    window.addEventListener('userChanged', async () => {
+        // Data is already reloaded by sleep.js, just refresh the panel
+        setTimeout(() => {
+            refreshSleepPanel();
+        }, 500);
     });
 
     sleepPanelInitialized = true;
