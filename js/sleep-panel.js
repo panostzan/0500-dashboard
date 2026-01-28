@@ -7,6 +7,101 @@ let sleepPanelHeatmapMonth = new Date().getMonth();
 let sleepPanelHeatmapYear = new Date().getFullYear();
 let sleepPanelInitialized = false;
 let sleepPanelUpdateInterval = null;
+let sleepPanelLog = []; // Local cache for sleep panel
+
+// Load sleep data directly from DataService (bypasses sleep.js cache)
+async function loadSleepPanelData() {
+    if (typeof DataService !== 'undefined' && typeof isSignedIn === 'function' && isSignedIn()) {
+        try {
+            const cloudLog = await DataService.loadSleepLog();
+            sleepPanelLog = cloudLog.map(e => ({
+                date: e.date,
+                bedtime: e.bedtime,
+                wakeTime: e.wakeTime,
+                duration: e.hours
+            }));
+        } catch (err) {
+            console.error('Sleep panel data load error:', err);
+            sleepPanelLog = [];
+        }
+    } else {
+        // Fall back to localStorage
+        const saved = localStorage.getItem('0500_sleep_log');
+        sleepPanelLog = saved ? JSON.parse(saved) : [];
+    }
+    return sleepPanelLog;
+}
+
+// Get last N days from panel's local cache
+function getSleepPanelDaysLog(n = 7) {
+    const now = new Date();
+    const result = [];
+
+    for (let i = n - 1; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+
+        const entry = sleepPanelLog.find(e => e.date === dateStr && e.duration);
+        result.push({
+            date: dateStr,
+            dayName: dayName,
+            duration: entry ? entry.duration : null,
+            bedtime: entry ? entry.bedtime : null,
+            wakeTime: entry ? entry.wakeTime : null
+        });
+    }
+    return result;
+}
+
+// Calculate sleep score from log data
+function calculateSleepScoreFromLog(days) {
+    const daysWithData = days.filter(d => d.duration);
+    if (daysWithData.length < 3) return null;
+
+    const targetHours = 7.5;
+    let totalScore = 0;
+
+    daysWithData.forEach(day => {
+        const diff = Math.abs(day.duration - targetHours);
+        const dayScore = Math.max(0, 100 - diff * 15);
+        totalScore += dayScore;
+    });
+
+    return { total: Math.round(totalScore / daysWithData.length) };
+}
+
+// Calculate streak from panel's local cache
+function calculateSleepPanelStreak() {
+    let current = 0;
+    const today = new Date();
+
+    for (let i = 0; i < 30; i++) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+
+        const entry = sleepPanelLog.find(e => e.date === dateStr && e.duration && e.duration >= 7);
+        if (entry) {
+            current++;
+        } else if (i > 0) {
+            break;
+        }
+    }
+
+    return { current };
+}
+
+// Calculate weekly average from panel's local cache
+function calculateSleepPanelAverage() {
+    const last7 = getSleepPanelDaysLog(7);
+    const daysWithData = last7.filter(d => d.duration);
+    if (daysWithData.length === 0) return null;
+
+    const total = daysWithData.reduce((sum, d) => sum + d.duration, 0);
+    return total / daysWithData.length;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // RENDER FUNCTIONS
@@ -21,10 +116,10 @@ function renderSleepPanelScore() {
 
     if (!scoreNumber) return;
 
-    const last14 = getLastNDaysLog(14);
-    const score = calculateSleepScore(last14);
-    const streak = calculateSleepStreak();
-    const avg = calculateWeeklyAverage();
+    const last14 = getSleepPanelDaysLog(14);
+    const score = calculateSleepScoreFromLog(last14);
+    const streak = calculateSleepPanelStreak();
+    const avg = calculateSleepPanelAverage();
 
     if (score) {
         scoreNumber.textContent = score.total;
@@ -86,7 +181,7 @@ function renderSleepPanelMiniBars() {
     const container = document.getElementById('sleep-panel-mini-bars');
     if (!container) return;
 
-    const weekData = getLastNDaysLog(7);
+    const weekData = getSleepPanelDaysLog(7);
     const maxHours = 10;
     const today = new Date().toISOString().split('T')[0];
 
@@ -119,7 +214,7 @@ function renderSleepPanelDebt() {
     if (!container) return;
 
     const settings = loadSleepSettings();
-    const last14 = getLastNDaysLog(14);
+    const last14 = getSleepPanelDaysLog(14);
     const daysWithData = last14.filter(d => d.duration);
 
     if (daysWithData.length < 3) {
@@ -199,7 +294,7 @@ function renderSleepPanelStats() {
     const container = document.getElementById('sleep-panel-stats-grid');
     if (!container) return;
 
-    const days = getLastNDaysLog(sleepPanelStatsPeriod);
+    const days = getSleepPanelDaysLog(sleepPanelStatsPeriod);
     const stats = calculatePeriodStats(days);
 
     container.innerHTML = `
@@ -264,8 +359,7 @@ function renderSleepPanelHeatmap() {
 }
 
 function updateSleepPanelButtonStates() {
-    const log = loadSleepLog();
-    const lastEntry = log[log.length - 1];
+    const lastEntry = sleepPanelLog[sleepPanelLog.length - 1];
     const pendingBedtime = lastEntry && lastEntry.bedtime && !lastEntry.wakeTime;
 
     const bedBtn = document.getElementById('sleep-btn-bed');
@@ -385,8 +479,7 @@ function openSleepTimelineModal(dateStr) {
     const dayName = date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
     document.getElementById('sleep-timeline-date').textContent = dayName;
 
-    const log = loadSleepLog();
-    const existing = log.find(e => e.date === dateStr);
+    const existing = sleepPanelLog.find(e => e.date === dateStr);
 
     if (existing && existing.bedtime && existing.wakeTime) {
         const bed = new Date(existing.bedtime);
@@ -534,7 +627,7 @@ async function initSleepPanel() {
     if (sleepPanelInitialized) return;
 
     // Load data
-    await loadSleepLogAsync();
+    await loadSleepPanelData();
     await loadSleepSettingsAsync();
 
     // Load settings into inputs
@@ -648,7 +741,7 @@ async function initSleepPanel() {
     // Listen for user changes to reload data (fires after sign in/out)
     window.addEventListener('userChanged', async () => {
         // Force reload data from cloud
-        await loadSleepLogAsync();
+        await loadSleepPanelData();
         await loadSleepSettingsAsync();
         refreshSleepPanel();
     });
@@ -662,7 +755,7 @@ async function onSleepPanelActivate() {
         await initSleepPanel();
     } else {
         // Always reload data from cloud when switching to sleep tab
-        await loadSleepLogAsync();
+        await loadSleepPanelData();
         await loadSleepSettingsAsync();
         refreshSleepPanel();
     }
