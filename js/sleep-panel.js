@@ -11,9 +11,14 @@ let sleepPanelLog = []; // Local cache for sleep panel
 
 // Load sleep data directly from DataService (bypasses sleep.js cache)
 async function loadSleepPanelData() {
+    const debugEl = document.getElementById('sleep-account-content');
+
     if (typeof DataService !== 'undefined' && typeof isSignedIn === 'function' && isSignedIn()) {
         try {
             const cloudLog = await DataService.loadSleepLog();
+            console.log('Sleep panel loaded from cloud:', cloudLog.length, 'entries');
+            if (debugEl) debugEl.setAttribute('data-debug', `Cloud: ${cloudLog.length} entries`);
+
             sleepPanelLog = cloudLog.map(e => ({
                 date: e.date,
                 bedtime: e.bedtime,
@@ -22,12 +27,16 @@ async function loadSleepPanelData() {
             }));
         } catch (err) {
             console.error('Sleep panel data load error:', err);
+            if (debugEl) debugEl.setAttribute('data-debug', `Error: ${err.message}`);
             sleepPanelLog = [];
         }
     } else {
         // Fall back to localStorage
         const saved = localStorage.getItem('0500_sleep_log');
         sleepPanelLog = saved ? JSON.parse(saved) : [];
+        console.log('Sleep panel loaded from localStorage:', sleepPanelLog.length, 'entries');
+        const reason = !isSignedIn?.() ? 'not signed in' : 'no DataService';
+        if (debugEl) debugEl.setAttribute('data-debug', `Local: ${sleepPanelLog.length}, ${reason}`);
     }
     return sleepPanelLog;
 }
@@ -375,12 +384,14 @@ function renderSleepPanelAccount() {
     const container = document.getElementById('sleep-account-content');
     if (!container) return;
 
+    const debugInfo = container.getAttribute('data-debug') || `Log: ${sleepPanelLog.length} entries`;
+
     if (typeof isSignedIn === 'function' && isSignedIn()) {
         const email = currentUser?.email || 'Signed in';
         container.innerHTML = `
             <div class="sleep-account-info">
                 <span class="sleep-account-email">${email}</span>
-                <span class="sleep-account-status">Syncing to cloud</span>
+                <span class="sleep-account-status">${debugInfo}</span>
             </div>
             <button class="sleep-account-btn" id="sleep-signout-btn">Sign Out</button>
         `;
