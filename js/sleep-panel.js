@@ -277,6 +277,40 @@ function updateSleepPanelButtonStates() {
     }
 }
 
+function renderSleepPanelAccount() {
+    const container = document.getElementById('sleep-account-content');
+    if (!container) return;
+
+    if (typeof isSignedIn === 'function' && isSignedIn()) {
+        const email = currentUser?.email || 'Signed in';
+        container.innerHTML = `
+            <div class="sleep-account-info">
+                <span class="sleep-account-email">${email}</span>
+                <span class="sleep-account-status">Syncing to cloud</span>
+            </div>
+            <button class="sleep-account-btn" id="sleep-signout-btn">Sign Out</button>
+        `;
+        document.getElementById('sleep-signout-btn')?.addEventListener('click', async () => {
+            if (typeof signOut === 'function') {
+                await signOut();
+                renderSleepPanelAccount();
+            }
+        });
+    } else {
+        container.innerHTML = `
+            <div class="sleep-account-info">
+                <span class="sleep-account-status">Using local storage only</span>
+            </div>
+            <button class="sleep-account-btn" id="sleep-signin-btn">Sign In to Sync</button>
+        `;
+        document.getElementById('sleep-signin-btn')?.addEventListener('click', () => {
+            if (typeof showAuthModal === 'function') {
+                showAuthModal();
+            }
+        });
+    }
+}
+
 function refreshSleepPanel() {
     renderSleepPanelScore();
     renderSleepPanelCountdown();
@@ -285,6 +319,7 @@ function refreshSleepPanel() {
     renderSleepPanelStats();
     renderSleepPanelHeatmap();
     updateSleepPanelButtonStates();
+    renderSleepPanelAccount();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

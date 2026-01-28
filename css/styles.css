@@ -4558,6 +4558,54 @@ html, body {
         box-shadow: 0 0 0 3px var(--accent-glow);
     }
 
+    /* Account Section */
+    .sleep-account-section {
+        padding: 16px 20px;
+    }
+
+    .sleep-account-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .sleep-account-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .sleep-account-email {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+
+    .sleep-account-status {
+        font-size: 11px;
+        color: var(--text-muted);
+    }
+
+    .sleep-account-btn {
+        padding: 10px 16px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 180, 150, 0.2);
+        border-radius: 10px;
+        color: var(--text-primary);
+        font-family: 'Outfit', sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .sleep-account-btn:active {
+        background: rgba(255, 255, 255, 0.12);
+        transform: scale(0.98);
+    }
+
     /* Hint */
     .sleep-hint {
         text-align: center;
