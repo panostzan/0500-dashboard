@@ -2,7 +2,7 @@
 // SERVICE WORKER - Offline Support for 0500 PWA
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = '0500-v7';
+const CACHE_NAME = '0500-v8';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache for offline use
@@ -27,6 +27,7 @@ const STATIC_ASSETS = [
     '/js/weather.js',
     '/js/notes.js',
     '/js/sleep.js',
+    '/js/sleep-panel.js',
     '/js/mobile.js',
     '/js/main.js',
     '/manifest.json'
