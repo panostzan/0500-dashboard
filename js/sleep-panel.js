@@ -647,26 +647,24 @@ async function initSleepPanel() {
 
     // Listen for user changes to reload data (fires after sign in/out)
     window.addEventListener('userChanged', async () => {
-        // Data is already reloaded by sleep.js, just refresh the panel
-        setTimeout(() => {
-            refreshSleepPanel();
-        }, 500);
+        // Force reload data from cloud
+        await loadSleepLogAsync();
+        await loadSleepSettingsAsync();
+        refreshSleepPanel();
     });
 
     sleepPanelInitialized = true;
 }
 
 // Called when sleep panel becomes active
-function onSleepPanelActivate() {
+async function onSleepPanelActivate() {
     if (!sleepPanelInitialized) {
-        initSleepPanel();
+        await initSleepPanel();
     } else {
-        // Reload data in case auth state changed
-        loadSleepLogAsync().then(() => {
-            loadSleepSettingsAsync().then(() => {
-                refreshSleepPanel();
-            });
-        });
+        // Always reload data from cloud when switching to sleep tab
+        await loadSleepLogAsync();
+        await loadSleepSettingsAsync();
+        refreshSleepPanel();
     }
 }
 
