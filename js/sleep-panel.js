@@ -645,6 +645,13 @@ async function initSleepPanel() {
     // Start countdown updates
     sleepPanelUpdateInterval = setInterval(renderSleepPanelCountdown, 1000);
 
+    // Listen for auth changes to reload data
+    window.addEventListener('authStateChange', async () => {
+        await loadSleepLogAsync();
+        await loadSleepSettingsAsync();
+        refreshSleepPanel();
+    });
+
     sleepPanelInitialized = true;
 }
 
@@ -653,7 +660,12 @@ function onSleepPanelActivate() {
     if (!sleepPanelInitialized) {
         initSleepPanel();
     } else {
-        refreshSleepPanel();
+        // Reload data in case auth state changed
+        loadSleepLogAsync().then(() => {
+            loadSleepSettingsAsync().then(() => {
+                refreshSleepPanel();
+            });
+        });
     }
 }
 
