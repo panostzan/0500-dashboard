@@ -24,20 +24,20 @@ function checkAndResetSchedule() {
     return false;
 }
 
-async function resetScheduleForNewDay() {
+async function clearScheduleFull() {
     const entries = await DataService.loadSchedule();
 
-    // Keep the time slots but clear activities
-    const resetEntries = entries.map(entry => ({
-        time: entry.time,
+    // Clear both times and activities
+    const clearedEntries = entries.map(() => ({
+        time: '',
         activity: ''
     }));
 
-    scheduleCache = resetEntries;
-    await DataService.saveSchedule(resetEntries);
+    scheduleCache = clearedEntries;
+    await DataService.saveSchedule(clearedEntries);
     localStorage.setItem(SCHEDULE_DATE_KEY, getTodayDateString());
 
-    return resetEntries;
+    return clearedEntries;
 }
 
 async function loadScheduleEntries() {
@@ -218,10 +218,10 @@ async function saveCurrentSchedule() {
 }
 
 async function initSchedule() {
-    // Check if we need to reset for a new day
-    if (checkAndResetSchedule()) {
-        await resetScheduleForNewDay();
-    } else {
+    // Check if we need to show new day banner
+    const isNewDay = checkAndResetSchedule();
+
+    if (!isNewDay) {
         // First time - set today's date
         if (!localStorage.getItem(SCHEDULE_DATE_KEY)) {
             localStorage.setItem(SCHEDULE_DATE_KEY, getTodayDateString());
@@ -229,6 +229,14 @@ async function initSchedule() {
     }
 
     await renderSchedule();
+
+    // Show new day banner if it's a new day
+    if (isNewDay) {
+        showNewDayBanner();
+    }
+
+    // Init clear schedule button + popover
+    initClearScheduleButton();
 
     // Re-render when user changes
     window.addEventListener('userChanged', async () => {
@@ -240,6 +248,76 @@ async function initSchedule() {
     scheduleMidnightReset();
 }
 
+function showNewDayBanner() {
+    const banner = document.getElementById('new-day-banner');
+    if (!banner) return;
+
+    banner.style.display = '';
+
+    document.getElementById('new-day-clear-btn')?.addEventListener('click', async () => {
+        await clearScheduleFull();
+        await renderSchedule();
+        banner.style.display = 'none';
+    });
+
+    document.getElementById('new-day-keep-btn')?.addEventListener('click', () => {
+        localStorage.setItem(SCHEDULE_DATE_KEY, getTodayDateString());
+        banner.style.display = 'none';
+    });
+}
+
+function initClearScheduleButton() {
+    const btn = document.getElementById('clear-schedule-btn');
+    const popover = document.getElementById('clear-schedule-popover');
+    const confirmBtn = document.getElementById('clear-confirm-btn');
+    const cancelBtn = document.getElementById('clear-cancel-btn');
+
+    if (!btn || !popover) return;
+
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        popover.classList.toggle('open');
+    });
+
+    cancelBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        popover.classList.remove('open');
+    });
+
+    confirmBtn?.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        popover.classList.remove('open');
+        await clearScheduleWithAnimation();
+    });
+
+    // Close popover on outside click
+    document.addEventListener('click', (e) => {
+        if (!btn.contains(e.target) && !popover.contains(e.target)) {
+            popover.classList.remove('open');
+        }
+    });
+}
+
+async function clearScheduleWithAnimation() {
+    const rows = document.querySelectorAll('.schedule-row');
+
+    // Animate rows out
+    rows.forEach((row, i) => {
+        setTimeout(() => {
+            row.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            row.style.opacity = '0';
+            row.style.transform = 'translateX(20px)';
+        }, i * 50);
+    });
+
+    // After animation, clear data and re-render
+    const delay = rows.length * 50 + 300;
+    setTimeout(async () => {
+        await clearScheduleFull();
+        await renderSchedule();
+    }, delay);
+}
+
 function scheduleMidnightReset() {
     const now = new Date();
     const tomorrow = new Date(now);
@@ -249,23 +327,8 @@ function scheduleMidnightReset() {
     const msUntilMidnight = tomorrow - now;
 
     // Set timeout for midnight
-    setTimeout(async () => {
-        await resetScheduleForNewDay();
-        await renderSchedule();
-
-        // Show a subtle indicator that schedule was reset
-        const container = document.getElementById('schedule-scroll');
-        if (container) {
-            const notice = document.createElement('div');
-            notice.style.cssText = 'text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 8px; opacity: 0; transition: opacity 0.5s;';
-            notice.textContent = 'Schedule reset for new day';
-            container.insertBefore(notice, container.firstChild);
-            setTimeout(() => notice.style.opacity = '1', 10);
-            setTimeout(() => {
-                notice.style.opacity = '0';
-                setTimeout(() => notice.remove(), 500);
-            }, 3000);
-        }
+    setTimeout(() => {
+        showNewDayBanner();
 
         // Schedule next midnight reset
         scheduleMidnightReset();

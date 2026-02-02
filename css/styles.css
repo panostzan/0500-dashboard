@@ -916,6 +916,161 @@ html, body {
     color: var(--text-secondary);
     margin-bottom: 0.6rem;
     padding: 0 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Clear schedule button */
+.clear-schedule-anchor {
+    position: relative;
+}
+
+.clear-schedule-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.clear-schedule-btn:hover,
+.clear-schedule-btn:active {
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.1);
+    border-color: rgba(255, 107, 107, 0.15);
+}
+
+/* Clear popover */
+.clear-schedule-popover {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    width: 190px;
+    background: rgba(26, 18, 32, 0.95);
+    border: 1px solid var(--hud-line-bright);
+    border-radius: 10px;
+    padding: 12px;
+    z-index: 50;
+    opacity: 0;
+    transform: translateY(-6px) scale(0.95);
+    pointer-events: none;
+    transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+.clear-schedule-popover.open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.clear-popover-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+.clear-popover-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.clear-popover-btn {
+    flex: 1;
+    padding: 7px 10px;
+    border: none;
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.clear-popover-btn:active {
+    transform: scale(0.96);
+}
+
+.clear-popover-confirm {
+    background: #ff6b6b;
+    color: #fff;
+}
+
+.clear-popover-cancel {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--hud-line);
+    color: var(--text-muted);
+}
+
+/* New day banner */
+.new-day-banner {
+    background: linear-gradient(135deg, rgba(255, 176, 144, 0.08), rgba(255, 107, 107, 0.04));
+    border: 1px solid rgba(255, 176, 144, 0.15);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin: 0 0.5rem 0.6rem;
+    animation: bannerFadeIn 0.5s ease;
+}
+
+@keyframes bannerFadeIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.new-day-banner-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.new-day-banner-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: var(--accent);
+    flex: 1;
+}
+
+.new-day-banner-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.new-day-btn {
+    padding: 5px 12px;
+    border: none;
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.new-day-btn:active {
+    transform: scale(0.96);
+}
+
+.new-day-clear {
+    background: var(--accent);
+    color: #1a1220;
+}
+
+.new-day-keep {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--hud-line);
+    color: var(--text-muted);
 }
 
 .schedule-scroll {

@@ -105,7 +105,30 @@
 
         <div class="schedule-section hud-frame mobile-panel" data-panel="schedule">
             <div class="hud-corners"></div>
-            <div class="schedule-header">TODAY</div>
+            <div class="schedule-header">
+                <span>TODAY</span>
+                <div class="clear-schedule-anchor">
+                    <button class="clear-schedule-btn" id="clear-schedule-btn" title="Clear schedule">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                    </button>
+                    <div class="clear-schedule-popover" id="clear-schedule-popover">
+                        <p class="clear-popover-text">Clear entire schedule?</p>
+                        <div class="clear-popover-actions">
+                            <button class="clear-popover-btn clear-popover-cancel" id="clear-cancel-btn">Cancel</button>
+                            <button class="clear-popover-btn clear-popover-confirm" id="clear-confirm-btn">Clear</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="new-day-banner" id="new-day-banner" style="display:none;">
+                <div class="new-day-banner-content">
+                    <span class="new-day-banner-text">New day — clear yesterday's schedule?</span>
+                    <div class="new-day-banner-actions">
+                        <button class="new-day-btn new-day-clear" id="new-day-clear-btn">Clear</button>
+                        <button class="new-day-btn new-day-keep" id="new-day-keep-btn">Keep</button>
+                    </div>
+                </div>
+            </div>
             <div class="schedule-scroll" id="schedule-scroll">
                 <div class="time-grid" id="time-grid">
                     <!-- Time slots populated by JS -->
