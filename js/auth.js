@@ -148,6 +148,9 @@ function showAuthModal() {
 }
 
 function hideAuthModal() {
+    // Only allow closing if signed in
+    if (!isSignedIn()) return;
+
     const modal = document.getElementById('auth-modal');
     if (modal) {
         modal.classList.remove('active');
@@ -219,6 +222,11 @@ function initAuth() {
     // Listen for auth changes
     window.addEventListener('authStateChange', () => {
         updateUserMenu();
+        // Show auth modal if user signs out
+        if (!isSignedIn()) {
+            createAuthModal();
+            showAuthModal();
+        }
     });
 
     // Initial state
