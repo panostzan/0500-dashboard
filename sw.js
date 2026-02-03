@@ -2,7 +2,7 @@
 // SERVICE WORKER - Offline Support for 0500 PWA
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = '0500-v9';
+const CACHE_NAME = '0500-v10';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache for offline use
