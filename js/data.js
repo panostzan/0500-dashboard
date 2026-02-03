@@ -45,7 +45,11 @@ const DataService = {
             const userId = currentUser.id;
 
             // Delete existing goals and insert new ones
-            await supabaseClient.from('goals').delete().eq('user_id', userId);
+            const { error: deleteError } = await supabaseClient.from('goals').delete().eq('user_id', userId);
+            if (deleteError) {
+                console.error('Error deleting goals:', deleteError);
+                return; // Don't insert if delete failed
+            }
 
             const inserts = [];
             ['daily', 'midTerm', 'longTerm'].forEach(category => {
@@ -113,7 +117,11 @@ const DataService = {
         if (isSignedIn()) {
             const userId = currentUser.id;
 
-            await supabaseClient.from('schedule_entries').delete().eq('user_id', userId);
+            const { error: deleteError } = await supabaseClient.from('schedule_entries').delete().eq('user_id', userId);
+            if (deleteError) {
+                console.error('Error deleting schedule:', deleteError);
+                return; // Don't insert if delete failed
+            }
 
             const inserts = entries.map((e, idx) => ({
                 user_id: userId,
