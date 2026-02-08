@@ -83,7 +83,8 @@ function calculateSleepScoreFromLog(days) {
     const daysWithData = days.filter(d => d.duration);
     if (daysWithData.length < 3) return null;
 
-    const targetHours = 7.5;
+    const settings = loadSleepSettings();
+    const targetHours = settings.targetSleepHours || 7.5;
     let totalScore = 0;
 
     daysWithData.forEach(day => {
@@ -105,7 +106,8 @@ function calculateSleepPanelStreak() {
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().split('T')[0];
 
-        const entry = sleepPanelLog.find(e => e.date === dateStr && e.duration && e.duration >= 7);
+        const target = (loadSleepSettings().targetSleepHours || 7.5) - 0.5;
+        const entry = sleepPanelLog.find(e => e.date === dateStr && e.duration && e.duration >= target);
         if (entry) {
             current++;
         } else if (i > 0) {

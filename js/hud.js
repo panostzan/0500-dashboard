@@ -77,7 +77,7 @@ class ClockArc {
         // Small tick marks around the arc
         for (let i = 0; i < 24; i++) {
             const angle = (i / 24) * Math.PI * 2 - Math.PI / 2;
-            const isHour = i % 1 === 0;
+            const isHour = i % 6 === 0;
             const tickLength = isHour ? 8 : 4;
             const innerRadius = radius - tickLength;
 
