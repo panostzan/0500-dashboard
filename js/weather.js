@@ -6,10 +6,14 @@ const LOCATION_STORAGE_KEY = '0500_user_location';
 
 // Get user location: localStorage > geolocation > default
 async function getUserLocation() {
-    // Check localStorage first
+    // Check localStorage first (with 24-hour expiry)
     const saved = localStorage.getItem(LOCATION_STORAGE_KEY);
     if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        const age = Date.now() - (parsed.timestamp || 0);
+        if (age < 24 * 60 * 60 * 1000) {
+            return parsed;
+        }
     }
 
     // Try browser geolocation
@@ -25,7 +29,8 @@ async function getUserLocation() {
             const location = {
                 lat: position.coords.latitude,
                 lon: position.coords.longitude,
-                name: 'Current Location'
+                name: 'Current Location',
+                timestamp: Date.now()
             };
 
             // Save to localStorage
@@ -36,7 +41,8 @@ async function getUserLocation() {
         }
     }
 
-    // Fallback to default
+    // Fallback: use stale cached location if available, else default
+    if (saved) return JSON.parse(saved);
     return CONFIG.defaultLocation;
 }
 

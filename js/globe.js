@@ -301,11 +301,12 @@ class DottedGlobe {
                 this.ctx.fillStyle = this.highlightColor;
                 this.ctx.fill();
             } else {
-                const alpha = Math.floor(depthOpacity * 255).toString(16).padStart(2, '0');
                 this.ctx.beginPath();
                 this.ctx.arc(dot.x, dot.y, dotRadius, 0, Math.PI * 2);
-                this.ctx.fillStyle = this.dotColor + alpha;
+                this.ctx.globalAlpha = depthOpacity;
+                this.ctx.fillStyle = this.dotColor;
                 this.ctx.fill();
+                this.ctx.globalAlpha = 1;
             }
         });
     }

@@ -2,7 +2,7 @@
 // SERVICE WORKER - Offline Support for 0500 PWA
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = '0500-v10';
+const CACHE_NAME = '0500-v12';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache for offline use
@@ -87,38 +87,32 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // For static assets, use cache-first strategy
-    event.respondWith(
-        caches.match(request)
-            .then((cachedResponse) => {
-                if (cachedResponse) {
-                    // Return cached version, but update cache in background
-                    event.waitUntil(
-                        fetch(request)
-                            .then((networkResponse) => {
-                                if (networkResponse && networkResponse.status === 200) {
-                                    caches.open(CACHE_NAME)
-                                        .then((cache) => cache.put(request, networkResponse));
-                                }
-                            })
-                            .catch(() => { /* ignore network errors */ })
-                    );
-                    return cachedResponse;
-                }
+    // For same-origin requests, use network-first strategy
+    // This ensures users always get the latest version when online
+    // Strip query params (cache-busting ?v=N) for cache matching
+    const strippedUrl = new URL(request.url);
+    strippedUrl.search = '';
+    const cacheKey = new Request(strippedUrl.toString());
 
-                // Not in cache, fetch from network
-                return fetch(request)
-                    .then((networkResponse) => {
-                        // Cache successful responses
-                        if (networkResponse && networkResponse.status === 200) {
-                            const responseClone = networkResponse.clone();
-                            caches.open(CACHE_NAME)
-                                .then((cache) => cache.put(request, responseClone));
+    event.respondWith(
+        fetch(request)
+            .then((networkResponse) => {
+                // Network succeeded - update cache (keyed without query params) and return response
+                if (networkResponse && networkResponse.status === 200) {
+                    const responseClone = networkResponse.clone();
+                    caches.open(CACHE_NAME)
+                        .then((cache) => cache.put(cacheKey, responseClone));
+                }
+                return networkResponse;
+            })
+            .catch(() => {
+                // Network failed - fall back to cache (match without query params)
+                return caches.match(cacheKey)
+                    .then((cachedResponse) => {
+                        if (cachedResponse) {
+                            return cachedResponse;
                         }
-                        return networkResponse;
-                    })
-                    .catch(() => {
-                        // Network failed, return offline page for navigation
+                        // Not in cache either - return offline page for navigation
                         if (request.mode === 'navigate') {
                             return caches.match('/index.html');
                         }

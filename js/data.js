@@ -2,6 +2,51 @@
 // DATA SERVICE - Abstracts storage (Supabase for signed-in, localStorage for anon)
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// Save locks to prevent concurrent saves from racing (delete-then-insert interleaving)
+const saveLocks = {
+    goals: { inProgress: false, pending: null },
+    schedule: { inProgress: false, pending: null }
+};
+
+// Track active cloud saves to warn before page unload during delete-then-insert
+let _activeSaveCount = 0;
+
+function _onBeforeUnload(e) {
+    if (_activeSaveCount > 0) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+}
+window.addEventListener('beforeunload', _onBeforeUnload);
+
+async function withSaveLock(lockName, saveFn) {
+    const lock = saveLocks[lockName];
+
+    if (lock.inProgress) {
+        // Save already in progress - queue this one
+        return new Promise((resolve) => {
+            lock.pending = async () => {
+                resolve(await saveFn());
+            };
+        });
+    }
+
+    lock.inProgress = true;
+    _activeSaveCount++;
+    try {
+        await saveFn();
+    } finally {
+        _activeSaveCount--;
+        lock.inProgress = false;
+        // Run pending save if queued
+        if (lock.pending) {
+            const pendingFn = lock.pending;
+            lock.pending = null;
+            await pendingFn();
+        }
+    }
+}
+
 const DataService = {
     // ═══════════════════════════════════════════════════════════════════════════
     // GOALS
@@ -42,32 +87,34 @@ const DataService = {
 
     async saveGoals(goals) {
         if (isSignedIn()) {
-            const userId = currentUser.id;
+            await withSaveLock('goals', async () => {
+                const userId = currentUser.id;
 
-            // Delete existing goals and insert new ones
-            const { error: deleteError } = await supabaseClient.from('goals').delete().eq('user_id', userId);
-            if (deleteError) {
-                console.error('Error deleting goals:', deleteError);
-                return; // Don't insert if delete failed
-            }
+                // Delete existing goals and insert new ones
+                const { error: deleteError } = await supabaseClient.from('goals').delete().eq('user_id', userId);
+                if (deleteError) {
+                    console.error('Error deleting goals:', deleteError);
+                    return; // Don't insert if delete failed
+                }
 
-            const inserts = [];
-            ['daily', 'midTerm', 'longTerm'].forEach(category => {
-                goals[category].forEach((g, idx) => {
-                    inserts.push({
-                        user_id: userId,
-                        category,
-                        text: g.text,
-                        checked: g.checked,
-                        sort_order: idx
+                const inserts = [];
+                ['daily', 'midTerm', 'longTerm'].forEach(category => {
+                    goals[category].forEach((g, idx) => {
+                        inserts.push({
+                            user_id: userId,
+                            category,
+                            text: g.text,
+                            checked: g.checked,
+                            sort_order: idx
+                        });
                     });
                 });
-            });
 
-            if (inserts.length > 0) {
-                const { error } = await supabaseClient.from('goals').insert(inserts);
-                if (error) console.error('Error saving goals:', error);
-            }
+                if (inserts.length > 0) {
+                    const { error } = await supabaseClient.from('goals').insert(inserts);
+                    if (error) console.error('Error saving goals:', error);
+                }
+            });
         } else {
             localStorage.setItem('0500_goals', JSON.stringify(goals));
         }
@@ -115,25 +162,27 @@ const DataService = {
 
     async saveSchedule(entries) {
         if (isSignedIn()) {
-            const userId = currentUser.id;
+            await withSaveLock('schedule', async () => {
+                const userId = currentUser.id;
 
-            const { error: deleteError } = await supabaseClient.from('schedule_entries').delete().eq('user_id', userId);
-            if (deleteError) {
-                console.error('Error deleting schedule:', deleteError);
-                return; // Don't insert if delete failed
-            }
+                const { error: deleteError } = await supabaseClient.from('schedule_entries').delete().eq('user_id', userId);
+                if (deleteError) {
+                    console.error('Error deleting schedule:', deleteError);
+                    return; // Don't insert if delete failed
+                }
 
-            const inserts = entries.map((e, idx) => ({
-                user_id: userId,
-                time: e.time,
-                activity: e.activity,
-                sort_order: idx
-            }));
+                const inserts = entries.map((e, idx) => ({
+                    user_id: userId,
+                    time: e.time,
+                    activity: e.activity,
+                    sort_order: idx
+                }));
 
-            if (inserts.length > 0) {
-                const { error } = await supabaseClient.from('schedule_entries').insert(inserts);
-                if (error) console.error('Error saving schedule:', error);
-            }
+                if (inserts.length > 0) {
+                    const { error } = await supabaseClient.from('schedule_entries').insert(inserts);
+                    if (error) console.error('Error saving schedule:', error);
+                }
+            });
         } else {
             localStorage.setItem('0500_schedule_entries', JSON.stringify(entries));
         }
@@ -152,8 +201,7 @@ const DataService = {
             const { data, error } = await supabaseClient
                 .from('sleep_log')
                 .select('*')
-                .order('date', { ascending: false })
-                .limit(30);
+                .order('date', { ascending: true });
 
             if (error) {
                 console.error('Error loading sleep log:', error);

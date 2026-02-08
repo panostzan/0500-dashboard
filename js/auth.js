@@ -3,6 +3,9 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function createAuthModal() {
+    // Prevent duplicate modals
+    if (document.getElementById('auth-modal')) return;
+
     const modal = document.createElement('div');
     modal.id = 'auth-modal';
     modal.className = 'modal-overlay auth-modal-overlay';

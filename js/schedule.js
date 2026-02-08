@@ -4,6 +4,7 @@
 
 const SCHEDULE_DATE_KEY = '0500_schedule_date';
 let scheduleCache = null;
+let scheduleSaveTimeout = null;
 
 function getTodayDateString() {
     return new Date().toISOString().split('T')[0];
@@ -25,6 +26,10 @@ function checkAndResetSchedule() {
 }
 
 async function clearScheduleFull() {
+    // Cancel any pending debounced save to prevent stale data overwriting
+    clearTimeout(scheduleSaveTimeout);
+    scheduleSaveTimeout = null;
+
     const entries = await DataService.loadSchedule();
 
     // Clear both times and activities
@@ -147,6 +152,10 @@ function attachScheduleListeners() {
     const addBtn = document.getElementById('add-schedule-row');
     if (addBtn) {
         addBtn.addEventListener('click', async () => {
+            // Cancel any pending debounced save to prevent stale data overwriting
+            clearTimeout(scheduleSaveTimeout);
+            scheduleSaveTimeout = null;
+
             const entries = await loadScheduleEntries();
             entries.push({ time: '', activity: '' });
             await saveScheduleEntries(entries);
@@ -214,7 +223,11 @@ async function saveCurrentSchedule() {
         entries.push({ time, activity });
     });
 
-    await saveScheduleEntries(entries);
+    // Debounce saves to avoid too many API calls
+    clearTimeout(scheduleSaveTimeout);
+    scheduleSaveTimeout = setTimeout(async () => {
+        await saveScheduleEntries(entries);
+    }, 500);
 }
 
 async function initSchedule() {
@@ -248,22 +261,29 @@ async function initSchedule() {
     scheduleMidnightReset();
 }
 
+let newDayBannerListenersAttached = false;
+
 function showNewDayBanner() {
     const banner = document.getElementById('new-day-banner');
     if (!banner) return;
 
     banner.style.display = '';
 
-    document.getElementById('new-day-clear-btn')?.addEventListener('click', async () => {
-        await clearScheduleFull();
-        await renderSchedule();
-        banner.style.display = 'none';
-    });
+    // Only attach listeners once to prevent duplicate handlers
+    if (!newDayBannerListenersAttached) {
+        newDayBannerListenersAttached = true;
 
-    document.getElementById('new-day-keep-btn')?.addEventListener('click', () => {
-        localStorage.setItem(SCHEDULE_DATE_KEY, getTodayDateString());
-        banner.style.display = 'none';
-    });
+        document.getElementById('new-day-clear-btn')?.addEventListener('click', async () => {
+            await clearScheduleFull();
+            await renderSchedule();
+            banner.style.display = 'none';
+        });
+
+        document.getElementById('new-day-keep-btn')?.addEventListener('click', () => {
+            localStorage.setItem(SCHEDULE_DATE_KEY, getTodayDateString());
+            banner.style.display = 'none';
+        });
+    }
 }
 
 function initClearScheduleButton() {
@@ -299,6 +319,10 @@ function initClearScheduleButton() {
 }
 
 async function clearScheduleWithAnimation() {
+    // Cancel any pending debounced save to prevent stale data overwriting during animation
+    clearTimeout(scheduleSaveTimeout);
+    scheduleSaveTimeout = null;
+
     const rows = document.querySelectorAll('.schedule-row');
 
     // Animate rows out

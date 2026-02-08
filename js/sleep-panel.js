@@ -9,6 +9,22 @@ let sleepPanelInitialized = false;
 let sleepPanelUpdateInterval = null;
 let sleepPanelLog = []; // Local cache for sleep panel
 
+// Sync panel cache from sleep.js cache or localStorage (after log operations)
+function syncSleepPanelFromLocal() {
+    // Prefer sleep.js cache (sleepLogCache) if available, else read localStorage
+    if (typeof sleepLogCache !== 'undefined' && sleepLogCache) {
+        sleepPanelLog = sleepLogCache.map(e => ({
+            date: e.date,
+            bedtime: e.bedtime,
+            wakeTime: e.wakeTime,
+            duration: e.duration
+        }));
+    } else {
+        const saved = localStorage.getItem('0500_sleep_log');
+        sleepPanelLog = saved ? JSON.parse(saved) : [];
+    }
+}
+
 // Load sleep data directly from DataService (bypasses sleep.js cache)
 async function loadSleepPanelData() {
     const debugEl = document.getElementById('sleep-account-content');
@@ -16,7 +32,6 @@ async function loadSleepPanelData() {
     if (typeof DataService !== 'undefined' && typeof isSignedIn === 'function' && isSignedIn()) {
         try {
             const cloudLog = await DataService.loadSleepLog();
-            console.log('Sleep panel loaded from cloud:', cloudLog.length, 'entries');
             if (debugEl) debugEl.setAttribute('data-debug', `Cloud: ${cloudLog.length} entries`);
 
             sleepPanelLog = cloudLog.map(e => ({
@@ -34,7 +49,6 @@ async function loadSleepPanelData() {
         // Fall back to localStorage
         const saved = localStorage.getItem('0500_sleep_log');
         sleepPanelLog = saved ? JSON.parse(saved) : [];
-        console.log('Sleep panel loaded from localStorage:', sleepPanelLog.length, 'entries');
         const reason = !isSignedIn?.() ? 'not signed in' : 'no DataService';
         if (debugEl) debugEl.setAttribute('data-debug', `Local: ${sleepPanelLog.length}, ${reason}`);
     }
@@ -520,7 +534,8 @@ function closeSleepTimelineModal() {
 function saveSleepTimelineEntry() {
     const bedDate = new Date(sleepTimelineDate + 'T00:00:00');
     bedDate.setHours(sleepTimelineBedHour, sleepTimelineBedMin, 0, 0);
-    if (sleepTimelineBedHour >= 12) {
+    if (sleepTimelineBedHour >= 18) {
+        // Evening bedtime (6pm+) means the user went to bed the night before the wake date
         bedDate.setDate(bedDate.getDate() - 1);
     }
 
@@ -546,6 +561,7 @@ function saveSleepTimelineEntry() {
     }
 
     saveSleepLog(log);
+    syncSleepPanelFromLocal();
     closeSleepTimelineModal();
     refreshSleepPanel();
 }
@@ -557,6 +573,7 @@ function deleteSleepTimelineEntry() {
         log.splice(idx, 1);
         saveSleepLog(log);
     }
+    syncSleepPanelFromLocal();
     closeSleepTimelineModal();
     refreshSleepPanel();
 }
@@ -672,6 +689,7 @@ async function initSleepPanel() {
                 setTimeout(() => {
                     this.innerHTML = '<span class="sleep-emoji">&#127769;</span> Going to bed';
                 }, 2000);
+                syncSleepPanelFromLocal();
                 refreshSleepPanel();
             }
         });
@@ -685,6 +703,7 @@ async function initSleepPanel() {
                 setTimeout(() => {
                     this.innerHTML = '<span class="sleep-emoji">&#9728;&#65039;</span> Just woke up';
                 }, 2000);
+                syncSleepPanelFromLocal();
                 refreshSleepPanel();
             }
         });
