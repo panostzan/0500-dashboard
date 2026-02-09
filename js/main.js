@@ -104,8 +104,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Initialize status indicator system
         initSyncIndicator();
 
-        // Initialize lava lamp background
-        const lavaLamp = new LavaLamp(document.getElementById('lava-canvas'));
+        // Lava lamp canvas is hidden (opacity: 0) — CSS orbs replaced it.
+        // Don't instantiate LavaLamp to avoid wasting CPU on invisible blur ops.
 
         // Initialize clock
         initClock();
@@ -119,20 +119,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Initialize timer
         initTimer();
 
-        // Initialize weather
-        initWeather();
-
         // Initialize notes
         initNotes();
 
-        // Initialize sleep card (async - loads cloud data)
-        await initSleepCard();
+        // Defer non-critical init to after first paint
+        const deferInit = (fn) => {
+            if ('requestIdleCallback' in window) requestIdleCallback(fn);
+            else setTimeout(fn, 100);
+        };
 
-        // Update sleep tracking status
-        updateSleepTrackingStatus();
-
-        // Initialize bedtime notifications
-        initBedtimeNotifications();
+        deferInit(() => initWeather());
+        deferInit(async () => {
+            await initSleepCard();
+            updateSleepTrackingStatus();
+            initBedtimeNotifications();
+        });
 
         // Initialize HUD elements (globe arcs)
         const hud = initHUD();

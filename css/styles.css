@@ -637,7 +637,6 @@ html, body {
     border-radius: 10px;
     position: relative;
     overflow: hidden;
-    will-change: transform, opacity;
     transition: opacity 0.15s ease;
 }
 
@@ -685,6 +684,7 @@ html, body {
 
 /* Add animation - simple fade in */
 .goal-item.adding {
+    will-change: transform, opacity;
     animation: goalFadeIn 0.2s ease-out forwards;
 }
 
@@ -695,6 +695,7 @@ html, body {
 
 /* Remove animation - fade out */
 .goal-item.removing {
+    will-change: transform, opacity;
     animation: goalFadeOut 0.2s ease-out forwards;
     pointer-events: none;
 }
@@ -833,6 +834,7 @@ html, body {
 .goal-group.collapsible.collapsed .goal-list {
     max-height: 0;
     opacity: 0;
+    content-visibility: hidden;
 }
 
 .goal-group.collapsible.collapsed {
