@@ -768,8 +768,17 @@ async function initSleepPanel() {
         });
     }
 
-    // Start countdown updates
+    // Start countdown updates (pause when tab hidden to save CPU)
     sleepPanelUpdateInterval = setInterval(renderSleepPanelCountdown, 1000);
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            clearInterval(sleepPanelUpdateInterval);
+            sleepPanelUpdateInterval = null;
+        } else if (!sleepPanelUpdateInterval) {
+            renderSleepPanelCountdown();
+            sleepPanelUpdateInterval = setInterval(renderSleepPanelCountdown, 1000);
+        }
+    });
 
     // Listen for user changes to reload data (fires after sign in/out)
     window.addEventListener('userChanged', async () => {

@@ -19,6 +19,11 @@ class ClockArc {
 
         this.resize();
         this.animate();
+
+        // Resume animation when tab becomes visible again
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) this.animate();
+        });
     }
 
     resize() {
@@ -122,6 +127,7 @@ class ClockArc {
     }
 
     animate() {
+        if (document.hidden) return;
         this.draw();
         requestAnimationFrame(() => this.animate());
     }
@@ -142,6 +148,10 @@ class GlobeHUD {
 
         this.resize();
         this.animate();
+
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) this.animate();
+        });
     }
 
     resize() {
@@ -270,6 +280,7 @@ class GlobeHUD {
     }
 
     animate() {
+        if (document.hidden) return;
         this.draw();
         requestAnimationFrame(() => this.animate());
     }

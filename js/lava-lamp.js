@@ -25,6 +25,11 @@ class LavaLamp {
         this.animate();
 
         window.addEventListener('resize', () => this.resize());
+
+        // Resume animation when tab becomes visible again
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) this.animate();
+        });
     }
 
     resize() {
@@ -166,6 +171,7 @@ class LavaLamp {
     }
 
     animate() {
+        if (document.hidden) return;
         this.time++;
         this.draw();
         requestAnimationFrame(() => this.animate());

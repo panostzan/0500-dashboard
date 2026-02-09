@@ -225,21 +225,21 @@ const DataService = {
         if (isSignedIn()) {
             const userId = currentUser.id;
 
-            // Upsert based on date
-            for (const entry of log) {
+            // Batch upsert all entries in one request
+            const rows = log.map(entry => ({
+                user_id: userId,
+                date: entry.date,
+                bedtime: entry.bedtime,
+                wake_time: entry.wakeTime,
+                hours: entry.hours
+            }));
+
+            if (rows.length > 0) {
                 const { error } = await supabaseClient
                     .from('sleep_log')
-                    .upsert({
-                        user_id: userId,
-                        date: entry.date,
-                        bedtime: entry.bedtime,
-                        wake_time: entry.wakeTime,
-                        hours: entry.hours
-                    }, {
-                        onConflict: 'user_id,date'
-                    });
+                    .upsert(rows, { onConflict: 'user_id,date' });
 
-                if (error) console.error('Error saving sleep entry:', error);
+                if (error) console.error('Error saving sleep log:', error);
             }
         } else {
             localStorage.setItem('0500_sleep_log', JSON.stringify(log));

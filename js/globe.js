@@ -126,7 +126,12 @@ class DottedGlobe {
         const loading = document.getElementById('globe-loading');
 
         try {
-            const response = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json');
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            const response = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json', {
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
             if (!response.ok) throw new Error('Network response was not ok');
             const topology = await response.json();
             const landFeature = topoFeature(topology, topology.objects.land);
@@ -249,70 +254,81 @@ class DottedGlobe {
 
         dots.sort((a, b) => a.z - b.z);
 
+        // Batch render non-highlight dots by setting fillStyle once
+        this.ctx.fillStyle = this.dotColor;
+        const regularDots = [];
+        const highlightDots = [];
         dots.forEach(dot => {
+            if (dot.isHighlight) highlightDots.push(dot);
+            else regularDots.push(dot);
+        });
+
+        regularDots.forEach(dot => {
             const depthOpacity = Math.max(0.12, (dot.z + 0.15) / 1.15);
+            this.ctx.globalAlpha = depthOpacity;
+            this.ctx.beginPath();
+            this.ctx.arc(dot.x, dot.y, dotRadius, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+        this.ctx.globalAlpha = 1;
 
-            if (dot.isHighlight) {
-                // Breathing animation
-                const breathScale = 1 + Math.sin(this.breathPhase) * 0.3;
-                const breathOpacity = 0.7 + Math.sin(this.breathPhase) * 0.3;
+        highlightDots.forEach(dot => {
+            // Breathing animation
+            const breathScale = 1 + Math.sin(this.breathPhase) * 0.3;
+            const breathOpacity = 0.7 + Math.sin(this.breathPhase) * 0.3;
 
-                // Large outer glow
-                const outerGlowRadius = dotRadius * 12 * breathScale;
-                const outerGradient = this.ctx.createRadialGradient(
-                    dot.x, dot.y, 0,
-                    dot.x, dot.y, outerGlowRadius
-                );
-                outerGradient.addColorStop(0, `rgba(255, 176, 144, ${breathOpacity * 0.5})`);
-                outerGradient.addColorStop(0.4, `rgba(255, 176, 144, ${breathOpacity * 0.2})`);
-                outerGradient.addColorStop(1, 'transparent');
+            // Large outer glow
+            const outerGlowRadius = dotRadius * 12 * breathScale;
+            const outerGradient = this.ctx.createRadialGradient(
+                dot.x, dot.y, 0,
+                dot.x, dot.y, outerGlowRadius
+            );
+            outerGradient.addColorStop(0, `rgba(255, 176, 144, ${breathOpacity * 0.5})`);
+            outerGradient.addColorStop(0.4, `rgba(255, 176, 144, ${breathOpacity * 0.2})`);
+            outerGradient.addColorStop(1, 'transparent');
 
-                this.ctx.beginPath();
-                this.ctx.arc(dot.x, dot.y, outerGlowRadius, 0, Math.PI * 2);
-                this.ctx.fillStyle = outerGradient;
-                this.ctx.fill();
+            this.ctx.beginPath();
+            this.ctx.arc(dot.x, dot.y, outerGlowRadius, 0, Math.PI * 2);
+            this.ctx.fillStyle = outerGradient;
+            this.ctx.fill();
 
-                // Inner glow ring
-                const glowRadius = dotRadius * 6 * breathScale;
-                const gradient = this.ctx.createRadialGradient(
-                    dot.x, dot.y, 0,
-                    dot.x, dot.y, glowRadius
-                );
-                gradient.addColorStop(0, `rgba(255, 255, 255, ${breathOpacity})`);
-                gradient.addColorStop(0.2, `rgba(255, 200, 170, ${breathOpacity * 0.8})`);
-                gradient.addColorStop(0.5, `rgba(255, 150, 100, ${breathOpacity * 0.4})`);
-                gradient.addColorStop(1, 'transparent');
+            // Inner glow ring
+            const glowRadius = dotRadius * 6 * breathScale;
+            const gradient = this.ctx.createRadialGradient(
+                dot.x, dot.y, 0,
+                dot.x, dot.y, glowRadius
+            );
+            gradient.addColorStop(0, `rgba(255, 255, 255, ${breathOpacity})`);
+            gradient.addColorStop(0.2, `rgba(255, 200, 170, ${breathOpacity * 0.8})`);
+            gradient.addColorStop(0.5, `rgba(255, 150, 100, ${breathOpacity * 0.4})`);
+            gradient.addColorStop(1, 'transparent');
 
-                this.ctx.beginPath();
-                this.ctx.arc(dot.x, dot.y, glowRadius, 0, Math.PI * 2);
-                this.ctx.fillStyle = gradient;
-                this.ctx.fill();
+            this.ctx.beginPath();
+            this.ctx.arc(dot.x, dot.y, glowRadius, 0, Math.PI * 2);
+            this.ctx.fillStyle = gradient;
+            this.ctx.fill();
 
-                // Bright white core
-                const coreSize = dotRadius * (2 + Math.sin(this.breathPhase) * 0.3);
-                this.ctx.beginPath();
-                this.ctx.arc(dot.x, dot.y, coreSize, 0, Math.PI * 2);
-                this.ctx.fillStyle = '#ffffff';
-                this.ctx.fill();
+            // Bright white core
+            const coreSize = dotRadius * (2 + Math.sin(this.breathPhase) * 0.3);
+            this.ctx.beginPath();
+            this.ctx.arc(dot.x, dot.y, coreSize, 0, Math.PI * 2);
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.fill();
 
-                // Inner color ring
-                this.ctx.beginPath();
-                this.ctx.arc(dot.x, dot.y, coreSize * 0.6, 0, Math.PI * 2);
-                this.ctx.fillStyle = this.highlightColor;
-                this.ctx.fill();
-            } else {
-                this.ctx.beginPath();
-                this.ctx.arc(dot.x, dot.y, dotRadius, 0, Math.PI * 2);
-                this.ctx.globalAlpha = depthOpacity;
-                this.ctx.fillStyle = this.dotColor;
-                this.ctx.fill();
-                this.ctx.globalAlpha = 1;
-            }
+            // Inner color ring
+            this.ctx.beginPath();
+            this.ctx.arc(dot.x, dot.y, coreSize * 0.6, 0, Math.PI * 2);
+            this.ctx.fillStyle = this.highlightColor;
+            this.ctx.fill();
         });
     }
 
     animate() {
         if (!this.ready) return;
+        if (document.hidden) {
+            requestAnimationFrame(() => this.animate());
+            return;
+        }
         this.rotation += this.rotationSpeed;
         this.breathPhase += 0.03; // Slow breathing cycle (~4 seconds)
         this.draw();

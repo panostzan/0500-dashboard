@@ -1705,6 +1705,15 @@ async function initSleepCard() {
     updateSleepDisplay();
     updateSleepDashboard();
 
-    // Update every second
-    setInterval(updateSleepDisplay, 1000);
+    // Update every second (pause when tab hidden to save CPU)
+    let sleepDisplayInterval = setInterval(updateSleepDisplay, 1000);
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            clearInterval(sleepDisplayInterval);
+            sleepDisplayInterval = null;
+        } else if (!sleepDisplayInterval) {
+            updateSleepDisplay();
+            sleepDisplayInterval = setInterval(updateSleepDisplay, 1000);
+        }
+    });
 }
