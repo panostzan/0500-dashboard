@@ -58,56 +58,52 @@ function attachGoalListeners(item, sectionKey, group) {
     const textEl = item.querySelector('.goal-text');
     const isNew = item.classList.contains('new-goal');
 
-    // Checkbox toggle with glow animation
-    checkbox.addEventListener('click', async (e) => {
+    // Checkbox toggle with glow animation (optimistic UI - toggle instantly, save in background)
+    checkbox.addEventListener('click', (e) => {
         e.stopPropagation();
         if (isNew) return;
 
-        const index = parseInt(item.dataset.index);
-        const goals = await loadGoals();
-        const wasChecked = goals[sectionKey][index].checked;
-        goals[sectionKey][index].checked = !wasChecked;
-        await saveGoals(goals);
-
+        // Toggle visual state immediately
         item.classList.toggle('checked');
+
+        // Save in background (don't await)
+        const index = parseInt(item.dataset.index);
+        loadGoals().then(goals => {
+            goals[sectionKey][index].checked = !goals[sectionKey][index].checked;
+            saveGoals(goals);
+        });
     });
 
-    // Text editing - save on blur
-    textEl.addEventListener('blur', async () => {
+    // Text editing - save on blur (optimistic UI - update DOM instantly, save in background)
+    textEl.addEventListener('blur', () => {
         const text = textEl.textContent.trim();
-        const goals = await loadGoals();
 
         if (isNew) {
             // Add new goal if text entered
             if (text) {
+                // Update DOM immediately
+                const goals = goalsCache;
                 goals[sectionKey].push({ text, checked: false });
-                await saveGoals(goals);
-
-                // Create new item with animation
                 const newItem = createGoalItem({ text, checked: false }, goals[sectionKey].length - 1);
                 newItem.classList.add('adding');
                 item.before(newItem);
                 attachGoalListeners(newItem, sectionKey, group);
                 attachSwipeListeners(newItem, sectionKey, group);
-
-                // Clear the "new goal" input
                 textEl.textContent = '';
-
-                // Update count
                 updateHeaderCount(group);
-
-                // Remove animation class after it completes
                 setTimeout(() => newItem.classList.remove('adding'), 200);
-
-                // Reindex all items
                 reindexGoalItems(group);
+
+                // Save in background
+                saveGoals(goals);
             }
         } else {
             const index = parseInt(item.dataset.index);
             if (text) {
-                // Update existing goal
+                // Update existing goal - save in background
+                const goals = goalsCache;
                 goals[sectionKey][index].text = text;
-                await saveGoals(goals);
+                saveGoals(goals);
             } else {
                 // Delete goal if empty (with animation)
                 removeGoalWithAnimation(item, sectionKey, index, group);

@@ -638,6 +638,7 @@ html, body {
     position: relative;
     overflow: hidden;
     will-change: transform, opacity;
+    transition: opacity 0.15s ease;
 }
 
 .goal-item.checked {
@@ -657,6 +658,8 @@ html, body {
     cursor: pointer;
     background: transparent;
     position: relative;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .goal-checkbox::after {
