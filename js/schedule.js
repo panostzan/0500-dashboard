@@ -30,13 +30,8 @@ async function clearScheduleFull() {
     clearTimeout(scheduleSaveTimeout);
     scheduleSaveTimeout = null;
 
-    const entries = await DataService.loadSchedule();
-
-    // Clear both times and activities
-    const clearedEntries = entries.map(() => ({
-        time: '',
-        activity: ''
-    }));
+    // Reset to a fresh 20 rows (removes any extra rows added by user)
+    const clearedEntries = Array(20).fill(null).map(() => ({ time: '', activity: '' }));
 
     scheduleCache = clearedEntries;
     await DataService.saveSchedule(clearedEntries);
