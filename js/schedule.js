@@ -296,7 +296,7 @@ async function initSchedule() {
             });
             scheduleCache = entries;
             // Save to localStorage synchronously as last resort
-            localStorage.setItem('0500_schedule_entries', JSON.stringify(entries));
+            safeSetItem('0500_schedule_entries', JSON.stringify(entries));
         }
     });
 }

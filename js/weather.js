@@ -153,8 +153,25 @@ function updateWeatherStatus(status) {
     }
 }
 
+let _weatherInterval = null;
+
 function initWeather() {
     fetchWeather();
+
     // Refresh every 15 minutes
-    setInterval(fetchWeather, 15 * 60 * 1000);
+    _weatherInterval = setInterval(fetchWeather, 15 * 60 * 1000);
+
+    // Pause/resume on tab visibility to save network when hidden
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            if (_weatherInterval) {
+                clearInterval(_weatherInterval);
+                _weatherInterval = null;
+            }
+        } else {
+            // Fetch immediately on return, then restart interval
+            fetchWeather();
+            _weatherInterval = setInterval(fetchWeather, 15 * 60 * 1000);
+        }
+    });
 }

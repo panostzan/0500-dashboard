@@ -74,6 +74,7 @@
 html, body {
     height: 100%;
     overflow: hidden;
+    overscroll-behavior: none;
     font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
     color: var(--text-primary);
     background-color: #0f0a12;

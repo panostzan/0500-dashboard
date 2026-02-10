@@ -70,6 +70,35 @@ function initSyncIndicator() {
 }
 
 /**
+ * Offline indicator — show/hide based on network status
+ */
+function initOfflineIndicator() {
+    const indicator = document.getElementById('sync-indicator');
+    if (!indicator) return;
+
+    function updateStatus() {
+        if (!navigator.onLine) {
+            indicator.classList.add('visible');
+            const dot = indicator.querySelector('.status-indicator');
+            const label = indicator.querySelector('span:last-child');
+            if (dot) { dot.classList.remove('status-syncing', 'status-active'); dot.classList.add('status-offline'); }
+            if (label) label.textContent = 'OFFLINE';
+        } else {
+            indicator.classList.remove('visible');
+            const dot = indicator.querySelector('.status-indicator');
+            const label = indicator.querySelector('span:last-child');
+            if (dot) { dot.classList.remove('status-offline'); dot.classList.add('status-syncing'); }
+            if (label) label.textContent = 'SYNCING';
+        }
+    }
+
+    window.addEventListener('online', updateStatus);
+    window.addEventListener('offline', updateStatus);
+    // Show on load if already offline
+    if (!navigator.onLine) updateStatus();
+}
+
+/**
  * Update sleep tracking status indicator
  */
 function updateSleepTrackingStatus() {
@@ -92,6 +121,36 @@ function updateSleepTrackingStatus() {
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// MULTI-TAB CONFLICT DETECTION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+window.addEventListener('storage', (e) => {
+    if (!e.key || !e.key.startsWith('0500_')) return;
+
+    // Another tab changed our data — invalidate caches and refresh UI
+    switch (e.key) {
+        case '0500_goals':
+            if (typeof goalsCache !== 'undefined') goalsCache = null;
+            if (typeof renderGoals === 'function') renderGoals();
+            break;
+        case '0500_schedule_entries':
+            if (typeof scheduleCache !== 'undefined') scheduleCache = null;
+            if (typeof renderSchedule === 'function') renderSchedule();
+            break;
+        case '0500_notes':
+            if (typeof notesCache !== 'undefined') notesCache = null;
+            const notesInput = document.getElementById('notes-input');
+            if (notesInput) notesInput.value = e.newValue || '';
+            if (typeof updateNotesChip === 'function') updateNotesChip();
+            break;
+        case '0500_sleep_log':
+            if (typeof sleepLogCache !== 'undefined') sleepLogCache = null;
+            if (typeof syncSleepPanelFromLocal === 'function') syncSleepPanelFromLocal();
+            break;
+    }
+});
+
 // Initialize all components when DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -103,6 +162,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Initialize status indicator system
         initSyncIndicator();
+        initOfflineIndicator();
 
         // Lava lamp canvas is hidden (opacity: 0) — CSS orbs replaced it.
         // Don't instantiate LavaLamp to avoid wasting CPU on invisible blur ops.

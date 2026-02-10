@@ -2,6 +2,42 @@
 // DATA SERVICE - Abstracts storage (Supabase for signed-in, localStorage for anon)
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// Safe localStorage.setItem — catches QuotaExceededError
+function safeSetItem(key, value) {
+    try {
+        localStorage.setItem(key, value);
+    } catch (e) {
+        if (e.name === 'QuotaExceededError' || e.code === 22) {
+            console.warn('localStorage quota exceeded for key:', key);
+            // Try clearing old/stale data to free space
+            try {
+                localStorage.removeItem('0500_user_location');
+                localStorage.setItem(key, value); // retry once
+            } catch (_) {
+                console.error('localStorage quota exceeded — cannot save:', key);
+            }
+        } else {
+            throw e;
+        }
+    }
+}
+
+// Exponential backoff retry for Supabase operations
+async function withRetry(fn, maxRetries = 2) {
+    let lastError;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            return await fn();
+        } catch (err) {
+            lastError = err;
+            if (attempt < maxRetries) {
+                await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)));
+            }
+        }
+    }
+    throw lastError;
+}
+
 // Save locks to prevent concurrent saves from racing (delete-then-insert interleaving)
 const saveLocks = {
     goals: { inProgress: false, pending: null },
@@ -116,7 +152,7 @@ const DataService = {
                 }
             });
         } else {
-            localStorage.setItem('0500_goals', JSON.stringify(goals));
+            safeSetItem('0500_goals', JSON.stringify(goals));
         }
     },
 
@@ -184,7 +220,7 @@ const DataService = {
                 }
             });
         } else {
-            localStorage.setItem('0500_schedule_entries', JSON.stringify(entries));
+            safeSetItem('0500_schedule_entries', JSON.stringify(entries));
         }
     },
 
@@ -223,44 +259,46 @@ const DataService = {
 
     async saveSleepLog(log) {
         if (isSignedIn()) {
-            const userId = currentUser.id;
+            await withRetry(async () => {
+                const userId = currentUser.id;
+                const rows = log.map(entry => ({
+                    user_id: userId,
+                    date: entry.date,
+                    bedtime: entry.bedtime,
+                    wake_time: entry.wakeTime,
+                    hours: entry.hours
+                }));
 
-            // Batch upsert all entries in one request
-            const rows = log.map(entry => ({
-                user_id: userId,
-                date: entry.date,
-                bedtime: entry.bedtime,
-                wake_time: entry.wakeTime,
-                hours: entry.hours
-            }));
+                if (rows.length > 0) {
+                    const { error } = await supabaseClient
+                        .from('sleep_log')
+                        .upsert(rows, { onConflict: 'user_id,date' });
 
-            if (rows.length > 0) {
-                const { error } = await supabaseClient
-                    .from('sleep_log')
-                    .upsert(rows, { onConflict: 'user_id,date' });
-
-                if (error) console.error('Error saving sleep log:', error);
-            }
+                    if (error) throw error;
+                }
+            });
         } else {
-            localStorage.setItem('0500_sleep_log', JSON.stringify(log));
+            safeSetItem('0500_sleep_log', JSON.stringify(log));
         }
     },
 
     async addSleepEntry(entry) {
         if (isSignedIn()) {
-            const { error } = await supabaseClient
-                .from('sleep_log')
-                .upsert({
-                    user_id: currentUser.id,
-                    date: entry.date,
-                    bedtime: entry.bedtime,
-                    wake_time: entry.wakeTime,
-                    hours: entry.hours
-                }, {
-                    onConflict: 'user_id,date'
-                });
+            await withRetry(async () => {
+                const { error } = await supabaseClient
+                    .from('sleep_log')
+                    .upsert({
+                        user_id: currentUser.id,
+                        date: entry.date,
+                        bedtime: entry.bedtime,
+                        wake_time: entry.wakeTime,
+                        hours: entry.hours
+                    }, {
+                        onConflict: 'user_id,date'
+                    });
 
-            if (error) console.error('Error adding sleep entry:', error);
+                if (error) throw error;
+            });
         } else {
             const log = await this.loadSleepLog();
             const idx = log.findIndex(e => e.date === entry.date);
@@ -269,7 +307,7 @@ const DataService = {
             } else {
                 log.push(entry);
             }
-            localStorage.setItem('0500_sleep_log', JSON.stringify(log));
+            safeSetItem('0500_sleep_log', JSON.stringify(log));
         }
     },
 
@@ -302,18 +340,20 @@ const DataService = {
 
     async saveSleepSettings(settings) {
         if (isSignedIn()) {
-            const { error } = await supabaseClient
-                .from('profiles')
-                .update({
-                    wake_time: settings.wakeTime,
-                    target_sleep_hours: settings.targetHours,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', currentUser.id);
+            await withRetry(async () => {
+                const { error } = await supabaseClient
+                    .from('profiles')
+                    .update({
+                        wake_time: settings.wakeTime,
+                        target_sleep_hours: settings.targetHours,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', currentUser.id);
 
-            if (error) console.error('Error saving sleep settings:', error);
+                if (error) throw error;
+            });
         } else {
-            localStorage.setItem('0500_sleep_settings', JSON.stringify(settings));
+            safeSetItem('0500_sleep_settings', JSON.stringify(settings));
         }
     },
 
@@ -338,17 +378,19 @@ const DataService = {
 
     async saveNotes(content) {
         if (isSignedIn()) {
-            const { error } = await supabaseClient
-                .from('notes')
-                .update({
-                    content,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('user_id', currentUser.id);
+            await withRetry(async () => {
+                const { error } = await supabaseClient
+                    .from('notes')
+                    .update({
+                        content,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('user_id', currentUser.id);
 
-            if (error) console.error('Error saving notes:', error);
+                if (error) throw error;
+            });
         } else {
-            localStorage.setItem('0500_notes', content);
+            safeSetItem('0500_notes', content);
         }
     },
 
@@ -363,6 +405,6 @@ const DataService = {
     },
 
     saveCollapsedState(state) {
-        localStorage.setItem('0500_goals_collapsed', JSON.stringify(state));
+        safeSetItem('0500_goals_collapsed', JSON.stringify(state));
     }
 };

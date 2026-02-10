@@ -140,6 +140,13 @@ function attachGoalListeners(item, sectionKey, group) {
             textEl.blur();
         }
     });
+
+    // Sanitize paste: strip HTML formatting, insert plain text only
+    textEl.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const text = e.clipboardData.getData('text/plain');
+        document.execCommand('insertText', false, text);
+    });
 }
 
 // Reindex goal items after add/remove

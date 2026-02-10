@@ -76,7 +76,7 @@ async function loadSleepSettingsAsync() {
 
 function saveSleepSettings(settings) {
     sleepSettingsCache = settings;
-    localStorage.setItem(SLEEP_STORAGE_KEY, JSON.stringify(settings));
+    safeSetItem(SLEEP_STORAGE_KEY, JSON.stringify(settings));
 
     // Async save to cloud
     if (typeof DataService !== 'undefined' && isSignedIn()) {
@@ -115,7 +115,7 @@ async function loadSleepLogAsync() {
 
 function saveSleepLog(log) {
     sleepLogCache = log;
-    localStorage.setItem(SLEEP_LOG_KEY, JSON.stringify(log));
+    safeSetItem(SLEEP_LOG_KEY, JSON.stringify(log));
 
     // Async save to cloud
     if (typeof DataService !== 'undefined' && isSignedIn()) {
