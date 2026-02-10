@@ -21,6 +21,15 @@ async function saveNotesContent(content) {
     }, 500);
 }
 
+// Flush pending debounced save immediately (called before sign-out / page unload)
+async function flushNotesSave() {
+    if (saveTimeout) {
+        clearTimeout(saveTimeout);
+        saveTimeout = null;
+        await DataService.saveNotes(notesCache);
+    }
+}
+
 async function getNotesPreview() {
     const notes = await loadNotesContent();
     if (!notes.trim()) return '';

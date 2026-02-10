@@ -75,6 +75,7 @@ async function renderSchedule() {
                     maxlength="7"
                     autocomplete="off"
                     data-form-type="other"
+                    aria-label="Time for row ${index + 1}"
                     readonly
                 >
                 <div class="schedule-row-divider"></div>
@@ -86,6 +87,7 @@ async function renderSchedule() {
                     data-field="activity"
                     autocomplete="off"
                     data-form-type="other"
+                    aria-label="Activity for row ${index + 1}"
                     readonly
                 >
             </div>
@@ -110,10 +112,13 @@ function attachScheduleListeners() {
         const inputs = row.querySelectorAll('input');
 
         inputs.forEach(input => {
-            // Remove readonly on focus (prevents iOS autofill popup)
+            // Remove readonly on focus, restore on blur (prevents iOS autofill popup)
             input.addEventListener('focus', () => {
                 input.removeAttribute('readonly');
             });
+            input.addEventListener('blur', () => {
+                input.setAttribute('readonly', '');
+            }, { capture: true });
 
             // Save on input change
             input.addEventListener('input', () => {
@@ -230,6 +235,22 @@ async function saveCurrentSchedule() {
     }, 500);
 }
 
+// Flush pending debounced save immediately (called before sign-out / page unload)
+async function flushScheduleSave() {
+    if (scheduleSaveTimeout) {
+        clearTimeout(scheduleSaveTimeout);
+        scheduleSaveTimeout = null;
+        const rows = document.querySelectorAll('.schedule-row');
+        const entries = [];
+        rows.forEach(row => {
+            const time = row.querySelector('[data-field="time"]')?.value || '';
+            const activity = row.querySelector('[data-field="activity"]')?.value || '';
+            entries.push({ time, activity });
+        });
+        await saveScheduleEntries(entries);
+    }
+}
+
 async function initSchedule() {
     // Check if we need to show new day banner
     const isNewDay = checkAndResetSchedule();
@@ -259,6 +280,25 @@ async function initSchedule() {
 
     // Schedule midnight reset check
     scheduleMidnightReset();
+
+    // Flush pending save on page unload to prevent data loss
+    window.addEventListener('beforeunload', () => {
+        if (scheduleSaveTimeout) {
+            clearTimeout(scheduleSaveTimeout);
+            // Use sendBeacon or sync XHR for last-chance save
+            const rows = document.querySelectorAll('.schedule-row');
+            const entries = [];
+            rows.forEach(row => {
+                entries.push({
+                    time: row.querySelector('[data-field="time"]')?.value || '',
+                    activity: row.querySelector('[data-field="activity"]')?.value || ''
+                });
+            });
+            scheduleCache = entries;
+            // Save to localStorage synchronously as last resort
+            localStorage.setItem('0500_schedule_entries', JSON.stringify(entries));
+        }
+    });
 }
 
 let newDayBannerListenersAttached = false;

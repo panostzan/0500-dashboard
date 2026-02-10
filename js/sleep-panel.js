@@ -8,6 +8,7 @@ let sleepPanelHeatmapYear = new Date().getFullYear();
 let sleepPanelInitialized = false;
 let sleepPanelUpdateInterval = null;
 let sleepPanelLog = []; // Local cache for sleep panel
+let _sleepSaveInProgress = false; // Prevent overlapping sleep saves
 
 // Sync panel cache from sleep.js cache or localStorage (after log operations)
 function syncSleepPanelFromLocal() {
@@ -392,7 +393,9 @@ function updateSleepPanelButtonStates() {
 
     if (bedBtn && wakeBtn) {
         bedBtn.classList.toggle('disabled', pendingBedtime);
+        bedBtn.disabled = pendingBedtime;
         wakeBtn.classList.toggle('disabled', !pendingBedtime);
+        wakeBtn.disabled = !pendingBedtime;
     }
 }
 
@@ -648,6 +651,43 @@ function initSleepTimelineModal() {
     document.addEventListener('mouseup', endDrag);
     document.addEventListener('touchmove', onDrag, { passive: false });
     document.addEventListener('touchend', endDrag);
+
+    // Keyboard navigation for timeline handles (Arrow keys adjust by 15 min)
+    handleLeft.setAttribute('tabindex', '0');
+    handleLeft.setAttribute('role', 'slider');
+    handleLeft.setAttribute('aria-label', 'Bedtime');
+    handleRight.setAttribute('tabindex', '0');
+    handleRight.setAttribute('role', 'slider');
+    handleRight.setAttribute('aria-label', 'Wake time');
+
+    function handleKeyNav(handle, e) {
+        const step = e.shiftKey ? 60 : 15; // Shift = 1 hour steps
+        let changed = false;
+        if (handle === 'left') {
+            if (e.key === 'ArrowLeft') { sleepTimelineBedMin -= step; changed = true; }
+            if (e.key === 'ArrowRight') { sleepTimelineBedMin += step; changed = true; }
+            if (changed) {
+                while (sleepTimelineBedMin < 0) { sleepTimelineBedHour--; sleepTimelineBedMin += 60; }
+                while (sleepTimelineBedMin >= 60) { sleepTimelineBedHour++; sleepTimelineBedMin -= 60; }
+                sleepTimelineBedHour = ((sleepTimelineBedHour % 24) + 24) % 24;
+            }
+        } else {
+            if (e.key === 'ArrowLeft') { sleepTimelineWakeMin -= step; changed = true; }
+            if (e.key === 'ArrowRight') { sleepTimelineWakeMin += step; changed = true; }
+            if (changed) {
+                while (sleepTimelineWakeMin < 0) { sleepTimelineWakeHour--; sleepTimelineWakeMin += 60; }
+                while (sleepTimelineWakeMin >= 60) { sleepTimelineWakeHour++; sleepTimelineWakeMin -= 60; }
+                sleepTimelineWakeHour = ((sleepTimelineWakeHour % 24) + 24) % 24;
+            }
+        }
+        if (changed) {
+            e.preventDefault();
+            updateSleepTimelineDisplay();
+        }
+    }
+
+    handleLeft.addEventListener('keydown', (e) => handleKeyNav('left', e));
+    handleRight.addEventListener('keydown', (e) => handleKeyNav('right', e));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -685,7 +725,9 @@ async function initSleepPanel() {
 
     if (bedBtn) {
         bedBtn.addEventListener('click', async function() {
-            if (!this.classList.contains('disabled')) {
+            if (this.disabled || _sleepSaveInProgress) return;
+            _sleepSaveInProgress = true;
+            try {
                 const bedtime = await logBedtime();
                 this.innerHTML = `Logged ${formatSleepPanelTime(bedtime.getHours(), bedtime.getMinutes())}`;
                 setTimeout(() => {
@@ -693,13 +735,17 @@ async function initSleepPanel() {
                 }, 2000);
                 syncSleepPanelFromLocal();
                 refreshSleepPanel();
+            } finally {
+                _sleepSaveInProgress = false;
             }
         });
     }
 
     if (wakeBtn) {
         wakeBtn.addEventListener('click', async function() {
-            if (!this.classList.contains('disabled')) {
+            if (this.disabled || _sleepSaveInProgress) return;
+            _sleepSaveInProgress = true;
+            try {
                 const wakeTime = await logWakeUp();
                 this.innerHTML = `Logged ${formatSleepPanelTime(wakeTime.getHours(), wakeTime.getMinutes())}`;
                 setTimeout(() => {
@@ -707,6 +753,8 @@ async function initSleepPanel() {
                 }, 2000);
                 syncSleepPanelFromLocal();
                 refreshSleepPanel();
+            } finally {
+                _sleepSaveInProgress = false;
             }
         });
     }
@@ -782,10 +830,17 @@ async function initSleepPanel() {
 
     // Listen for user changes to reload data (fires after sign in/out)
     window.addEventListener('userChanged', async () => {
+        // Clear interval to prevent stale updates during reload
+        if (sleepPanelUpdateInterval) {
+            clearInterval(sleepPanelUpdateInterval);
+            sleepPanelUpdateInterval = null;
+        }
         // Force reload data from cloud
         await loadSleepPanelData();
         await loadSleepSettingsAsync();
         refreshSleepPanel();
+        // Restart interval
+        sleepPanelUpdateInterval = setInterval(renderSleepPanelCountdown, 1000);
     });
 
     sleepPanelInitialized = true;

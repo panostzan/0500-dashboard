@@ -4,6 +4,7 @@
 
 let goalsCache = null;
 let swipeState = { el: null, startX: 0, currentX: 0 };
+let _pendingGoalSave = null; // Track in-flight save for sign-out guard
 
 async function loadGoals() {
     if (!goalsCache) {
@@ -14,7 +15,14 @@ async function loadGoals() {
 
 async function saveGoals(goals) {
     goalsCache = goals;
-    await DataService.saveGoals(goals);
+    _pendingGoalSave = DataService.saveGoals(goals);
+    await _pendingGoalSave;
+    _pendingGoalSave = null;
+}
+
+// Wait for any in-flight save (called before sign-out)
+async function flushGoalSaves() {
+    if (_pendingGoalSave) await _pendingGoalSave;
 }
 
 function loadCollapsedState() {
@@ -35,7 +43,7 @@ function createGoalItem(item, index, isNew = false) {
     div.innerHTML = `
         <div class="swipe-delete-bg">Delete</div>
         <div class="goal-content-wrapper">
-            <div class="goal-checkbox"></div>
+            <div class="goal-checkbox" role="checkbox" aria-checked="${item?.checked ? 'true' : 'false'}" tabindex="0"></div>
             <span class="goal-text" contenteditable="true" spellcheck="false" autocomplete="off" data-form-type="other" ${isNew ? 'data-placeholder="+ add goal"' : ''}>${item?.text || ''}</span>
         </div>
     `;
@@ -58,20 +66,34 @@ function attachGoalListeners(item, sectionKey, group) {
     const textEl = item.querySelector('.goal-text');
     const isNew = item.classList.contains('new-goal');
 
-    // Checkbox toggle with glow animation (optimistic UI - toggle instantly, save in background)
-    checkbox.addEventListener('click', (e) => {
-        e.stopPropagation();
+    // Checkbox toggle (optimistic UI - toggle instantly, save in background)
+    function toggleCheckbox() {
         if (isNew) return;
 
         // Toggle visual state immediately
         item.classList.toggle('checked');
+        const isChecked = item.classList.contains('checked');
+        checkbox.setAttribute('aria-checked', isChecked ? 'true' : 'false');
 
         // Save in background (don't await)
         const index = parseInt(item.dataset.index);
         loadGoals().then(goals => {
-            goals[sectionKey][index].checked = !goals[sectionKey][index].checked;
+            goals[sectionKey][index].checked = isChecked;
             saveGoals(goals);
         });
+    }
+
+    checkbox.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleCheckbox();
+    });
+
+    // Keyboard: Space/Enter toggles checkbox
+    checkbox.addEventListener('keydown', (e) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            toggleCheckbox();
+        }
     });
 
     // Text editing - save on blur (optimistic UI - update DOM instantly, save in background)

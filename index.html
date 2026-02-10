@@ -37,7 +37,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&family=Inter:wght@200;300;400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/styles.css?v=15">
+    <link rel="stylesheet" href="css/styles.css?v=16">
 </head>
 <body>
 
@@ -48,16 +48,16 @@
 <!-- Mobile Navigation (hidden on desktop) -->
 <nav class="mobile-nav" id="mobile-nav">
     <div class="mobile-nav-tabs">
-        <button class="mobile-tab active" data-tab="goals">
-            <span class="tab-icon">◎</span>
+        <button class="mobile-tab active" data-tab="goals" aria-label="Goals tab">
+            <span class="tab-icon" aria-hidden="true">◎</span>
             <span class="tab-label">Goals</span>
         </button>
-        <button class="mobile-tab" data-tab="schedule">
-            <span class="tab-icon">▤</span>
+        <button class="mobile-tab" data-tab="schedule" aria-label="Schedule tab">
+            <span class="tab-icon" aria-hidden="true">▤</span>
             <span class="tab-label">Schedule</span>
         </button>
-        <button class="mobile-tab" data-tab="sleep">
-            <span class="tab-icon">◐</span>
+        <button class="mobile-tab" data-tab="sleep" aria-label="Sleep tab">
+            <span class="tab-icon" aria-hidden="true">◐</span>
             <span class="tab-label">Sleep</span>
         </button>
     </div>
@@ -367,10 +367,10 @@
     <div class="modal-content modal-notes">
         <div class="modal-header">
             <span class="modal-title">NOTES</span>
-            <button class="modal-close" id="notes-modal-close">&times;</button>
+            <button class="modal-close" id="notes-modal-close" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body">
-            <textarea class="notes-input" id="notes-input" placeholder="quick thoughts..." spellcheck="false" autocomplete="off" data-form-type="other" readonly></textarea>
+            <textarea class="notes-input" id="notes-input" placeholder="quick thoughts..." spellcheck="false" autocomplete="off" data-form-type="other" aria-label="Notes (tap to edit)" readonly></textarea>
         </div>
     </div>
 </div>
@@ -384,7 +384,7 @@
                 <div class="status-indicator status-active amber" id="sleep-tracking-indicator"></div>
                 <span class="modal-title">REST</span>
             </div>
-            <button class="modal-close" id="sleep-modal-close">&times;</button>
+            <button class="modal-close" id="sleep-modal-close" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body">
             <div class="sleep-dashboard">
@@ -533,21 +533,20 @@
 
 <!-- Scripts -->
 <script src="js/config.js?v=4"></script>
-<script src="js/supabase.js?v=4"></script>
+<script src="js/supabase.js?v=5"></script>
 <script src="js/data.js?v=4"></script>
 <script src="js/auth.js?v=4"></script>
 <script src="js/animations.js?v=4"></script>
-<script src="js/lava-lamp.js?v=5"></script>
 <script src="js/clock.js?v=4"></script>
-<script src="js/goals.js?v=6"></script>
-<script src="js/schedule.js?v=4"></script>
+<script src="js/goals.js?v=7"></script>
+<script src="js/schedule.js?v=5"></script>
 <script src="js/timer.js?v=4"></script>
 <script src="js/globe.js?v=8"></script>
 <script src="js/hud.js?v=4"></script>
 <script src="js/weather.js?v=4"></script>
-<script src="js/notes.js?v=4"></script>
+<script src="js/notes.js?v=5"></script>
 <script src="js/sleep.js?v=8"></script>
-<script src="js/sleep-panel.js?v=10"></script>
+<script src="js/sleep-panel.js?v=11"></script>
 <script src="js/mobile.js?v=9"></script>
 <script src="js/main.js?v=5"></script>
 

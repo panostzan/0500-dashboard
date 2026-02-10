@@ -83,8 +83,11 @@ async function signInWithGoogle() {
     return data;
 }
 
-// Sign out
+// Sign out (flush pending saves first to avoid data loss)
 async function signOut() {
+    if (typeof flushGoalSaves === 'function') await flushGoalSaves();
+    if (typeof flushScheduleSave === 'function') await flushScheduleSave();
+    if (typeof flushNotesSave === 'function') await flushNotesSave();
     const { error } = await supabaseClient.auth.signOut();
     if (error) throw error;
 }

@@ -1802,6 +1802,11 @@ html, body {
     color: var(--accent);
 }
 
+.modal-close:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
 .modal-body {
     padding: 1.5rem;
 }

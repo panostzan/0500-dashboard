@@ -2,7 +2,7 @@
 // SERVICE WORKER - Offline Support for 0500 PWA
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = '0500-v12';
+const CACHE_NAME = '0500-v13';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache for offline use
@@ -17,7 +17,6 @@ const STATIC_ASSETS = [
     '/js/data.js',
     '/js/auth.js',
     '/js/animations.js',
-    '/js/lava-lamp.js',
     '/js/clock.js',
     '/js/goals.js',
     '/js/schedule.js',
@@ -81,6 +80,22 @@ self.addEventListener('fetch', (event) => {
                             headers: { 'Content-Type': 'application/json' }
                         });
                     })
+            );
+            return;
+        }
+        // Cache Google Fonts with stale-while-revalidate
+        if (url.hostname.includes('fonts.googleapis.com') || url.hostname.includes('fonts.gstatic.com')) {
+            event.respondWith(
+                caches.match(request).then(cached => {
+                    const fetchPromise = fetch(request).then(response => {
+                        if (response && response.status === 200) {
+                            const clone = response.clone();
+                            caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+                        }
+                        return response;
+                    }).catch(() => cached);
+                    return cached || fetchPromise;
+                })
             );
             return;
         }
