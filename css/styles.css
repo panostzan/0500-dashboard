@@ -1505,6 +1505,190 @@ html, body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
+   WEEKLY REVIEW MODAL
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.modal-review {
+    width: 480px;
+    max-width: 90vw;
+}
+
+.modal-review .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.25rem;
+}
+
+.review-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 1.1rem 1.25rem;
+}
+
+.review-card-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    color: var(--hud-amber);
+    margin-bottom: 0.9rem;
+}
+
+.review-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.7rem 1.5rem;
+}
+
+.review-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.review-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.review-stat-value {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.review-stat-sub {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.review-score-good { color: var(--success); }
+.review-score-ok { color: var(--warning); }
+.review-score-poor { color: var(--danger); }
+
+/* Daily goals summary */
+.review-goals-summary {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+
+.review-goals-rate {
+    font-size: 1.6rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.review-goals-detail {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* Day-by-day bars */
+.review-day-bars {
+    display: flex;
+    gap: 0.35rem;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+}
+
+.review-day-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    gap: 0.25rem;
+}
+
+.review-day-bar-track {
+    width: 100%;
+    max-width: 32px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+}
+
+.review-day-bar-fill {
+    width: 100%;
+    border-radius: 3px;
+    min-height: 2px;
+    transition: height 0.4s ease;
+}
+
+.review-day-bar-fill.good { background: var(--success); }
+.review-day-bar-fill.ok { background: var(--warning); }
+.review-day-bar-fill.poor { background: var(--danger); }
+
+.review-day-label {
+    font-size: 0.55rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.review-day-count {
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Mid-term section */
+.review-midterm-section {
+    margin-top: 1rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--card-border);
+}
+
+.review-subsection-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.5rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.review-midterm-item {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    padding: 0.3rem 0;
+}
+
+.review-midterm-item em {
+    color: var(--accent);
+    font-style: normal;
+    font-weight: 500;
+}
+
+.review-empty {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 1rem 0;
+}
+
+/* Review chip */
+.chip-review .chip-label {
+    color: var(--warm-purple);
+}
+
+.chip-review:hover {
+    border-color: var(--warm-purple);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
    SLEEP DASHBOARD MODAL
    ═══════════════════════════════════════════════════════════════════════════════ */
 

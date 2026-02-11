@@ -309,12 +309,16 @@ function showNewDayBanner() {
         newDayBannerListenersAttached = true;
 
         document.getElementById('new-day-clear-btn')?.addEventListener('click', async () => {
+            // Snapshot daily goals before clearing for the new day
+            if (typeof snapshotDailyGoals === 'function') await snapshotDailyGoals();
             await clearScheduleFull();
             await renderSchedule();
             banner.style.display = 'none';
         });
 
-        document.getElementById('new-day-keep-btn')?.addEventListener('click', () => {
+        document.getElementById('new-day-keep-btn')?.addEventListener('click', async () => {
+            // Snapshot daily goals even if keeping schedule
+            if (typeof snapshotDailyGoals === 'function') await snapshotDailyGoals();
             localStorage.setItem(SCHEDULE_DATE_KEY, getTodayDateString());
             banner.style.display = 'none';
         });

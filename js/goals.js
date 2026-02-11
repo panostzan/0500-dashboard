@@ -9,6 +9,7 @@ let _pendingGoalSave = null; // Track in-flight save for sign-out guard
 async function loadGoals() {
     if (!goalsCache) {
         goalsCache = await DataService.loadGoals();
+        hydrateMidTermTimestamps(goalsCache);
     }
     return goalsCache;
 }
@@ -79,6 +80,13 @@ function attachGoalListeners(item, sectionKey, group) {
         const index = parseInt(item.dataset.index);
         loadGoals().then(goals => {
             goals[sectionKey][index].checked = isChecked;
+            // Track completedAt for mid-term goals (for weekly review)
+            if (sectionKey === 'midTerm') {
+                const ts = isChecked ? new Date().toISOString() : null;
+                goals[sectionKey][index].completedAt = ts;
+                // Also persist to localStorage for cross-session tracking
+                _saveMidTermTimestamp(goals[sectionKey][index].text, ts);
+            }
             saveGoals(goals);
         });
     }
@@ -312,6 +320,65 @@ async function renderGoals() {
             });
         }
     });
+}
+
+// Mid-term completion timestamps (persisted in localStorage for weekly review)
+function _saveMidTermTimestamp(text, ts) {
+    const map = JSON.parse(localStorage.getItem('0500_midterm_completed') || '{}');
+    if (ts) {
+        map[text] = ts;
+    } else {
+        delete map[text];
+    }
+    safeSetItem('0500_midterm_completed', JSON.stringify(map));
+}
+
+function _loadMidTermTimestamps() {
+    return JSON.parse(localStorage.getItem('0500_midterm_completed') || '{}');
+}
+
+// Hydrate completedAt from localStorage into goalsCache (after load)
+function hydrateMidTermTimestamps(goals) {
+    const map = _loadMidTermTimestamps();
+    if (goals.midTerm) {
+        goals.midTerm.forEach(g => {
+            if (g.checked && map[g.text] && !g.completedAt) {
+                g.completedAt = map[g.text];
+            }
+        });
+    }
+}
+
+// Snapshot daily goals completion count to history, then uncheck all daily goals
+async function snapshotDailyGoals() {
+    const goals = await loadGoals();
+    const daily = goals.daily;
+    if (daily.length === 0) return;
+
+    const today = new Date().toISOString().split('T')[0];
+    const completed = daily.filter(g => g.checked).length;
+    const total = daily.length;
+
+    // Save to history
+    const history = DataService.loadDailyGoalHistory();
+    // Avoid duplicate entries for the same date
+    const existing = history.findIndex(h => h.date === today);
+    if (existing >= 0) {
+        history[existing] = { date: today, completed, total };
+    } else {
+        history.push({ date: today, completed, total });
+    }
+    // Keep last 90 days max
+    if (history.length > 90) history.splice(0, history.length - 90);
+    DataService.saveDailyGoalHistory(history);
+
+    // Uncheck all daily goals
+    goals.daily = daily.map(g => ({ ...g, checked: false }));
+    await saveGoals(goals);
+
+    // Re-render goals UI
+    goalsCache = null;
+    await renderGoals();
 }
 
 async function initGoals() {

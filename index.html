@@ -38,7 +38,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&family=Inter:wght@200;300;400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/styles.css?v=16">
+    <link rel="stylesheet" href="css/styles.css?v=17">
 </head>
 <body>
 
@@ -354,6 +354,10 @@
             <span>SYNCING</span>
         </div>
 
+        <button class="chip chip-review" id="chip-review">
+            <span class="chip-label">REVIEW</span>
+        </button>
+
         <button class="chip chip-rest" id="chip-rest">
             <span class="chip-label">REST</span>
             <span class="chip-value" id="chip-rest-countdown">0:00:00</span>
@@ -518,6 +522,20 @@
     </div>
 </div>
 
+<!-- Weekly Review Modal -->
+<div class="modal-overlay" id="review-modal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-review">
+        <div class="modal-header">
+            <span class="modal-title">WEEK IN REVIEW</span>
+            <button class="modal-close" id="review-modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body" id="review-modal-body">
+            <!-- Populated by weekly-review.js -->
+        </div>
+    </div>
+</div>
+
 <div class="timer-overlay" id="timer-overlay">
     <canvas class="timer-globe" id="timer-globe-canvas"></canvas>
     <div class="timer-display" id="timer-display">25:00</div>
@@ -534,12 +552,12 @@
 <!-- Scripts -->
 <script src="js/config.js?v=4"></script>
 <script src="js/supabase.js?v=5"></script>
-<script src="js/data.js?v=5"></script>
+<script src="js/data.js?v=6"></script>
 <script src="js/auth.js?v=4"></script>
 <script src="js/animations.js?v=4"></script>
 <script src="js/clock.js?v=4"></script>
-<script src="js/goals.js?v=7"></script>
-<script src="js/schedule.js?v=6"></script>
+<script src="js/goals.js?v=8"></script>
+<script src="js/schedule.js?v=7"></script>
 <script src="js/timer.js?v=4"></script>
 <script src="js/globe.js?v=8"></script>
 <script src="js/hud.js?v=4"></script>
@@ -547,8 +565,9 @@
 <script src="js/notes.js?v=5"></script>
 <script src="js/sleep.js?v=9"></script>
 <script src="js/sleep-panel.js?v=11"></script>
+<script src="js/weekly-review.js?v=1"></script>
 <script src="js/mobile.js?v=9"></script>
-<script src="js/main.js?v=6"></script>
+<script src="js/main.js?v=7"></script>
 
 </body>
 </html>

@@ -194,6 +194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             updateSleepTrackingStatus();
             initBedtimeNotifications();
         });
+        deferInit(() => initWeeklyReview());
 
         // Initialize HUD elements (globe arcs)
         const hud = initHUD();

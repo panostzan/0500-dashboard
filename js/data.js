@@ -395,6 +395,20 @@ const DataService = {
     },
 
     // ═══════════════════════════════════════════════════════════════════════════
+    // DAILY GOAL HISTORY (local only - weekly review data)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    loadDailyGoalHistory() {
+        const saved = localStorage.getItem('0500_daily_goal_history');
+        if (saved) return JSON.parse(saved);
+        return [];
+    },
+
+    saveDailyGoalHistory(log) {
+        safeSetItem('0500_daily_goal_history', JSON.stringify(log));
+    },
+
+    // ═══════════════════════════════════════════════════════════════════════════
     // GOALS COLLAPSED STATE (local only - UI preference)
     // ═══════════════════════════════════════════════════════════════════════════
 
