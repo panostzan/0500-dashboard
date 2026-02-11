@@ -282,6 +282,21 @@ const DataService = {
         }
     },
 
+    async deleteSleepEntry(date) {
+        if (isSignedIn()) {
+            await withRetry(async () => {
+                const { error } = await supabaseClient
+                    .from('sleep_log')
+                    .delete()
+                    .eq('user_id', currentUser.id)
+                    .eq('date', date);
+
+                if (error) throw error;
+            });
+        }
+        // localStorage handled by caller
+    },
+
     async addSleepEntry(entry) {
         if (isSignedIn()) {
             await withRetry(async () => {

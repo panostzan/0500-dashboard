@@ -146,7 +146,6 @@ window.addEventListener('storage', (e) => {
             break;
         case '0500_sleep_log':
             if (typeof sleepLogCache !== 'undefined') sleepLogCache = null;
-            if (typeof syncSleepPanelFromLocal === 'function') syncSleepPanelFromLocal();
             break;
     }
 });

@@ -116,16 +116,6 @@ async function loadSleepLogAsync() {
 function saveSleepLog(log) {
     sleepLogCache = log;
     safeSetItem(SLEEP_LOG_KEY, JSON.stringify(log));
-
-    // Async save to cloud
-    if (typeof DataService !== 'undefined' && isSignedIn()) {
-        DataService.saveSleepLog(log.map(e => ({
-            date: e.date,
-            bedtime: e.bedtime,
-            wakeTime: e.wakeTime,
-            hours: e.duration
-        })));
-    }
 }
 
 // Clear cache when user changes
@@ -167,6 +157,18 @@ async function logBedtime() {
     }
 
     saveSleepLog(log);
+
+    // Save the modified entry to cloud
+    const savedEntry = log[log.length - 1];
+    if (typeof DataService !== 'undefined' && isSignedIn()) {
+        await DataService.addSleepEntry({
+            date: savedEntry.date,
+            bedtime: savedEntry.bedtime,
+            wakeTime: savedEntry.wakeTime,
+            hours: savedEntry.duration
+        });
+    }
+
     updateSleepDashboard();
 
     // Update tracking status indicator
@@ -185,10 +187,12 @@ async function logWakeUp() {
     // Find the most recent entry with bedtime but no wake time
     const lastEntry = log[log.length - 1];
 
+    let savedEntry;
     if (lastEntry && lastEntry.bedtime && !lastEntry.wakeTime) {
         lastEntry.wakeTime = now.toISOString();
         const bedtime = new Date(lastEntry.bedtime);
         lastEntry.duration = (now - bedtime) / 1000 / 60 / 60; // hours
+        savedEntry = lastEntry;
         saveSleepLog(log);
     } else {
         // No bedtime logged, estimate based on settings
@@ -196,13 +200,24 @@ async function logWakeUp() {
         let estimatedBedtime = new Date(now);
         estimatedBedtime.setHours(settings.wakeHour - settings.targetSleepHours);
 
-        log.push({
+        savedEntry = {
             date: now.toISOString().split('T')[0],
             bedtime: estimatedBedtime.toISOString(),
             wakeTime: now.toISOString(),
             duration: settings.targetSleepHours
-        });
+        };
+        log.push(savedEntry);
         saveSleepLog(log);
+    }
+
+    // Save the modified entry to cloud
+    if (typeof DataService !== 'undefined' && isSignedIn()) {
+        await DataService.addSleepEntry({
+            date: savedEntry.date,
+            bedtime: savedEntry.bedtime,
+            wakeTime: savedEntry.wakeTime,
+            hours: savedEntry.duration
+        });
     }
 
     updateSleepDashboard();
@@ -608,7 +623,8 @@ function getLastNDaysLog(n = 7) {
             date: dateStr,
             dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
             duration: entry ? entry.duration : null,
-            bedtime: entry ? new Date(entry.bedtime) : null
+            bedtime: entry ? new Date(entry.bedtime) : null,
+            wakeTime: entry ? new Date(entry.wakeTime) : null
         });
     }
 
@@ -1375,31 +1391,6 @@ function updateSleepDisplay() {
         }
     }
 
-    // Update modal state
-    const modal = document.getElementById('sleep-modal');
-    const modalContent = modal?.querySelector('.modal-sleep');
-    if (modalContent) {
-        modalContent.classList.remove('state-relaxed', 'state-caution', 'state-warning', 'state-urgent');
-        modalContent.classList.add(`state-${state}`);
-    }
-
-    // Check for pending bedtime
-    const log = loadSleepLog();
-    const lastEntry = log[log.length - 1];
-    const pendingBedtime = lastEntry && lastEntry.bedtime && !lastEntry.wakeTime;
-
-    const goingToBedBtn = document.getElementById('btn-going-to-bed');
-    const wokeUpBtn = document.getElementById('btn-woke-up');
-
-    if (goingToBedBtn && wokeUpBtn) {
-        if (pendingBedtime) {
-            goingToBedBtn.classList.add('disabled');
-            wokeUpBtn.classList.remove('disabled');
-        } else {
-            goingToBedBtn.classList.remove('disabled');
-            wokeUpBtn.classList.add('disabled');
-        }
-    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1502,210 +1493,25 @@ function importSleepData() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// MODAL FUNCTIONS
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function openSleepModal() {
-    const modal = document.getElementById('sleep-modal');
-    modal.classList.add('active');
-    document.body.style.overflow = 'hidden';
-    updateSleepDashboard();
-}
-
-function closeSleepModal() {
-    const modal = document.getElementById('sleep-modal');
-    modal.classList.remove('active');
-    document.body.style.overflow = '';
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
 // INITIALIZATION
 // ═══════════════════════════════════════════════════════════════════════════════
 
 async function initSleepCard() {
     const chip = document.getElementById('chip-rest');
-    const modal = document.getElementById('sleep-modal');
-    const backdrop = modal.querySelector('.modal-backdrop');
-    const closeBtn = document.getElementById('sleep-modal-close');
-    const wakeInput = document.getElementById('sleep-wake-input');
-    const hoursInput = document.getElementById('sleep-hours-input');
-    const goingToBedBtn = document.getElementById('btn-going-to-bed');
-    const wokeUpBtn = document.getElementById('btn-woke-up');
-    const manualDateInput = document.getElementById('manual-sleep-date');
-    const manualBedInput = document.getElementById('manual-sleep-bed');
-    const manualWakeInput = document.getElementById('manual-sleep-wake');
-    const manualAddBtn = document.getElementById('btn-add-manual-sleep');
 
-    // Load cloud data first (populates cache for sync functions)
+    // Load cloud data first (populates cache)
     await loadSleepLogAsync();
     await loadSleepSettingsAsync();
-
-    // Load settings into inputs
-    const settings = loadSleepSettings();
-    if (wakeInput) {
-        const h = settings.wakeHour.toString().padStart(2, '0');
-        const m = settings.wakeMinute.toString().padStart(2, '0');
-        wakeInput.value = `${h}:${m}`;
-    }
-    if (hoursInput) {
-        hoursInput.value = settings.targetSleepHours;
-    }
 
     // Navigate to sleep page on chip click
     chip.addEventListener('click', () => {
         window.location.href = 'sleep.html';
     });
 
-    // Close modal
-    closeBtn.addEventListener('click', closeSleepModal);
-    backdrop.addEventListener('click', closeSleepModal);
-
-    // Close on Escape key
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && modal.classList.contains('active')) {
-            closeSleepModal();
-        }
-    });
-
-    // Quick action buttons
-    if (goingToBedBtn) {
-        goingToBedBtn.addEventListener('click', async () => {
-            if (!goingToBedBtn.classList.contains('disabled')) {
-                const bedtime = await logBedtime();
-                goingToBedBtn.classList.add('disabled');
-                wokeUpBtn.classList.remove('disabled');
-
-                // Show feedback
-                goingToBedBtn.textContent = `Logged ${formatTime12Hour(bedtime.getHours(), bedtime.getMinutes())}`;
-                setTimeout(() => {
-                    goingToBedBtn.innerHTML = '<span class="btn-icon">🌙</span> Going to bed';
-                }, 2000);
-            }
-        });
-    }
-
-    if (wokeUpBtn) {
-        wokeUpBtn.addEventListener('click', async () => {
-            if (!wokeUpBtn.classList.contains('disabled')) {
-                const wakeTime = await logWakeUp();
-                wokeUpBtn.classList.add('disabled');
-                goingToBedBtn.classList.remove('disabled');
-
-                // Show feedback
-                wokeUpBtn.textContent = `Logged ${formatTime12Hour(wakeTime.getHours(), wakeTime.getMinutes())}`;
-                setTimeout(() => {
-                    wokeUpBtn.innerHTML = '<span class="btn-icon">☀️</span> Just woke up';
-                }, 2000);
-            }
-        });
-    }
-
-    // Manual entry - set default date to yesterday
-    if (manualDateInput) {
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        manualDateInput.value = yesterday.toISOString().split('T')[0];
-        manualDateInput.max = new Date().toISOString().split('T')[0]; // Can't add future dates
-    }
-
-    // Manual entry button
-    if (manualAddBtn) {
-        manualAddBtn.addEventListener('click', () => {
-            const date = manualDateInput.value;
-            const bedTime = manualBedInput.value;
-            const wakeTime = manualWakeInput.value;
-
-            if (!date || !bedTime || !wakeTime) {
-                return;
-            }
-
-            // Create bedtime datetime (night before)
-            const bedDate = new Date(date);
-            const [bedH, bedM] = bedTime.split(':').map(Number);
-            bedDate.setHours(bedH, bedM, 0, 0);
-
-            // If bedtime is after noon, it's the night before
-            // If bedtime is before noon, assume it's early morning same day (unusual but possible)
-            if (bedH >= 12) {
-                // Bedtime is PM of previous day - no adjustment needed
-            }
-
-            // Create wake datetime
-            const wakeDate = new Date(date);
-            const [wakeH, wakeM] = wakeTime.split(':').map(Number);
-            wakeDate.setHours(wakeH, wakeM, 0, 0);
-
-            // If wake time is earlier than bed time, bed was previous day
-            if (wakeDate <= bedDate) {
-                bedDate.setDate(bedDate.getDate() - 1);
-            }
-
-            // Calculate duration
-            const duration = (wakeDate - bedDate) / 1000 / 60 / 60;
-
-            // Add to log
-            const log = loadSleepLog();
-
-            // Check if entry for this date already exists
-            const existingIdx = log.findIndex(e => e.date === date);
-            const entry = {
-                date: date,
-                bedtime: bedDate.toISOString(),
-                wakeTime: wakeDate.toISOString(),
-                duration: duration
-            };
-
-            if (existingIdx >= 0) {
-                log[existingIdx] = entry;
-            } else {
-                log.push(entry);
-                // Sort by date
-                log.sort((a, b) => new Date(a.date) - new Date(b.date));
-            }
-
-            saveSleepLog(log);
-            updateSleepDashboard();
-
-            // Show feedback
-            manualAddBtn.textContent = '✓';
-            manualAddBtn.style.background = 'var(--check-green)';
-            setTimeout(() => {
-                manualAddBtn.textContent = '+';
-                manualAddBtn.style.background = '';
-                // Move date back one more day for next entry
-                const nextDate = new Date(date);
-                nextDate.setDate(nextDate.getDate() - 1);
-                manualDateInput.value = nextDate.toISOString().split('T')[0];
-            }, 1000);
-        });
-    }
-
-    // Save settings on change
-    if (wakeInput) {
-        wakeInput.addEventListener('change', () => {
-            const [h, m] = wakeInput.value.split(':').map(Number);
-            const settings = loadSleepSettings();
-            settings.wakeHour = h;
-            settings.wakeMinute = m;
-            saveSleepSettings(settings);
-            updateSleepDisplay();
-        });
-    }
-
-    if (hoursInput) {
-        hoursInput.addEventListener('change', () => {
-            const settings = loadSleepSettings();
-            settings.targetSleepHours = parseFloat(hoursInput.value) || 7.5;
-            saveSleepSettings(settings);
-            updateSleepDisplay();
-        });
-    }
-
     // Initial update
     updateSleepDisplay();
-    updateSleepDashboard();
 
-    // Update every second (pause when tab hidden to save CPU)
+    // Update chip countdown every second (pause when tab hidden to save CPU)
     let sleepDisplayInterval = setInterval(updateSleepDisplay, 1000);
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {

@@ -1,5 +1,6 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // SLEEP PANEL - Inline Aurora Theme Panel for Mobile
+// Pure UI layer — all data via sleep.js (single cache: sleepLogCache)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 let sleepPanelStatsPeriod = 7;
@@ -7,127 +8,7 @@ let sleepPanelHeatmapMonth = new Date().getMonth();
 let sleepPanelHeatmapYear = new Date().getFullYear();
 let sleepPanelInitialized = false;
 let sleepPanelUpdateInterval = null;
-let sleepPanelLog = []; // Local cache for sleep panel
 let _sleepSaveInProgress = false; // Prevent overlapping sleep saves
-
-// Sync panel cache from sleep.js cache or localStorage (after log operations)
-function syncSleepPanelFromLocal() {
-    // Prefer sleep.js cache (sleepLogCache) if available, else read localStorage
-    if (typeof sleepLogCache !== 'undefined' && sleepLogCache) {
-        sleepPanelLog = sleepLogCache.map(e => ({
-            date: e.date,
-            bedtime: e.bedtime,
-            wakeTime: e.wakeTime,
-            duration: e.duration
-        }));
-    } else {
-        const saved = localStorage.getItem('0500_sleep_log');
-        sleepPanelLog = saved ? JSON.parse(saved) : [];
-    }
-}
-
-// Load sleep data directly from DataService (bypasses sleep.js cache)
-async function loadSleepPanelData() {
-    const debugEl = document.getElementById('sleep-account-content');
-
-    if (typeof DataService !== 'undefined' && typeof isSignedIn === 'function' && isSignedIn()) {
-        try {
-            const cloudLog = await DataService.loadSleepLog();
-            if (debugEl) debugEl.setAttribute('data-debug', `Cloud: ${cloudLog.length} entries`);
-
-            sleepPanelLog = cloudLog.map(e => ({
-                date: e.date,
-                bedtime: e.bedtime,
-                wakeTime: e.wakeTime,
-                duration: e.hours
-            }));
-        } catch (err) {
-            console.error('Sleep panel data load error:', err);
-            if (debugEl) debugEl.setAttribute('data-debug', `Error: ${err.message}`);
-            sleepPanelLog = [];
-        }
-    } else {
-        // Fall back to localStorage
-        const saved = localStorage.getItem('0500_sleep_log');
-        sleepPanelLog = saved ? JSON.parse(saved) : [];
-        const reason = !isSignedIn?.() ? 'not signed in' : 'no DataService';
-        if (debugEl) debugEl.setAttribute('data-debug', `Local: ${sleepPanelLog.length}, ${reason}`);
-    }
-    return sleepPanelLog;
-}
-
-// Get last N days from panel's local cache
-function getSleepPanelDaysLog(n = 7) {
-    const now = new Date();
-    const result = [];
-
-    for (let i = n - 1; i >= 0; i--) {
-        const date = new Date(now);
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toISOString().split('T')[0];
-        const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
-
-        const entry = sleepPanelLog.find(e => e.date === dateStr && e.duration);
-        result.push({
-            date: dateStr,
-            dayName: dayName,
-            duration: entry ? entry.duration : null,
-            bedtime: entry ? entry.bedtime : null,
-            wakeTime: entry ? entry.wakeTime : null
-        });
-    }
-    return result;
-}
-
-// Calculate sleep score from log data
-function calculateSleepScoreFromLog(days) {
-    const daysWithData = days.filter(d => d.duration);
-    if (daysWithData.length < 3) return null;
-
-    const settings = loadSleepSettings();
-    const targetHours = settings.targetSleepHours || 7.5;
-    let totalScore = 0;
-
-    daysWithData.forEach(day => {
-        const diff = Math.abs(day.duration - targetHours);
-        const dayScore = Math.max(0, 100 - diff * 15);
-        totalScore += dayScore;
-    });
-
-    return { total: Math.round(totalScore / daysWithData.length) };
-}
-
-// Calculate streak from panel's local cache
-function calculateSleepPanelStreak() {
-    let current = 0;
-    const today = new Date();
-
-    for (let i = 0; i < 30; i++) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toISOString().split('T')[0];
-
-        const target = (loadSleepSettings().targetSleepHours || 7.5) - 0.5;
-        const entry = sleepPanelLog.find(e => e.date === dateStr && e.duration && e.duration >= target);
-        if (entry) {
-            current++;
-        } else if (i > 0) {
-            break;
-        }
-    }
-
-    return { current };
-}
-
-// Calculate weekly average from panel's local cache
-function calculateSleepPanelAverage() {
-    const last7 = getSleepPanelDaysLog(7);
-    const daysWithData = last7.filter(d => d.duration);
-    if (daysWithData.length === 0) return null;
-
-    const total = daysWithData.reduce((sum, d) => sum + d.duration, 0);
-    return total / daysWithData.length;
-}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // RENDER FUNCTIONS
@@ -142,10 +23,10 @@ function renderSleepPanelScore() {
 
     if (!scoreNumber) return;
 
-    const last14 = getSleepPanelDaysLog(14);
-    const score = calculateSleepScoreFromLog(last14);
-    const streak = calculateSleepPanelStreak();
-    const avg = calculateSleepPanelAverage();
+    const last14 = getLastNDaysLog(14);
+    const score = calculateSleepScore(last14);
+    const streak = calculateSleepStreak();
+    const avg = calculateWeeklyAverage();
 
     if (score) {
         scoreNumber.textContent = score.total;
@@ -207,7 +88,7 @@ function renderSleepPanelMiniBars() {
     const container = document.getElementById('sleep-panel-mini-bars');
     if (!container) return;
 
-    const weekData = getSleepPanelDaysLog(7);
+    const weekData = getLastNDaysLog(7);
     const maxHours = 10;
     const today = new Date().toISOString().split('T')[0];
 
@@ -240,7 +121,7 @@ function renderSleepPanelDebt() {
     if (!container) return;
 
     const settings = loadSleepSettings();
-    const last14 = getSleepPanelDaysLog(14);
+    const last14 = getLastNDaysLog(14);
     const daysWithData = last14.filter(d => d.duration);
 
     if (daysWithData.length < 3) {
@@ -320,7 +201,7 @@ function renderSleepPanelStats() {
     const container = document.getElementById('sleep-panel-stats-grid');
     if (!container) return;
 
-    const days = getSleepPanelDaysLog(sleepPanelStatsPeriod);
+    const days = getLastNDaysLog(sleepPanelStatsPeriod);
     const stats = calculatePeriodStats(days);
 
     container.innerHTML = `
@@ -385,7 +266,8 @@ function renderSleepPanelHeatmap() {
 }
 
 function updateSleepPanelButtonStates() {
-    const lastEntry = sleepPanelLog[sleepPanelLog.length - 1];
+    const log = loadSleepLog();
+    const lastEntry = log[log.length - 1];
     const pendingBedtime = lastEntry && lastEntry.bedtime && !lastEntry.wakeTime;
 
     const bedBtn = document.getElementById('sleep-btn-bed');
@@ -404,7 +286,8 @@ function renderSleepPanelAccount() {
     if (!container) return;
 
     const signedIn = typeof isSignedIn === 'function' && isSignedIn();
-    const debugInfo = `${sleepPanelLog.length} entries | ${signedIn ? 'signed in' : 'NOT signed in'}`;
+    const log = loadSleepLog();
+    const debugInfo = `${log.length} entries | ${signedIn ? 'signed in' : 'NOT signed in'}`;
 
     if (signedIn) {
         const email = currentUser?.email || 'Signed in';
@@ -510,7 +393,8 @@ function openSleepTimelineModal(dateStr) {
     const dayName = date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
     document.getElementById('sleep-timeline-date').textContent = dayName;
 
-    const existing = sleepPanelLog.find(e => e.date === dateStr);
+    const log = loadSleepLog();
+    const existing = log.find(e => e.date === dateStr);
 
     if (existing && existing.bedtime && existing.wakeTime) {
         const bed = new Date(existing.bedtime);
@@ -536,11 +420,10 @@ function closeSleepTimelineModal() {
     document.getElementById('sleep-timeline-overlay').classList.remove('active');
 }
 
-function saveSleepTimelineEntry() {
+async function saveSleepTimelineEntry() {
     const bedDate = new Date(sleepTimelineDate + 'T00:00:00');
     bedDate.setHours(sleepTimelineBedHour, sleepTimelineBedMin, 0, 0);
     if (sleepTimelineBedHour >= 18) {
-        // Evening bedtime (6pm+) means the user went to bed the night before the wake date
         bedDate.setDate(bedDate.getDate() - 1);
     }
 
@@ -549,8 +432,6 @@ function saveSleepTimelineEntry() {
 
     const duration = (wakeDate - bedDate) / 1000 / 60 / 60;
 
-    const log = loadSleepLog();
-    const existingIdx = log.findIndex(e => e.date === sleepTimelineDate);
     const entry = {
         date: sleepTimelineDate,
         bedtime: bedDate.toISOString(),
@@ -558,27 +439,41 @@ function saveSleepTimelineEntry() {
         duration: duration
     };
 
+    const log = loadSleepLog();
+    const existingIdx = log.findIndex(e => e.date === sleepTimelineDate);
     if (existingIdx >= 0) {
         log[existingIdx] = entry;
     } else {
         log.push(entry);
         log.sort((a, b) => new Date(a.date) - new Date(b.date));
     }
-
     saveSleepLog(log);
-    syncSleepPanelFromLocal();
+
+    if (typeof DataService !== 'undefined' && isSignedIn()) {
+        await DataService.addSleepEntry({
+            date: entry.date,
+            bedtime: entry.bedtime,
+            wakeTime: entry.wakeTime,
+            hours: entry.duration
+        });
+    }
+
     closeSleepTimelineModal();
     refreshSleepPanel();
 }
 
-function deleteSleepTimelineEntry() {
+async function deleteSleepTimelineEntry() {
     const log = loadSleepLog();
     const idx = log.findIndex(e => e.date === sleepTimelineDate);
     if (idx >= 0) {
         log.splice(idx, 1);
-        saveSleepLog(log);
     }
-    syncSleepPanelFromLocal();
+    saveSleepLog(log);
+
+    if (typeof DataService !== 'undefined' && isSignedIn()) {
+        await DataService.deleteSleepEntry(sleepTimelineDate);
+    }
+
     closeSleepTimelineModal();
     refreshSleepPanel();
 }
@@ -697,8 +592,8 @@ function initSleepTimelineModal() {
 async function initSleepPanel() {
     if (sleepPanelInitialized) return;
 
-    // Load data
-    await loadSleepPanelData();
+    // Load data into single cache (sleep.js)
+    await loadSleepLogAsync();
     await loadSleepSettingsAsync();
 
     // Load settings into inputs
@@ -733,7 +628,6 @@ async function initSleepPanel() {
                 setTimeout(() => {
                     this.innerHTML = '<span class="sleep-emoji">&#127769;</span> Going to bed';
                 }, 2000);
-                syncSleepPanelFromLocal();
                 refreshSleepPanel();
             } finally {
                 _sleepSaveInProgress = false;
@@ -751,7 +645,6 @@ async function initSleepPanel() {
                 setTimeout(() => {
                     this.innerHTML = '<span class="sleep-emoji">&#9728;&#65039;</span> Just woke up';
                 }, 2000);
-                syncSleepPanelFromLocal();
                 refreshSleepPanel();
             } finally {
                 _sleepSaveInProgress = false;
@@ -830,16 +723,13 @@ async function initSleepPanel() {
 
     // Listen for user changes to reload data (fires after sign in/out)
     window.addEventListener('userChanged', async () => {
-        // Clear interval to prevent stale updates during reload
         if (sleepPanelUpdateInterval) {
             clearInterval(sleepPanelUpdateInterval);
             sleepPanelUpdateInterval = null;
         }
-        // Force reload data from cloud
-        await loadSleepPanelData();
+        await loadSleepLogAsync();
         await loadSleepSettingsAsync();
         refreshSleepPanel();
-        // Restart interval
         sleepPanelUpdateInterval = setInterval(renderSleepPanelCountdown, 1000);
     });
 
@@ -851,8 +741,7 @@ async function onSleepPanelActivate() {
     if (!sleepPanelInitialized) {
         await initSleepPanel();
     } else {
-        // Always reload data from cloud when switching to sleep tab
-        await loadSleepPanelData();
+        await loadSleepLogAsync();
         await loadSleepSettingsAsync();
         refreshSleepPanel();
     }
