@@ -2432,7 +2432,7 @@ function closeTimelineModal() {
     document.getElementById('timeline-overlay').classList.remove('active');
 }
 
-function saveTimelineEntry() {
+async function saveTimelineEntry() {
     const bedDate = new Date(timelineDate + 'T00:00:00');
     bedDate.setHours(timelineBedHour, timelineBedMin, 0, 0);
     if (timelineBedHour >= 12) {
@@ -2461,16 +2461,32 @@ function saveTimelineEntry() {
     }
 
     saveSleepLog(log);
+
+    // Sync to Supabase
+    if (typeof DataService !== 'undefined' && isSignedIn()) {
+        await DataService.addSleepEntry({
+            date: entry.date,
+            bedtime: entry.bedtime,
+            wakeTime: entry.wakeTime,
+            hours: entry.duration
+        });
+    }
+
     closeTimelineModal();
     refreshAll();
 }
 
-function deleteTimelineEntry() {
+async function deleteTimelineEntry() {
     const log = loadSleepLog();
     const idx = log.findIndex(e => e.date === timelineDate);
     if (idx >= 0) {
         log.splice(idx, 1);
         saveSleepLog(log);
+
+        // Sync to Supabase
+        if (typeof DataService !== 'undefined' && isSignedIn()) {
+            await DataService.deleteSleepEntry(timelineDate);
+        }
     }
     closeTimelineModal();
     refreshAll();
@@ -2548,6 +2564,9 @@ function initTimelineModal() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Initialize Supabase auth so cloud sync works
+    if (typeof initSupabase === 'function') await initSupabase();
+
     // Load cloud data first (populates cache for sync functions)
     await loadSleepLogAsync();
     await loadSleepSettingsAsync();
