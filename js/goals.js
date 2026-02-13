@@ -9,7 +9,7 @@ let _pendingGoalSave = null; // Track in-flight save for sign-out guard
 async function loadGoals() {
     if (!goalsCache) {
         goalsCache = await DataService.loadGoals();
-        hydrateMidTermTimestamps(goalsCache);
+        hydrateGoalTimestamps(goalsCache);
     }
     return goalsCache;
 }
@@ -80,12 +80,12 @@ function attachGoalListeners(item, sectionKey, group) {
         const index = parseInt(item.dataset.index);
         loadGoals().then(goals => {
             goals[sectionKey][index].checked = isChecked;
-            // Track completedAt for mid-term goals (for weekly review)
-            if (sectionKey === 'midTerm') {
+            // Track completedAt for mid-term and one-year goals (for weekly review)
+            if (sectionKey === 'midTerm' || sectionKey === 'oneYear') {
                 const ts = isChecked ? new Date().toISOString() : null;
                 goals[sectionKey][index].completedAt = ts;
                 // Also persist to localStorage for cross-session tracking
-                _saveMidTermTimestamp(goals[sectionKey][index].text, ts);
+                _saveGoalTimestamp(sectionKey, goals[sectionKey][index].text, ts);
             }
             saveGoals(goals);
         });
@@ -263,7 +263,8 @@ async function renderGoals() {
 
     const sections = [
         { key: 'daily', title: 'DAILY', items: goals.daily, collapsible: true },
-        { key: 'midTerm', title: 'MID-TERM', items: goals.midTerm, collapsible: true },
+        { key: 'midTerm', title: '3 MONTH', items: goals.midTerm, collapsible: true },
+        { key: 'oneYear', title: '1 YEAR', items: goals.oneYear, collapsible: true },
         { key: 'longTerm', title: 'LONG-TERM', items: goals.longTerm, collapsible: true }
     ];
 
@@ -322,30 +323,36 @@ async function renderGoals() {
     });
 }
 
-// Mid-term completion timestamps (persisted in localStorage for weekly review)
-function _saveMidTermTimestamp(text, ts) {
-    const map = JSON.parse(localStorage.getItem('0500_midterm_completed') || '{}');
+// Goal completion timestamps (persisted in localStorage for weekly review)
+const _TIMESTAMP_KEYS = {
+    midTerm: '0500_midterm_completed',
+    oneYear: '0500_oneyear_completed'
+};
+
+function _saveGoalTimestamp(category, text, ts) {
+    const key = _TIMESTAMP_KEYS[category];
+    if (!key) return;
+    const map = JSON.parse(localStorage.getItem(key) || '{}');
     if (ts) {
         map[text] = ts;
     } else {
         delete map[text];
     }
-    safeSetItem('0500_midterm_completed', JSON.stringify(map));
-}
-
-function _loadMidTermTimestamps() {
-    return JSON.parse(localStorage.getItem('0500_midterm_completed') || '{}');
+    safeSetItem(key, JSON.stringify(map));
 }
 
 // Hydrate completedAt from localStorage into goalsCache (after load)
-function hydrateMidTermTimestamps(goals) {
-    const map = _loadMidTermTimestamps();
-    if (goals.midTerm) {
-        goals.midTerm.forEach(g => {
-            if (g.checked && map[g.text] && !g.completedAt) {
-                g.completedAt = map[g.text];
-            }
-        });
+function hydrateGoalTimestamps(goals) {
+    for (const category of Object.keys(_TIMESTAMP_KEYS)) {
+        const key = _TIMESTAMP_KEYS[category];
+        const map = JSON.parse(localStorage.getItem(key) || '{}');
+        if (goals[category]) {
+            goals[category].forEach(g => {
+                if (g.checked && map[g.text] && !g.completedAt) {
+                    g.completedAt = map[g.text];
+                }
+            });
+        }
     }
 }
 

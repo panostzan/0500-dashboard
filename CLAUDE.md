@@ -68,7 +68,8 @@ localStorage keys: `0500_goals`, `0500_schedule_entries`, `0500_sleep_log`, `050
 ```js
 {
   daily: [{ text: "...", checked: false }],
-  midTerm: [{ text: "...", checked: false }],
+  midTerm: [{ text: "...", checked: false }],    // "3 MONTH" in UI
+  oneYear: [{ text: "...", checked: false }],    // "1 YEAR" in UI
   longTerm: [{ text: "...", checked: false }]
 }
 ```
@@ -96,7 +97,7 @@ localStorage keys: `0500_goals`, `0500_schedule_entries`, `0500_sleep_log`, `050
 
 | Component | Location | Notes |
 |-----------|----------|-------|
-| Goals panel | Left side | 3 collapsible sections, inline edit, swipe-to-delete on mobile |
+| Goals panel | Left side | 4 collapsible sections (Daily, 3 Month, 1 Year, Long-Term), inline edit, swipe-to-delete on mobile |
 | Globe | Center | Canvas-based dotted globe with location highlight |
 | Schedule | Right side | Notebook-style, HUD frame aesthetic |
 | Timer bar | Below globe | Preset buttons (5/10/15/25 min) |

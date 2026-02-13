@@ -102,7 +102,7 @@ const DataService = {
             }
 
             // Transform to app format
-            const goals = { daily: [], midTerm: [], longTerm: [] };
+            const goals = { daily: [], midTerm: [], oneYear: [], longTerm: [] };
             data.forEach(g => {
                 if (goals[g.category]) {
                     goals[g.category].push({
@@ -134,7 +134,7 @@ const DataService = {
                 }
 
                 const inserts = [];
-                ['daily', 'midTerm', 'longTerm'].forEach(category => {
+                ['daily', 'midTerm', 'oneYear', 'longTerm'].forEach(category => {
                     goals[category].forEach((g, idx) => {
                         inserts.push({
                             user_id: userId,
@@ -160,6 +160,7 @@ const DataService = {
         return {
             daily: [],
             midTerm: [],
+            oneYear: [],
             longTerm: []
         };
     },
@@ -430,7 +431,7 @@ const DataService = {
     loadCollapsedState() {
         const saved = localStorage.getItem('0500_goals_collapsed');
         if (saved) return JSON.parse(saved);
-        return { daily: false, midTerm: true, longTerm: true };
+        return { daily: false, midTerm: true, oneYear: true, longTerm: true };
     },
 
     saveCollapsedState(state) {

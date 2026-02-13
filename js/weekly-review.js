@@ -37,14 +37,22 @@ function generateWeeklyReview() {
     const totalGoals = daysWithGoals.reduce((s, d) => s + d.total, 0);
     const completionRate = totalGoals > 0 ? Math.round((totalCompleted / totalGoals) * 100) : null;
 
-    // --- Mid-term goals completed this week ---
+    // --- Mid-term and one-year goals completed this week ---
     const weekAgo = new Date(now);
     weekAgo.setDate(weekAgo.getDate() - 7);
+    if (typeof goalsCache !== 'undefined' && goalsCache) {
+        if (typeof hydrateGoalTimestamps === 'function') hydrateGoalTimestamps(goalsCache);
+    }
     let midTermCompleted = [];
-    if (typeof goalsCache !== 'undefined' && goalsCache && goalsCache.midTerm) {
-        // Ensure timestamps are hydrated
-        if (typeof hydrateMidTermTimestamps === 'function') hydrateMidTermTimestamps(goalsCache);
+    if (goalsCache && goalsCache.midTerm) {
         midTermCompleted = goalsCache.midTerm.filter(g => {
+            if (!g.checked || !g.completedAt) return false;
+            return new Date(g.completedAt) >= weekAgo;
+        });
+    }
+    let oneYearCompleted = [];
+    if (goalsCache && goalsCache.oneYear) {
+        oneYearCompleted = goalsCache.oneYear.filter(g => {
             if (!g.checked || !g.completedAt) return false;
             return new Date(g.completedAt) >= weekAgo;
         });
@@ -66,7 +74,8 @@ function generateWeeklyReview() {
             totalGoals,
             completionRate,
             daysTracked: daysWithGoals.length,
-            midTermCompleted
+            midTermCompleted,
+            oneYearCompleted
         }
     };
 }
@@ -154,11 +163,23 @@ function renderWeeklyReview(data) {
     let midTermHtml = '';
     if (g.midTermCompleted.length > 0) {
         const items = g.midTermCompleted.map(m =>
-            `<div class="review-midterm-item">Completed <em>${m.text}</em> from mid-term goals</div>`
+            `<div class="review-midterm-item">Completed <em>${m.text}</em> from 3 month goals</div>`
         ).join('');
         midTermHtml = `
             <div class="review-midterm-section">
-                <div class="review-subsection-title">MID-TERM</div>
+                <div class="review-subsection-title">3 MONTH</div>
+                ${items}
+            </div>`;
+    }
+
+    let oneYearHtml = '';
+    if (g.oneYearCompleted.length > 0) {
+        const items = g.oneYearCompleted.map(m =>
+            `<div class="review-midterm-item">Completed <em>${m.text}</em> from 1 year goals</div>`
+        ).join('');
+        oneYearHtml = `
+            <div class="review-midterm-section">
+                <div class="review-subsection-title">1 YEAR</div>
                 ${items}
             </div>`;
     }
@@ -178,6 +199,7 @@ function renderWeeklyReview(data) {
                 <div class="review-empty">No daily goal data this week</div>
             `}
             ${midTermHtml}
+            ${oneYearHtml}
         </div>`;
 
     container.innerHTML = sleepHtml + goalsHtml;
