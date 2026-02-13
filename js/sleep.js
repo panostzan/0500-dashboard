@@ -108,6 +108,10 @@ async function loadSleepLogAsync() {
             wakeTime: e.wakeTime,
             duration: e.hours
         }));
+        // Keep localStorage in sync as offline/startup fallback
+        if (sleepLogCache.length > 0) {
+            safeSetItem(SLEEP_LOG_KEY, JSON.stringify(sleepLogCache));
+        }
         return sleepLogCache;
     }
     return loadSleepLog();

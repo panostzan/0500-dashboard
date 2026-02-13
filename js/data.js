@@ -98,6 +98,9 @@ const DataService = {
 
             if (error) {
                 console.error('Error loading goals:', error);
+                // Fall back to localStorage instead of empty
+                const fallback = localStorage.getItem('0500_goals');
+                if (fallback) return JSON.parse(fallback);
                 return this._getEmptyGoals();
             }
 
@@ -178,6 +181,9 @@ const DataService = {
 
             if (error) {
                 console.error('Error loading schedule:', error);
+                // Fall back to localStorage instead of empty
+                const fallback = localStorage.getItem('0500_schedule_entries');
+                if (fallback) return JSON.parse(fallback);
                 return this._getEmptySchedule();
             }
 
@@ -242,6 +248,9 @@ const DataService = {
 
             if (error) {
                 console.error('Error loading sleep log:', error);
+                // Fall back to localStorage instead of returning empty
+                const fallback = localStorage.getItem('0500_sleep_log');
+                if (fallback) return JSON.parse(fallback);
                 return [];
             }
 
@@ -340,6 +349,15 @@ const DataService = {
                 .single();
 
             if (error || !data) {
+                // Fall back to localStorage instead of defaults
+                const fallback = localStorage.getItem('0500_sleep_settings');
+                if (fallback) {
+                    const parsed = JSON.parse(fallback);
+                    return {
+                        wakeTime: `${(parsed.wakeHour || 5).toString().padStart(2, '0')}:${(parsed.wakeMinute || 0).toString().padStart(2, '0')}`,
+                        targetHours: parsed.targetSleepHours || 7.5
+                    };
+                }
                 return { wakeTime: '05:00', targetHours: 7.5 };
             }
 
@@ -385,7 +403,10 @@ const DataService = {
                 .eq('user_id', currentUser.id)
                 .single();
 
-            if (error || !data) return '';
+            if (error || !data) {
+                // Fall back to localStorage instead of empty
+                return localStorage.getItem('0500_notes') || '';
+            }
             return data.content || '';
         } else {
             return localStorage.getItem('0500_notes') || '';
