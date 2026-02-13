@@ -61,15 +61,19 @@ function loadSleepSettings() {
 
 async function loadSleepSettingsAsync() {
     if (typeof DataService !== 'undefined' && isSignedIn()) {
-        const cloudSettings = await DataService.loadSleepSettings();
-        sleepSettingsCache = {
-            wakeHour: parseInt(cloudSettings.wakeTime.split(':')[0]),
-            wakeMinute: parseInt(cloudSettings.wakeTime.split(':')[1]),
-            targetSleepHours: cloudSettings.targetHours,
-            idealBedtimeStart: '21:30',
-            idealBedtimeEnd: '22:30'
-        };
-        return { ...SLEEP_DEFAULTS, ...sleepSettingsCache };
+        try {
+            const cloudSettings = await DataService.loadSleepSettings();
+            sleepSettingsCache = {
+                wakeHour: parseInt(cloudSettings.wakeTime.split(':')[0]),
+                wakeMinute: parseInt(cloudSettings.wakeTime.split(':')[1]),
+                targetSleepHours: cloudSettings.targetHours,
+                idealBedtimeStart: '21:30',
+                idealBedtimeEnd: '22:30'
+            };
+            return { ...SLEEP_DEFAULTS, ...sleepSettingsCache };
+        } catch (e) {
+            console.warn('Cloud sleep settings load failed, using local:', e.message);
+        }
     }
     return loadSleepSettings();
 }
@@ -101,18 +105,22 @@ function loadSleepLog() {
 
 async function loadSleepLogAsync() {
     if (typeof DataService !== 'undefined' && isSignedIn()) {
-        const cloudLog = await DataService.loadSleepLog();
-        sleepLogCache = cloudLog.map(e => ({
-            date: e.date,
-            bedtime: e.bedtime,
-            wakeTime: e.wakeTime,
-            duration: e.hours
-        }));
-        // Keep localStorage in sync as offline/startup fallback
-        if (sleepLogCache.length > 0) {
-            safeSetItem(SLEEP_LOG_KEY, JSON.stringify(sleepLogCache));
+        try {
+            const cloudLog = await DataService.loadSleepLog();
+            sleepLogCache = cloudLog.map(e => ({
+                date: e.date,
+                bedtime: e.bedtime,
+                wakeTime: e.wakeTime,
+                duration: e.hours
+            }));
+            // Keep localStorage in sync as offline/startup fallback
+            if (sleepLogCache.length > 0) {
+                safeSetItem(SLEEP_LOG_KEY, JSON.stringify(sleepLogCache));
+            }
+            return sleepLogCache;
+        } catch (e) {
+            console.warn('Cloud sleep log load failed, using local:', e.message);
         }
-        return sleepLogCache;
     }
     return loadSleepLog();
 }
@@ -162,15 +170,19 @@ async function logBedtime() {
 
     saveSleepLog(log);
 
-    // Save the modified entry to cloud
+    // Save the modified entry to cloud (don't block UI on failure)
     const savedEntry = log[log.length - 1];
     if (typeof DataService !== 'undefined' && isSignedIn()) {
-        await DataService.addSleepEntry({
-            date: savedEntry.date,
-            bedtime: savedEntry.bedtime,
-            wakeTime: savedEntry.wakeTime,
-            hours: savedEntry.duration
-        });
+        try {
+            await DataService.addSleepEntry({
+                date: savedEntry.date,
+                bedtime: savedEntry.bedtime,
+                wakeTime: savedEntry.wakeTime,
+                hours: savedEntry.duration
+            });
+        } catch (e) {
+            console.warn('Supabase bedtime sync failed:', e.message);
+        }
     }
 
     updateSleepDashboard();
@@ -214,14 +226,18 @@ async function logWakeUp() {
         saveSleepLog(log);
     }
 
-    // Save the modified entry to cloud
+    // Save the modified entry to cloud (don't block UI on failure)
     if (typeof DataService !== 'undefined' && isSignedIn()) {
-        await DataService.addSleepEntry({
-            date: savedEntry.date,
-            bedtime: savedEntry.bedtime,
-            wakeTime: savedEntry.wakeTime,
-            hours: savedEntry.duration
-        });
+        try {
+            await DataService.addSleepEntry({
+                date: savedEntry.date,
+                bedtime: savedEntry.bedtime,
+                wakeTime: savedEntry.wakeTime,
+                hours: savedEntry.duration
+            });
+        } catch (e) {
+            console.warn('Supabase wake sync failed:', e.message);
+        }
     }
 
     updateSleepDashboard();

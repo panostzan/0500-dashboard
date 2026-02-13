@@ -1862,7 +1862,7 @@
 <script src="js/config.js?v=5"></script>
 <script src="js/supabase.js?v=5"></script>
 <script src="js/data.js?v=9"></script>
-<script src="js/sleep.js?v=12"></script>
+<script src="js/sleep.js?v=13"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════════════════
 // SLEEP PAGE - Aurora Theme Integration
@@ -2462,14 +2462,18 @@ async function saveTimelineEntry() {
 
     saveSleepLog(log);
 
-    // Sync to Supabase
+    // Sync to Supabase (don't block UI on failure)
     if (typeof DataService !== 'undefined' && isSignedIn()) {
-        await DataService.addSleepEntry({
-            date: entry.date,
-            bedtime: entry.bedtime,
-            wakeTime: entry.wakeTime,
-            hours: entry.duration
-        });
+        try {
+            await DataService.addSleepEntry({
+                date: entry.date,
+                bedtime: entry.bedtime,
+                wakeTime: entry.wakeTime,
+                hours: entry.duration
+            });
+        } catch (e) {
+            console.warn('Supabase sleep sync failed:', e.message);
+        }
     }
 
     closeTimelineModal();
@@ -2483,9 +2487,13 @@ async function deleteTimelineEntry() {
         log.splice(idx, 1);
         saveSleepLog(log);
 
-        // Sync to Supabase
+        // Sync to Supabase (don't block UI on failure)
         if (typeof DataService !== 'undefined' && isSignedIn()) {
-            await DataService.deleteSleepEntry(timelineDate);
+            try {
+                await DataService.deleteSleepEntry(timelineDate);
+            } catch (e) {
+                console.warn('Supabase sleep delete failed:', e.message);
+            }
         }
     }
     closeTimelineModal();
@@ -2572,8 +2580,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Load cloud data first (populates cache for sync functions)
-    await loadSleepLogAsync();
-    await loadSleepSettingsAsync();
+    try {
+        await loadSleepLogAsync();
+    } catch (e) {
+        console.warn('Failed to load cloud sleep log, using local:', e.message);
+    }
+    try {
+        await loadSleepSettingsAsync();
+    } catch (e) {
+        console.warn('Failed to load cloud sleep settings, using local:', e.message);
+    }
 
     // Load settings into inputs
     const settings = loadSleepSettings();
