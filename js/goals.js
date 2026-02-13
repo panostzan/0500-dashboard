@@ -9,6 +9,8 @@ let _pendingGoalSave = null; // Track in-flight save for sign-out guard
 async function loadGoals() {
     if (!goalsCache) {
         goalsCache = await DataService.loadGoals();
+        // Ensure oneYear exists (migration from old data)
+        if (!goalsCache.oneYear) goalsCache.oneYear = [];
         hydrateGoalTimestamps(goalsCache);
     }
     return goalsCache;
