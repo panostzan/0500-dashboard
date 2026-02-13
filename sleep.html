@@ -2565,7 +2565,11 @@ function initTimelineModal() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Initialize Supabase auth so cloud sync works
-    if (typeof initSupabase === 'function') await initSupabase();
+    try {
+        if (typeof initSupabase === 'function') await initSupabase();
+    } catch (e) {
+        console.warn('Supabase auth init failed, continuing offline:', e.message);
+    }
 
     // Load cloud data first (populates cache for sync functions)
     await loadSleepLogAsync();
