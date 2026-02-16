@@ -2,7 +2,7 @@
 // SERVICE WORKER - Offline Support for 0500 PWA
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = '0500-v19';
+const CACHE_NAME = '0500-v20';
 
 // Files to cache for offline use
 const STATIC_ASSETS = [

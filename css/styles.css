@@ -149,9 +149,7 @@ html, body {
 }
 
 .hud-frame::before,
-.hud-frame::after,
-.hud-frame .corner-bl,
-.hud-frame .corner-br {
+.hud-frame::after {
     content: '';
     position: absolute;
     width: 20px;
@@ -254,48 +252,6 @@ html, body {
             0 0 40px rgba(212, 145, 92, 0.1),
             inset 0 0 25px rgba(255, 255, 255, 0.12);
     }
-}
-
-/* Enhanced corner brackets with glow */
-.hud-frame-glow::before,
-.hud-frame-glow::after {
-    width: 20px;
-    height: 20px;
-    border-width: 0;
-    animation: cornerGlowBreathe 4s ease-in-out infinite;
-}
-
-.hud-frame-glow::before {
-    top: -4px;
-    left: -4px;
-    border-top-width: 2px;
-    border-left-width: 2px;
-}
-
-.hud-frame-glow::after {
-    top: -4px;
-    right: -4px;
-    border-top-width: 2px;
-    border-right-width: 2px;
-    animation-delay: 0.5s;
-}
-
-.hud-corners-glow::before {
-    width: 20px;
-    height: 20px;
-    border-bottom-width: 2px;
-    border-left-width: 2px;
-    animation: cornerGlowBreathe 4s ease-in-out infinite;
-    animation-delay: 1s;
-}
-
-.hud-corners-glow::after {
-    width: 20px;
-    height: 20px;
-    border-bottom-width: 2px;
-    border-right-width: 2px;
-    animation: cornerGlowBreathe 4s ease-in-out infinite;
-    animation-delay: 1.5s;
 }
 
 @keyframes cornerGlowBreathe {
@@ -2919,10 +2875,6 @@ html, body {
         overscroll-behavior: none;
     }
 
-    /* Hide any browser-specific UI hints */
-    .install-prompt {
-        display: none;
-    }
 }
 
 /* Touch-friendly targets */
@@ -3241,66 +3193,6 @@ html, body {
 
 .user-dropdown-item:hover {
     background: var(--card-bg-hover);
-}
-
-/* Sleep Manual Entry */
-.sleep-manual-entry {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(212, 145, 92, 0.15);
-}
-
-.sleep-manual-row {
-    display: flex;
-    align-items: flex-end;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-}
-
-.sleep-manual-field {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.sleep-manual-field label {
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.sleep-manual-field input {
-    padding: 0.5rem;
-    border: 1px solid var(--card-border);
-    border-radius: 6px;
-    background: var(--card-bg);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.8rem;
-    color: var(--text-primary);
-}
-
-.sleep-manual-field input:focus {
-    outline: none;
-    border-color: var(--accent);
-    background: var(--card-bg-hover);
-}
-
-.sleep-manual-add {
-    padding: 0.5rem 0.75rem;
-    background: var(--hud-amber);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
-
-.sleep-manual-add:hover {
-    background: var(--hud-orange);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
