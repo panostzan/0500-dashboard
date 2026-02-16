@@ -1858,11 +1858,8 @@
 </nav>
 
 <!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/config.js?v=5"></script>
-<script src="js/supabase.js?v=5"></script>
-<script src="js/data.js?v=9"></script>
-<script src="js/sleep.js?v=13"></script>
+<script src="js/sleep.js?v=14"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════════════════
 // SLEEP PAGE - Aurora Theme Integration
@@ -2578,9 +2575,9 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(updateCountdown, 1000);
 
     // Going to bed button
-    document.getElementById('btn-going-to-bed').addEventListener('click', async function() {
+    document.getElementById('btn-going-to-bed').addEventListener('click', function() {
         if (!this.classList.contains('disabled')) {
-            const bedtime = await logBedtime();
+            const bedtime = logBedtime();
             this.innerHTML = `Logged ${formatTime12HourShort(bedtime.getHours(), bedtime.getMinutes())}`;
             setTimeout(() => {
                 this.innerHTML = '<span class="emoji">&#127769;</span> Going to bed';
@@ -2590,9 +2587,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Woke up button
-    document.getElementById('btn-woke-up').addEventListener('click', async function() {
+    document.getElementById('btn-woke-up').addEventListener('click', function() {
         if (!this.classList.contains('disabled')) {
-            const wakeTime = await logWakeUp();
+            const wakeTime = logWakeUp();
             this.innerHTML = `Logged ${formatTime12HourShort(wakeTime.getHours(), wakeTime.getMinutes())}`;
             setTimeout(() => {
                 this.innerHTML = '<span class="emoji">&#9728;&#65039;</span> Just woke up';
