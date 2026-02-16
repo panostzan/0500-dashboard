@@ -43,7 +43,6 @@ Open `index.html` in browser. No build step required.
 │   ├── clock.js        # Time display
 │   ├── notes.js        # Notes modal
 │   ├── mobile.js       # Mobile-specific behavior
-│   ├── lava-lamp.js    # Background animation
 │   └── animations.js   # Shared animation utilities
 └── icons/              # PWA icons and splash screens
 ```
