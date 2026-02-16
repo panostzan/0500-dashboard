@@ -5,8 +5,13 @@
 const SUPABASE_URL = 'https://zodtmxoaqvbwicvoiuaj.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpvZHRteG9hcXZid2ljdm9pdWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMDkwNjQsImV4cCI6MjA4NDY4NTA2NH0.CM3p-WttkugGx9SoJeJxM7TN3-Zka1GDDHYFoOOR3lk';
 
-// Initialize Supabase client
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Initialize Supabase client (guard against CDN failure)
+let supabaseClient = null;
+try {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} catch (e) {
+    console.warn('Supabase client init failed (CDN may be unavailable):', e.message);
+}
 
 // Current user state
 let currentUser = null;

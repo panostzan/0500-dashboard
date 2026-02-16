@@ -2432,7 +2432,7 @@ function closeTimelineModal() {
     document.getElementById('timeline-overlay').classList.remove('active');
 }
 
-async function saveTimelineEntry() {
+function saveTimelineEntry() {
     const bedDate = new Date(timelineDate + 'T00:00:00');
     bedDate.setHours(timelineBedHour, timelineBedMin, 0, 0);
     if (timelineBedHour >= 12) {
@@ -2444,7 +2444,8 @@ async function saveTimelineEntry() {
 
     const duration = (wakeDate - bedDate) / 1000 / 60 / 60;
 
-    const log = loadSleepLog();
+    const raw = localStorage.getItem('0500_sleep_log');
+    const log = raw ? JSON.parse(raw) : [];
     const existingIdx = log.findIndex(e => e.date === timelineDate);
     const entry = {
         date: timelineDate,
@@ -2460,42 +2461,20 @@ async function saveTimelineEntry() {
         log.sort((a, b) => new Date(a.date) - new Date(b.date));
     }
 
-    saveSleepLog(log);
-
-    // Sync to Supabase (don't block UI on failure)
-    if (typeof DataService !== 'undefined' && isSignedIn()) {
-        try {
-            await DataService.addSleepEntry({
-                date: entry.date,
-                bedtime: entry.bedtime,
-                wakeTime: entry.wakeTime,
-                hours: entry.duration
-            });
-        } catch (e) {
-            console.warn('Supabase sleep sync failed:', e.message);
-        }
-    }
+    localStorage.setItem('0500_sleep_log', JSON.stringify(log));
+    sleepLogCache = log;
 
     closeTimelineModal();
     refreshAll();
 }
 
-async function deleteTimelineEntry() {
-    const log = loadSleepLog();
-    const idx = log.findIndex(e => e.date === timelineDate);
-    if (idx >= 0) {
-        log.splice(idx, 1);
-        saveSleepLog(log);
+function deleteTimelineEntry() {
+    const raw = localStorage.getItem('0500_sleep_log');
+    const log = raw ? JSON.parse(raw) : [];
+    const filtered = log.filter(e => e.date !== timelineDate);
+    localStorage.setItem('0500_sleep_log', JSON.stringify(filtered));
+    sleepLogCache = filtered;
 
-        // Sync to Supabase (don't block UI on failure)
-        if (typeof DataService !== 'undefined' && isSignedIn()) {
-            try {
-                await DataService.deleteSleepEntry(timelineDate);
-            } catch (e) {
-                console.warn('Supabase sleep delete failed:', e.message);
-            }
-        }
-    }
     closeTimelineModal();
     refreshAll();
 }
@@ -2571,26 +2550,7 @@ function initTimelineModal() {
     document.addEventListener('touchend', endDrag);
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-    // Initialize Supabase auth so cloud sync works
-    try {
-        if (typeof initSupabase === 'function') await initSupabase();
-    } catch (e) {
-        console.warn('Supabase auth init failed, continuing offline:', e.message);
-    }
-
-    // Load cloud data first (populates cache for sync functions)
-    try {
-        await loadSleepLogAsync();
-    } catch (e) {
-        console.warn('Failed to load cloud sleep log, using local:', e.message);
-    }
-    try {
-        await loadSleepSettingsAsync();
-    } catch (e) {
-        console.warn('Failed to load cloud sleep settings, using local:', e.message);
-    }
-
+document.addEventListener('DOMContentLoaded', () => {
     // Load settings into inputs
     const settings = loadSleepSettings();
     const wakeInput = document.getElementById('wake-input');
@@ -2756,7 +2716,7 @@ function initPullToRefresh() {
         }
     }, { passive: true });
 
-    document.addEventListener('touchend', async () => {
+    document.addEventListener('touchend', () => {
         if (!isPulling) return;
         isPulling = false;
 
@@ -2766,12 +2726,6 @@ function initPullToRefresh() {
             isRefreshing = true;
             indicator.classList.add('refreshing');
             vibrate([10, 20, 10]);
-
-            // Sync data from cloud
-            if (typeof loadSleepLogAsync === 'function' && typeof isSignedIn === 'function' && isSignedIn()) {
-                await loadSleepLogAsync();
-                await loadSleepSettingsAsync();
-            }
 
             refreshAll();
 
