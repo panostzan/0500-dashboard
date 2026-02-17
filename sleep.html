@@ -313,6 +313,54 @@
             color: var(--text-primary);
         }
 
+        /* Score Breakdown Bars */
+        .score-breakdown {
+            margin-top: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            text-align: left;
+        }
+
+        .score-factor {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .factor-label {
+            width: 80px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+
+        .factor-bar {
+            flex: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .factor-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), #c87090);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .factor-value {
+            width: 28px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: right;
+            flex-shrink: 0;
+        }
+
         /* Mini Week */
         .mini-week {
             padding: 22px;
@@ -1674,6 +1722,14 @@
                     <span class="value" id="avg-hours">--</span> avg
                 </div>
             </div>
+
+            <div class="score-breakdown" id="score-breakdown">
+                <div class="score-factor"><span class="factor-label">Regularity</span><div class="factor-bar"><div class="factor-fill" id="fill-regularity" style="width: 0%"></div></div><span class="factor-value" id="val-regularity">--</span></div>
+                <div class="score-factor"><span class="factor-label">Duration</span><div class="factor-bar"><div class="factor-fill" id="fill-duration" style="width: 0%"></div></div><span class="factor-value" id="val-duration">--</span></div>
+                <div class="score-factor"><span class="factor-label">Sleep Debt</span><div class="factor-bar"><div class="factor-fill" id="fill-debt" style="width: 0%"></div></div><span class="factor-value" id="val-debt">--</span></div>
+                <div class="score-factor"><span class="factor-label">Timing</span><div class="factor-bar"><div class="factor-fill" id="fill-timing" style="width: 0%"></div></div><span class="factor-value" id="val-timing">--</span></div>
+                <div class="score-factor"><span class="factor-label">Streak</span><div class="factor-bar"><div class="factor-fill" id="fill-streak" style="width: 0%"></div></div><span class="factor-value" id="val-streak">--</span></div>
+            </div>
         </div>
 
         <!-- Countdown Section -->
@@ -1859,7 +1915,7 @@
 
 <!-- Scripts -->
 <script src="js/config.js?v=5"></script>
-<script src="js/sleep.js?v=14"></script>
+<script src="js/sleep.js?v=15"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════════════════
 // SLEEP PAGE - Aurora Theme Integration
@@ -1886,9 +1942,22 @@ function renderScoreHero() {
         // Circumference = 2 * PI * 78 ≈ 490
         const dashArray = (score.total / 100) * 490;
         scoreRing.setAttribute('stroke-dasharray', `${dashArray} 490`);
+
+        // Breakdown bars
+        const factors = ['regularity', 'duration', 'debt', 'timing', 'streak'];
+        for (const f of factors) {
+            document.getElementById(`fill-${f}`).style.width = `${score[f]}%`;
+            document.getElementById(`val-${f}`).textContent = score[f];
+        }
     } else {
         scoreNumber.textContent = '--';
         scoreRing.setAttribute('stroke-dasharray', '0 490');
+
+        const factors = ['regularity', 'duration', 'debt', 'timing', 'streak'];
+        for (const f of factors) {
+            document.getElementById(`fill-${f}`).style.width = '0%';
+            document.getElementById(`val-${f}`).textContent = '--';
+        }
     }
 
     // Streak

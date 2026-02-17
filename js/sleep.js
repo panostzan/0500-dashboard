@@ -219,34 +219,106 @@ function calculateSleepScore(days) {
 
     if (daysWithData.length === 0) return null;
 
-    // Duration accuracy (40%) - how close to target
+    // --- 1. Regularity (30%) — Sleep Window Overlap ---
+    let regularityScore = 100;
+    const daysWithBothTimes = daysWithData.filter(d => d.bedtime && d.wakeTime);
+    if (daysWithBothTimes.length >= 2) {
+        let totalOverlapPct = 0;
+        let pairs = 0;
+        for (let i = 1; i < daysWithBothTimes.length; i++) {
+            const bedA = daysWithBothTimes[i - 1].bedtime.getTime();
+            const wakeA = daysWithBothTimes[i - 1].wakeTime.getTime();
+            const bedB = daysWithBothTimes[i].bedtime.getTime();
+            const wakeB = daysWithBothTimes[i].wakeTime.getTime();
+
+            const overlapStart = Math.max(bedA, bedB);
+            const overlapEnd = Math.min(wakeA, wakeB);
+            const overlap = Math.max(0, overlapEnd - overlapStart);
+
+            const unionStart = Math.min(bedA, bedB);
+            const unionEnd = Math.max(wakeA, wakeB);
+            const union = unionEnd - unionStart;
+
+            if (union > 0) {
+                totalOverlapPct += (overlap / union) * 100;
+                pairs++;
+            }
+        }
+        regularityScore = pairs > 0 ? Math.round(totalOverlapPct / pairs) : 100;
+    }
+
+    // --- 2. Duration (25%) — Asymmetric penalty ---
     const avgDuration = daysWithData.reduce((sum, d) => sum + d.duration, 0) / daysWithData.length;
-    const durationDiff = Math.abs(avgDuration - settings.targetSleepHours);
-    const durationScore = Math.max(0, 100 - (durationDiff * 20)); // -20 points per hour off target
-
-    // Bedtime consistency (30%) - lower std dev = better
-    const bedtimeStd = calculateBedtimeConsistency(daysWithData);
-    let bedtimeScore = 100;
-    if (bedtimeStd !== null) {
-        // 0 min std = 100, 60 min std = 50, 120 min std = 0
-        bedtimeScore = Math.max(0, 100 - (bedtimeStd * 0.83));
+    const durationDiff = avgDuration - settings.targetSleepHours;
+    let durationScore;
+    if (durationDiff < 0) {
+        // Under target: -30 pts/hr
+        durationScore = Math.max(0, 100 - (Math.abs(durationDiff) * 30));
+    } else {
+        // Over target: -15 pts/hr
+        durationScore = Math.max(0, 100 - (durationDiff * 15));
     }
 
-    // Wake time consistency (30%) - lower std dev = better
-    const wakeStd = calculateWakeTimeConsistency(daysWithData);
-    let wakeScore = 100;
-    if (wakeStd !== null) {
-        wakeScore = Math.max(0, 100 - (wakeStd * 0.83));
+    // --- 3. Sleep Debt (20%) — 7-day rolling deficit ---
+    const last7 = daysWithData.slice(-7);
+    let debt = 0;
+    for (const d of last7) {
+        const diff = d.duration - settings.targetSleepHours;
+        if (diff < 0) debt += diff; // Only accumulate deficits, not surpluses
+    }
+    const debtScore = Math.max(0, Math.round(100 + (debt * 14.3)));
+
+    // --- 4. Timing (15%) — Average bedtime vs target ---
+    let timingScore = 100;
+    const daysWithBedtime = daysWithData.filter(d => d.bedtime);
+    if (daysWithBedtime.length > 0) {
+        // Target bedtime = wake target - target hours (in minutes from midnight)
+        const wakeTargetMin = settings.wakeHour * 60 + (settings.wakeMinute || 0);
+        const targetBedMin = wakeTargetMin - (settings.targetSleepHours * 60);
+        // targetBedMin may be negative (before midnight), that's fine for diff calculation
+
+        // Average actual bedtime in minutes from midnight (handle overnight)
+        let totalBedMin = 0;
+        for (const d of daysWithBedtime) {
+            const bt = d.bedtime;
+            let bedMin = bt.getHours() * 60 + bt.getMinutes();
+            // If bedtime is after noon, treat as same-day evening (negative offset from midnight)
+            // If before noon, treat as past-midnight
+            if (bedMin >= 720) bedMin -= 1440; // e.g., 22:00 → -120 (2h before midnight)
+            totalBedMin += bedMin;
+        }
+        const avgBedMin = totalBedMin / daysWithBedtime.length;
+
+        // Diff in minutes (positive = late, negative = early)
+        const diffMin = avgBedMin - targetBedMin;
+
+        if (diffMin <= 0) {
+            // Early: -3.3 pts per 30 min
+            timingScore = Math.max(0, Math.round(100 - (Math.abs(diffMin) / 30) * 3.3));
+        } else {
+            // Late: -20 pts per 30 min
+            timingScore = Math.max(0, Math.round(100 - (diffMin / 30) * 20));
+        }
     }
 
-    // Weighted average
-    const totalScore = (durationScore * 0.4) + (bedtimeScore * 0.3) + (wakeScore * 0.3);
+    // --- 5. Streak (10%) — Uses existing calculateSleepStreak() ---
+    const streak = calculateSleepStreak();
+    const streakScore = Math.min(100, 30 + (streak.current * 10));
+
+    // --- Final weighted score ---
+    const totalScore = (regularityScore * 0.30) +
+                       (durationScore * 0.25) +
+                       (debtScore * 0.20) +
+                       (timingScore * 0.15) +
+                       (streakScore * 0.10);
 
     return {
         total: Math.round(totalScore),
+        regularity: Math.round(regularityScore),
         duration: Math.round(durationScore),
-        bedtime: Math.round(bedtimeScore),
-        wake: Math.round(wakeScore)
+        debt: Math.round(debtScore),
+        timing: Math.round(timingScore),
+        streak: Math.round(streakScore)
     };
 }
 
@@ -797,9 +869,11 @@ function renderSleepScore() {
                 <div class="score-label">SLEEP SCORE</div>
             </div>
             <div class="score-breakdown">
+                <div class="score-factor"><span class="factor-label">Regularity</span><div class="factor-bar"><div class="factor-fill" style="width: 0%"></div></div><span class="factor-value">--</span></div>
                 <div class="score-factor"><span class="factor-label">Duration</span><div class="factor-bar"><div class="factor-fill" style="width: 0%"></div></div><span class="factor-value">--</span></div>
-                <div class="score-factor"><span class="factor-label">Bedtime</span><div class="factor-bar"><div class="factor-fill" style="width: 0%"></div></div><span class="factor-value">--</span></div>
-                <div class="score-factor"><span class="factor-label">Wake</span><div class="factor-bar"><div class="factor-fill" style="width: 0%"></div></div><span class="factor-value">--</span></div>
+                <div class="score-factor"><span class="factor-label">Sleep Debt</span><div class="factor-bar"><div class="factor-fill" style="width: 0%"></div></div><span class="factor-value">--</span></div>
+                <div class="score-factor"><span class="factor-label">Timing</span><div class="factor-bar"><div class="factor-fill" style="width: 0%"></div></div><span class="factor-value">--</span></div>
+                <div class="score-factor"><span class="factor-label">Streak</span><div class="factor-bar"><div class="factor-fill" style="width: 0%"></div></div><span class="factor-value">--</span></div>
             </div>
         `;
         return;
@@ -827,19 +901,29 @@ function renderSleepScore() {
         </div>
         <div class="score-breakdown">
             <div class="score-factor">
+                <span class="factor-label">Regularity</span>
+                <div class="factor-bar"><div class="factor-fill" style="width: ${score.regularity}%"></div></div>
+                <span class="factor-value">${score.regularity}</span>
+            </div>
+            <div class="score-factor">
                 <span class="factor-label">Duration</span>
                 <div class="factor-bar"><div class="factor-fill" style="width: ${score.duration}%"></div></div>
                 <span class="factor-value">${score.duration}</span>
             </div>
             <div class="score-factor">
-                <span class="factor-label">Bedtime</span>
-                <div class="factor-bar"><div class="factor-fill" style="width: ${score.bedtime}%"></div></div>
-                <span class="factor-value">${score.bedtime}</span>
+                <span class="factor-label">Sleep Debt</span>
+                <div class="factor-bar"><div class="factor-fill" style="width: ${score.debt}%"></div></div>
+                <span class="factor-value">${score.debt}</span>
             </div>
             <div class="score-factor">
-                <span class="factor-label">Wake</span>
-                <div class="factor-bar"><div class="factor-fill" style="width: ${score.wake}%"></div></div>
-                <span class="factor-value">${score.wake}</span>
+                <span class="factor-label">Timing</span>
+                <div class="factor-bar"><div class="factor-fill" style="width: ${score.timing}%"></div></div>
+                <span class="factor-value">${score.timing}</span>
+            </div>
+            <div class="score-factor">
+                <span class="factor-label">Streak</span>
+                <div class="factor-bar"><div class="factor-fill" style="width: ${score.streak}%"></div></div>
+                <span class="factor-value">${score.streak}</span>
             </div>
         </div>
     `;
