@@ -220,16 +220,26 @@ function calculateSleepScore(days) {
     if (daysWithData.length === 0) return null;
 
     // --- 1. Regularity (30%) — Sleep Window Overlap ---
+    // Normalize bedtime/wake to "minutes since 6 PM" so consecutive nights
+    // are compared on the same scale (absolute timestamps never overlap).
+    function toMinSince6pm(dt) {
+        let min = dt.getHours() * 60 + dt.getMinutes();
+        // 6 PM = 1080. Shift so 6 PM = 0, midnight = 360, 6 AM = 720, noon = 1080
+        min -= 1080;
+        if (min < 0) min += 1440;
+        return min;
+    }
+
     let regularityScore = 100;
     const daysWithBothTimes = daysWithData.filter(d => d.bedtime && d.wakeTime);
     if (daysWithBothTimes.length >= 2) {
         let totalOverlapPct = 0;
         let pairs = 0;
         for (let i = 1; i < daysWithBothTimes.length; i++) {
-            const bedA = daysWithBothTimes[i - 1].bedtime.getTime();
-            const wakeA = daysWithBothTimes[i - 1].wakeTime.getTime();
-            const bedB = daysWithBothTimes[i].bedtime.getTime();
-            const wakeB = daysWithBothTimes[i].wakeTime.getTime();
+            const bedA = toMinSince6pm(daysWithBothTimes[i - 1].bedtime);
+            const wakeA = toMinSince6pm(daysWithBothTimes[i - 1].wakeTime);
+            const bedB = toMinSince6pm(daysWithBothTimes[i].bedtime);
+            const wakeB = toMinSince6pm(daysWithBothTimes[i].wakeTime);
 
             const overlapStart = Math.max(bedA, bedB);
             const overlapEnd = Math.min(wakeA, wakeB);
