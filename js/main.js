@@ -10,21 +10,18 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
             .then((registration) => {
-                console.log('[PWA] Service Worker registered:', registration.scope);
-
                 // Check for updates
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing;
                     newWorker.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            // New version available
-                            console.log('[PWA] New version available');
+                            // New version available — could show update prompt here
                         }
                     });
                 });
             })
             .catch((error) => {
-                console.log('[PWA] Service Worker registration failed:', error);
+                console.error('[PWA] Service Worker registration failed:', error);
             });
     });
 }
@@ -98,29 +95,6 @@ function initOfflineIndicator() {
     if (!navigator.onLine) updateStatus();
 }
 
-/**
- * Update sleep tracking status indicator
- */
-function updateSleepTrackingStatus() {
-    const indicator = document.getElementById('sleep-tracking-indicator');
-    if (!indicator) return;
-
-    // Check if there's pending sleep tracking (bedtime logged but not wake)
-    const log = localStorage.getItem('0500_sleep_log');
-    if (log) {
-        const parsed = JSON.parse(log);
-        const lastEntry = parsed[parsed.length - 1];
-        const isPending = lastEntry && lastEntry.bedtime && !lastEntry.wakeTime;
-
-        indicator.classList.remove('status-active', 'status-syncing', 'status-offline');
-        if (isPending) {
-            indicator.classList.add('status-syncing');
-        } else {
-            indicator.classList.add('status-active');
-        }
-    }
-}
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // MULTI-TAB CONFLICT DETECTION
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -190,7 +164,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         deferInit(() => initWeather());
         deferInit(async () => {
             await initSleepCard();
-            updateSleepTrackingStatus();
             initBedtimeNotifications();
         });
         deferInit(() => initWeeklyReview());
@@ -200,13 +173,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Calculate initial globe size based on container
         const globeContainer = document.querySelector('.globe-section');
-        const getGlobeSize = () => {
-            if (window.innerWidth <= 768) {
-                // Mobile: fixed size for proper aspect ratio
-                return 200;
-            }
-            return 450; // Desktop size
-        };
+        const getGlobeSize = () => 450;
 
         // Get initial location (may be from localStorage or default)
         const savedLocation = localStorage.getItem('0500_user_location');

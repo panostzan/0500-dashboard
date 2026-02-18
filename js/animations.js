@@ -222,9 +222,3 @@ function shouldRunBootAnimation() {
     return true;
 }
 
-/**
- * Reset boot state (useful for testing)
- */
-function resetBootState() {
-    hasBooted = false;
-}

@@ -37,7 +37,7 @@ async function getUserLocation() {
             localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(location));
             return location;
         } catch (err) {
-            console.log('Geolocation unavailable, using default');
+            console.warn('Geolocation unavailable, using default');
         }
     }
 

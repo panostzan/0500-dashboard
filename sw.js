@@ -2,7 +2,7 @@
 // SERVICE WORKER - Offline Support for 0500 PWA
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = '0500-v26';
+const CACHE_NAME = '0500-v27';
 
 // Files to cache for offline use
 const STATIC_ASSETS = [
@@ -25,9 +25,7 @@ const STATIC_ASSETS = [
     '/js/weather.js',
     '/js/notes.js',
     '/js/sleep.js',
-    '/js/sleep-panel.js',
     '/js/weekly-review.js',
-    '/js/mobile.js',
     '/js/main.js',
     '/manifest.json'
 ];
@@ -37,7 +35,6 @@ self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
-                console.log('[SW] Caching static assets');
                 return cache.addAll(STATIC_ASSETS);
             })
             .then(() => self.skipWaiting())
@@ -51,10 +48,7 @@ self.addEventListener('activate', (event) => {
             return Promise.all(
                 cacheNames
                     .filter((name) => name !== CACHE_NAME)
-                    .map((name) => {
-                        console.log('[SW] Deleting old cache:', name);
-                        return caches.delete(name);
-                    })
+                    .map((name) => caches.delete(name))
             );
         }).then(() => self.clients.claim())
     );

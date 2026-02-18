@@ -1,6 +1,6 @@
 # 0500 Morning Dashboard
 
-Personal productivity PWA with a cinematic sunrise aesthetic. Globe-centered design, ambient UI, warm color palette.
+Desktop-only productivity PWA with a cinematic sunrise aesthetic. Globe-centered design, ambient UI, warm color palette.
 
 ## Quick Start
 
@@ -35,14 +35,12 @@ Open `index.html` in browser. No build step required.
 │   ├── goals.js        # Goals section (daily/mid-term/long-term)
 │   ├── schedule.js     # Notebook-style schedule
 │   ├── sleep.js        # Sleep tracking core functions
-│   ├── sleep-panel.js  # Inline sleep panel for mobile (Aurora theme)
 │   ├── timer.js        # Pomodoro focus timer
 │   ├── weather.js      # Weather integration (Open-Meteo API)
 │   ├── globe.js        # 3D dotted globe (canvas)
 │   ├── hud.js          # HUD overlay elements
 │   ├── clock.js        # Time display
 │   ├── notes.js        # Notes modal
-│   ├── mobile.js       # Mobile-specific behavior
 │   └── animations.js   # Shared animation utilities
 └── icons/              # PWA icons and splash screens
 ```
@@ -96,23 +94,13 @@ localStorage keys: `0500_goals`, `0500_schedule_entries`, `0500_sleep_log`, `050
 
 | Component | Location | Notes |
 |-----------|----------|-------|
-| Goals panel | Left side | 4 collapsible sections (Daily, 3 Month, 1 Year, Long-Term), inline edit, swipe-to-delete on mobile |
+| Goals panel | Left side | 4 collapsible sections (Daily, 3 Month, 1 Year, Long-Term), inline edit |
 | Globe | Center | Canvas-based dotted globe with location highlight |
 | Schedule | Right side | Notebook-style, HUD frame aesthetic |
 | Timer bar | Below globe | Preset buttons (5/10/15/25 min) |
 | Bottom chips | Footer | Notes button, sync indicator, REST (sleep) button |
-| Sleep modal | Modal | Full sleep dashboard with charts |
+| Sleep page | `sleep.html` | Full sleep dashboard (standalone page via REST chip) |
 | Timer overlay | Fullscreen | Focus mode with large globe |
-
-## Mobile
-
-- Bottom tab navigation (Goals / Schedule / Sleep)
-- **All three tabs are inline panels** - no page navigation, seamless switching
-- Sleep panel uses Aurora theme (Outfit font, glass morphism, floating orbs)
-- Swipe-to-delete on goal items
-- Responsive globe sizing
-- `mobile.js` handles tab switching
-- `sleep-panel.js` handles sleep panel rendering (inline Aurora theme)
 
 ## Design Tokens
 
@@ -138,7 +126,6 @@ Fonts: Orbitron (headers/clock), Inter (body)
 Goals and schedule already support:
 - Add/edit/delete via inline editing
 - Persistence (local + cloud)
-- Mobile swipe-to-delete (goals)
 
 Still needed for v1.2:
 - Drag-and-drop reordering for goals
