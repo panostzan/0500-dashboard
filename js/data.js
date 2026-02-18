@@ -115,6 +115,11 @@ const DataService = {
                     });
                 }
             });
+            // Keep localStorage backup of cloud data for fallback
+            const totalGoals = data.length;
+            if (totalGoals > 0) {
+                safeSetItem('0500_goals', JSON.stringify(goals));
+            }
             return goals;
         } else {
             // Fallback to localStorage
@@ -129,13 +134,6 @@ const DataService = {
             await withSaveLock('goals', async () => {
                 const userId = currentUser.id;
 
-                // Delete existing goals and insert new ones
-                const { error: deleteError } = await supabaseClient.from('goals').delete().eq('user_id', userId);
-                if (deleteError) {
-                    console.error('Error deleting goals:', deleteError);
-                    return; // Don't insert if delete failed
-                }
-
                 const inserts = [];
                 ['daily', 'midTerm', 'oneYear', 'longTerm'].forEach(category => {
                     goals[category].forEach((g, idx) => {
@@ -149,6 +147,21 @@ const DataService = {
                     });
                 });
 
+                // Safety: never wipe all goals unless user truly has none
+                // Only allow a full delete if the user explicitly cleared everything
+                // (i.e., goalsCache was previously populated with real data)
+                if (inserts.length === 0 && !this._confirmedEmpty) {
+                    console.warn('saveGoals: blocked delete-all with empty goals (safety guard)');
+                    return;
+                }
+
+                // Delete existing goals and insert new ones
+                const { error: deleteError } = await supabaseClient.from('goals').delete().eq('user_id', userId);
+                if (deleteError) {
+                    console.error('Error deleting goals:', deleteError);
+                    return;
+                }
+
                 if (inserts.length > 0) {
                     const { error } = await supabaseClient.from('goals').insert(inserts);
                     if (error) console.error('Error saving goals:', error);
@@ -157,6 +170,8 @@ const DataService = {
         } else {
             safeSetItem('0500_goals', JSON.stringify(goals));
         }
+        // Always keep a localStorage backup when signed in
+        safeSetItem('0500_goals', JSON.stringify(goals));
     },
 
     _getEmptyGoals() {
