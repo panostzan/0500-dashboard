@@ -98,7 +98,6 @@ const DataService = {
 
             if (error) {
                 console.error('Error loading goals:', error);
-                // Fall back to localStorage instead of empty
                 const fallback = localStorage.getItem('0500_goals');
                 if (fallback) return JSON.parse(fallback);
                 return this._getEmptyGoals();
@@ -115,14 +114,26 @@ const DataService = {
                     });
                 }
             });
-            // Keep localStorage backup of cloud data for fallback
-            const totalGoals = data.length;
-            if (totalGoals > 0) {
+
+            if (data.length > 0) {
+                // Successful cloud load with data — back up to localStorage
                 safeSetItem('0500_goals', JSON.stringify(goals));
+            } else {
+                // Cloud returned empty — check if localStorage has goals
+                // (protects against transient empty reads wiping the cache)
+                const fallback = localStorage.getItem('0500_goals');
+                if (fallback) {
+                    const cached = JSON.parse(fallback);
+                    const cachedTotal = ['daily', 'midTerm', 'oneYear', 'longTerm']
+                        .reduce((sum, cat) => sum + (cached[cat]?.length || 0), 0);
+                    if (cachedTotal > 0) {
+                        console.warn('loadGoals: Supabase returned empty but localStorage has data — using localStorage');
+                        return cached;
+                    }
+                }
             }
             return goals;
         } else {
-            // Fallback to localStorage
             const saved = localStorage.getItem('0500_goals');
             if (saved) return JSON.parse(saved);
             return this._getEmptyGoals();
@@ -196,21 +207,33 @@ const DataService = {
 
             if (error) {
                 console.error('Error loading schedule:', error);
-                // Fall back to localStorage instead of empty
                 const fallback = localStorage.getItem('0500_schedule_entries');
                 if (fallback) return JSON.parse(fallback);
                 return this._getEmptySchedule();
             }
 
             if (data.length === 0) {
+                // Cloud returned empty — check if localStorage has schedule
+                const fallback = localStorage.getItem('0500_schedule_entries');
+                if (fallback) {
+                    const cached = JSON.parse(fallback);
+                    const hasContent = cached.some(e => e.time || e.activity);
+                    if (hasContent) {
+                        console.warn('loadSchedule: Supabase returned empty but localStorage has data — using localStorage');
+                        return cached;
+                    }
+                }
                 return this._getEmptySchedule();
             }
 
-            return data.map(e => ({
+            const result = data.map(e => ({
                 id: e.id,
                 time: e.time || '',
                 activity: e.activity || ''
             }));
+            // Backup to localStorage for fallback
+            safeSetItem('0500_schedule_entries', JSON.stringify(result));
+            return result;
         } else {
             const saved = localStorage.getItem('0500_schedule_entries');
             if (saved) return JSON.parse(saved);
@@ -220,13 +243,20 @@ const DataService = {
 
     async saveSchedule(entries) {
         if (isSignedIn()) {
+            // Safety: block saving completely empty schedule
+            const hasContent = entries.some(e => e.time || e.activity);
+            if (entries.length === 0 || !hasContent) {
+                console.warn('saveSchedule: blocked save with empty schedule (safety guard)');
+                return;
+            }
+
             await withSaveLock('schedule', async () => {
                 const userId = currentUser.id;
 
                 const { error: deleteError } = await supabaseClient.from('schedule_entries').delete().eq('user_id', userId);
                 if (deleteError) {
                     console.error('Error deleting schedule:', deleteError);
-                    return; // Don't insert if delete failed
+                    return;
                 }
 
                 const inserts = entries.map((e, idx) => ({
@@ -241,6 +271,9 @@ const DataService = {
                     if (error) console.error('Error saving schedule:', error);
                 }
             });
+
+            // Backup to localStorage after successful cloud save
+            safeSetItem('0500_schedule_entries', JSON.stringify(entries));
         } else {
             safeSetItem('0500_schedule_entries', JSON.stringify(entries));
         }
