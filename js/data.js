@@ -130,7 +130,16 @@ const DataService = {
     },
 
     async saveGoals(goals) {
+        const totalGoals = ['daily', 'midTerm', 'oneYear', 'longTerm']
+            .reduce((sum, cat) => sum + goals[cat].length, 0);
+
         if (isSignedIn()) {
+            // Safety: never wipe all goals from a save with empty data
+            if (totalGoals === 0) {
+                console.warn('saveGoals: blocked save with 0 goals (safety guard)');
+                return;
+            }
+
             await withSaveLock('goals', async () => {
                 const userId = currentUser.id;
 
@@ -147,14 +156,6 @@ const DataService = {
                     });
                 });
 
-                // Safety: never wipe all goals unless user truly has none
-                // Only allow a full delete if the user explicitly cleared everything
-                // (i.e., goalsCache was previously populated with real data)
-                if (inserts.length === 0 && !this._confirmedEmpty) {
-                    console.warn('saveGoals: blocked delete-all with empty goals (safety guard)');
-                    return;
-                }
-
                 // Delete existing goals and insert new ones
                 const { error: deleteError } = await supabaseClient.from('goals').delete().eq('user_id', userId);
                 if (deleteError) {
@@ -162,16 +163,15 @@ const DataService = {
                     return;
                 }
 
-                if (inserts.length > 0) {
-                    const { error } = await supabaseClient.from('goals').insert(inserts);
-                    if (error) console.error('Error saving goals:', error);
-                }
+                const { error } = await supabaseClient.from('goals').insert(inserts);
+                if (error) console.error('Error saving goals:', error);
             });
+
+            // Backup to localStorage only after successful cloud save
+            safeSetItem('0500_goals', JSON.stringify(goals));
         } else {
             safeSetItem('0500_goals', JSON.stringify(goals));
         }
-        // Always keep a localStorage backup when signed in
-        safeSetItem('0500_goals', JSON.stringify(goals));
     },
 
     _getEmptyGoals() {
