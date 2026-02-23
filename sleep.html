@@ -2550,10 +2550,12 @@ function initTimelineModal() {
     const handleLeft = document.getElementById('handle-left');
     const handleRight = document.getElementById('handle-right');
 
-    // Close modal
+    // Close modal (but not if we just finished dragging a handle)
+    let wasDragging = false;
     document.getElementById('timeline-close').addEventListener('click', closeTimelineModal);
     overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) closeTimelineModal();
+        if (e.target === overlay && !wasDragging) closeTimelineModal();
+        wasDragging = false;
     });
 
     // Save/Delete buttons
@@ -2601,6 +2603,7 @@ function initTimelineModal() {
     }
 
     function endDrag() {
+        if (isDragging) wasDragging = true;
         isDragging = null;
         document.body.style.cursor = '';
     }
