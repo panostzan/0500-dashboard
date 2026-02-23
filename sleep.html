@@ -825,7 +825,7 @@
         .debt-meter-recovery-text strong.positive { color: #7dd4a0; }
 
         /* ═══════════════════════════════════════════════════════════════════════
-           HEALTH IMPACT SECTION
+           DYNAMIC INSIGHTS SECTION
            ═══════════════════════════════════════════════════════════════════════ */
         .health-impact-section {
             margin-bottom: 16px;
@@ -844,136 +844,105 @@
             padding-left: 4px;
         }
 
-        /* Warning colors */
-        .health-impact-section {
-            --warning-severe: #ff6b6b;
-            --warning-severe-bg: rgba(255, 107, 107, 0.12);
-            --warning-severe-border: rgba(255, 107, 107, 0.3);
-            --warning-moderate: #ffa94d;
-            --warning-moderate-bg: rgba(255, 169, 77, 0.12);
-            --warning-moderate-border: rgba(255, 169, 77, 0.3);
+        .insights-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
-        /* Hero Warning (Primary) */
-        .health-hero {
-            background: var(--warning-severe-bg);
-            border: 1px solid var(--warning-severe-border);
-            border-radius: 16px;
-            padding: 22px 18px;
-            text-align: center;
-            margin-bottom: 10px;
-            position: relative;
-        }
-
-        .health-hero.moderate {
-            background: var(--warning-moderate-bg);
-            border-color: var(--warning-moderate-border);
-        }
-
-        .health-hero-badge {
-            position: absolute;
-            top: -9px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--warning-severe);
-            color: #0f0a12;
-            font-size: 0.58rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 3px 10px;
-            border-radius: 20px;
-        }
-
-        .health-hero.moderate .health-hero-badge {
-            background: var(--warning-moderate);
-        }
-
-        .health-hero-stat {
-            font-size: 2.6rem;
-            font-weight: 700;
-            color: var(--warning-severe);
-            line-height: 1;
-        }
-
-        .health-hero.moderate .health-hero-stat {
-            color: var(--warning-moderate);
-        }
-
-        .health-hero-label {
-            font-size: 0.65rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-        }
-
-        .health-hero-message {
-            font-size: 0.9rem;
-            color: var(--text-primary);
-            line-height: 1.55;
-        }
-
-        /* Secondary Warnings */
-        .health-secondary {
-            background: var(--warning-moderate-bg);
-            border: 1px solid var(--warning-moderate-border);
-            border-radius: 12px;
-            padding: 12px 14px;
+        .insight-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 14px 16px;
             display: flex;
             gap: 12px;
             align-items: flex-start;
-            margin-bottom: 8px;
+            transition: all 0.3s ease;
         }
 
-        .health-secondary.severe {
-            background: var(--warning-severe-bg);
-            border-color: var(--warning-severe-border);
+        .insight-card:hover {
+            background: rgba(255, 255, 255, 0.08);
         }
 
-        .health-secondary-stat {
-            min-width: 52px;
-            text-align: center;
+        .insight-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
 
-        .health-secondary-value {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--warning-moderate);
-            line-height: 1.2;
+        .insight-icon svg {
+            width: 16px;
+            height: 16px;
         }
 
-        .health-secondary.severe .health-secondary-value {
-            color: var(--warning-severe);
-        }
-
-        .health-secondary-label {
-            font-size: 0.55rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .health-secondary-text {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            line-height: 1.45;
+        .insight-content {
             flex: 1;
+            min-width: 0;
         }
 
-        /* No warnings state */
-        .health-good {
-            background: rgba(125, 212, 160, 0.1);
-            border: 1px solid rgba(125, 212, 160, 0.25);
-            border-radius: 12px;
-            padding: 16px;
-            text-align: center;
-        }
-
-        .health-good-text {
+        .insight-title {
             font-size: 0.85rem;
-            color: var(--data-good-start);
+            font-weight: 600;
+            line-height: 1.3;
+            margin-bottom: 3px;
         }
+
+        .insight-body {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Critical */
+        .insight-critical {
+            background: rgba(255, 107, 107, 0.1);
+            border-color: rgba(255, 107, 107, 0.3);
+        }
+        .insight-critical .insight-icon {
+            background: rgba(255, 107, 107, 0.2);
+        }
+        .insight-critical .insight-icon svg { color: #ff6b6b; }
+        .insight-critical .insight-title { color: #ff6b6b; }
+
+        /* Warning */
+        .insight-warning {
+            background: rgba(255, 169, 77, 0.1);
+            border-color: rgba(255, 169, 77, 0.3);
+        }
+        .insight-warning .insight-icon {
+            background: rgba(255, 169, 77, 0.2);
+        }
+        .insight-warning .insight-icon svg { color: #ffa94d; }
+        .insight-warning .insight-title { color: #ffa94d; }
+
+        /* Neutral */
+        .insight-neutral {
+            background: rgba(255, 176, 144, 0.08);
+            border-color: rgba(255, 176, 144, 0.2);
+        }
+        .insight-neutral .insight-icon {
+            background: rgba(255, 176, 144, 0.15);
+        }
+        .insight-neutral .insight-icon svg { color: var(--accent); }
+        .insight-neutral .insight-title { color: var(--accent); }
+
+        /* Positive */
+        .insight-positive {
+            background: rgba(125, 212, 160, 0.08);
+            border-color: rgba(125, 212, 160, 0.25);
+        }
+        .insight-positive .insight-icon {
+            background: rgba(125, 212, 160, 0.15);
+        }
+        .insight-positive .insight-icon svg { color: #7dd4a0; }
+        .insight-positive .insight-title { color: #7dd4a0; }
 
         /* Calendar Hint */
         .calendar-hint {
@@ -2240,160 +2209,44 @@ function renderDebtMeter() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// HEALTH IMPACT WARNINGS
+// DYNAMIC INSIGHTS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function renderHealthImpact() {
+const INSIGHT_ICONS = {
+    Health: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>',
+    Trends: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>',
+    Consistency: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+    Patterns: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg>',
+    Achievements: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>',
+    Debt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="10" x="2" y="7" rx="2" ry="2" transform="rotate(90 12 12)"/><line x1="12" x2="12" y1="17" y2="17.01"/><line x1="12" x2="12" y1="11" y2="14"/></svg>'
+};
+
+function renderDynamicInsights() {
     const container = document.getElementById('health-impact');
     if (!container) return;
 
-    const log = loadSleepLog().filter(e => e.hours);
-    const settings = loadSleepSettings();
+    const insights = generateDynamicInsights();
 
-    // Need at least 3 days of data
-    if (log.length < 3) {
+    if (insights.length === 0) {
         container.innerHTML = '';
         return;
     }
 
-    // Calculate metrics
-    const last7 = getLastNDaysLog(7).filter(d => d.hours);
-    const avgDuration = last7.length > 0
-        ? last7.reduce((sum, d) => sum + d.hours, 0) / last7.length
-        : null;
+    let html = '<div class="section-header">INSIGHTS</div><div class="insights-grid">';
 
-    // Count consecutive nights under 6h (from most recent)
-    let consecutiveUnder6 = 0;
-    const sortedLog = [...log].sort((a, b) => new Date(b.date) - new Date(a.date));
-    for (const entry of sortedLog) {
-        if (entry.hours < 6) {
-            consecutiveUnder6++;
-        } else {
-            break;
-        }
-    }
-
-    // Calculate bedtime variance
-    const bedtimes = last7.filter(d => d.bedtime).map(d => {
-        const bt = new Date(d.bedtime);
-        let mins = bt.getHours() * 60 + bt.getMinutes();
-        if (mins > 720) mins -= 1440;
-        return mins;
-    });
-    let bedtimeVariance = null;
-    if (bedtimes.length >= 3) {
-        const mean = bedtimes.reduce((a, b) => a + b, 0) / bedtimes.length;
-        const variance = bedtimes.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / bedtimes.length;
-        bedtimeVariance = Math.sqrt(variance);
-    }
-
-    // Calculate sleep debt
-    const debt = calculateSleepDebt(7);
-
-    // Build warnings array
-    const warnings = [];
-
-    // Severe: Average under 5.5h
-    if (avgDuration !== null && avgDuration < 5.5) {
-        warnings.push({
-            type: 'hero',
-            severity: 'severe',
-            badge: 'Critical',
-            stat: avgDuration.toFixed(1) + 'h',
-            label: 'Average This Week',
-            message: `Testosterone drops 10-15% at this level. Cortisol is elevated. Your body is in survival mode, not recovery mode.`
-        });
-    }
-    // Moderate: Average under 6.5h
-    else if (avgDuration !== null && avgDuration < 6.5) {
-        warnings.push({
-            type: 'hero',
-            severity: 'moderate',
-            badge: 'Warning',
-            stat: avgDuration.toFixed(1) + 'h',
-            label: 'Average This Week',
-            message: `Below 7 hours consistently impairs memory consolidation and immune function. Growth hormone secretion is reduced.`
-        });
-    }
-
-    // Consecutive nights under 6h
-    if (consecutiveUnder6 >= 3) {
-        warnings.push({
-            type: 'secondary',
-            severity: consecutiveUnder6 >= 4 ? 'severe' : 'moderate',
-            stat: consecutiveUnder6,
-            label: 'Nights',
-            message: `Consecutive nights under 6 hours. Cognitive performance equivalent to 0.05% blood alcohol level.`
-        });
-    }
-
-    // Bedtime variance
-    if (bedtimeVariance !== null && bedtimeVariance > 45) {
-        warnings.push({
-            type: 'secondary',
-            severity: bedtimeVariance > 60 ? 'severe' : 'moderate',
-            stat: '±' + Math.round(bedtimeVariance) + 'm',
-            label: 'Variance',
-            message: `Irregular bedtime disrupts insulin sensitivity and circadian rhythm. Hunger hormones become dysregulated.`
-        });
-    }
-
-    // Sleep debt
-    if (debt < -5) {
-        warnings.push({
-            type: 'secondary',
-            severity: debt < -8 ? 'severe' : 'moderate',
-            stat: debt.toFixed(1) + 'h',
-            label: 'Debt',
-            message: `Sleep debt this week. Inflammatory markers are elevated. This does not fully recover on weekends.`
-        });
-    }
-
-    // Render
-    if (warnings.length === 0) {
-        // Check if sleep is actually good
-        if (avgDuration !== null && avgDuration >= 7 && (bedtimeVariance === null || bedtimeVariance <= 30)) {
-            container.innerHTML = `
-                <div class="section-header">HEALTH STATUS</div>
-                <div class="health-good">
-                    <div class="health-good-text">Your sleep is supporting recovery and performance.</div>
-                </div>
-            `;
-        } else {
-            container.innerHTML = '';
-        }
-        return;
-    }
-
-    let html = '<div class="section-header">HEALTH IMPACT</div>';
-
-    // Find hero warning (first one with type 'hero')
-    const heroWarning = warnings.find(w => w.type === 'hero');
-    const secondaryWarnings = warnings.filter(w => w.type === 'secondary');
-
-    if (heroWarning) {
+    for (const insight of insights) {
+        const icon = INSIGHT_ICONS[insight.category] || INSIGHT_ICONS.Health;
         html += `
-            <div class="health-hero ${heroWarning.severity}">
-                <div class="health-hero-badge">${heroWarning.badge}</div>
-                <div class="health-hero-stat">${heroWarning.stat}</div>
-                <div class="health-hero-label">${heroWarning.label}</div>
-                <div class="health-hero-message">${heroWarning.message}</div>
-            </div>
-        `;
-    }
-
-    for (const warning of secondaryWarnings) {
-        html += `
-            <div class="health-secondary ${warning.severity}">
-                <div class="health-secondary-stat">
-                    <div class="health-secondary-value">${warning.stat}</div>
-                    <div class="health-secondary-label">${warning.label}</div>
+            <div class="insight-card insight-${insight.type}">
+                <div class="insight-icon">${icon}</div>
+                <div class="insight-content">
+                    <div class="insight-title">${insight.title}</div>
+                    <div class="insight-body">${insight.body}</div>
                 </div>
-                <div class="health-secondary-text">${warning.message}</div>
-            </div>
-        `;
+            </div>`;
     }
 
+    html += '</div>';
     container.innerHTML = html;
 }
 
@@ -2401,7 +2254,7 @@ function refreshAll() {
     renderScoreHero();
     renderMiniBars();
     renderDebtMeter();
-    renderHealthImpact();
+    renderDynamicInsights();
     renderStats();
     renderHeatmap();
     updateCountdown();

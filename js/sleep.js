@@ -593,6 +593,354 @@ function generateSleepInsights() {
     return insights.slice(0, 3); // Max 3 insights
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// DYNAMIC INSIGHTS ENGINE (WHOOP-inspired)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function generateDynamicInsights() {
+    const log = loadSleepLog().filter(e => e.hours);
+    const settings = loadSleepSettings();
+
+    if (log.length === 0) {
+        return [{
+            id: 'keep-logging', category: 'Health', title: 'Start Tracking',
+            body: 'Log your first night of sleep to unlock personalized insights.',
+            type: 'neutral', priority: 100
+        }];
+    }
+
+    if (log.length < 3) {
+        return [{
+            id: 'keep-logging', category: 'Health', title: 'Keep Logging',
+            body: `${log.length} night${log.length > 1 ? 's' : ''} logged. Need at least 3 for insights.`,
+            type: 'neutral', priority: 100
+        }];
+    }
+
+    // Precompute metrics
+    const last7 = getLastNDaysLog(7);
+    const last14 = getLastNDaysLog(14);
+    const last7data = last7.filter(d => d.hours);
+    const last14data = last14.filter(d => d.hours);
+
+    const avgDuration7 = last7data.length > 0
+        ? last7data.reduce((s, d) => s + d.hours, 0) / last7data.length : null;
+
+    const streak = calculateSleepStreak();
+    const debtObj = calculateCumulativeSleepDebt(14);
+    const cumulativeDebt = debtObj.total;
+
+    const bedtimeStdDev = calculateBedtimeConsistency(last14data);
+    const wakeStdDev = calculateWakeTimeConsistency(last14data);
+
+    // Weekday/weekend averages
+    const weekdays14 = last14data.filter(d => { const dow = new Date(d.date).getDay(); return dow >= 1 && dow <= 5; });
+    const weekends14 = last14data.filter(d => { const dow = new Date(d.date).getDay(); return dow === 0 || dow === 6; });
+    const weekdayAvg = weekdays14.length > 0 ? weekdays14.reduce((s, d) => s + d.hours, 0) / weekdays14.length : null;
+    const weekendAvg = weekends14.length > 0 ? weekends14.reduce((s, d) => s + d.hours, 0) / weekends14.length : null;
+
+    // Duration trend
+    const durationValues = last14data.map(d => d.hours);
+    const durationTrend = calculateTrend(durationValues);
+
+    // Bedtime shift (compare recent 3 bedtimes to earlier 3)
+    const bedtimeMinutes = last14data.filter(d => d.bedtime).map(d => {
+        let mins = d.bedtime.getHours() * 60 + d.bedtime.getMinutes();
+        if (mins > 720) mins -= 1440;
+        return mins;
+    });
+    let bedtimeShift = 0;
+    if (bedtimeMinutes.length >= 6) {
+        const recent3 = bedtimeMinutes.slice(-3);
+        const earlier3 = bedtimeMinutes.slice(-6, -3);
+        const recentAvg = recent3.reduce((a, b) => a + b, 0) / 3;
+        const earlierAvg = earlier3.reduce((a, b) => a + b, 0) / 3;
+        bedtimeShift = recentAvg - earlierAvg;
+    }
+
+    // Consecutive nights under 6h
+    const sortedDesc = [...log].sort((a, b) => new Date(b.date) - new Date(a.date));
+    let consecutiveUnder6 = 0;
+    for (const e of sortedDesc) {
+        if (e.hours < 6) consecutiveUnder6++;
+        else break;
+    }
+
+    // Day-of-week averages (need 14+ days)
+    const dowTotals = Array(7).fill(0);
+    const dowCounts = Array(7).fill(0);
+    last14data.forEach(d => {
+        const dow = new Date(d.date).getDay();
+        dowTotals[dow] += d.hours;
+        dowCounts[dow]++;
+    });
+    const dowAvgs = dowTotals.map((t, i) => dowCounts[i] > 0 ? t / dowCounts[i] : null);
+
+    // Target hit ratio (last 14 nights)
+    const tolerance = 0.5;
+    const hitsIn14 = last14data.filter(d => d.hours >= settings.targetHours - tolerance).length;
+    const targetRatio = last14data.length > 0 ? hitsIn14 / last14data.length : 0;
+
+    const totalDays = log.length;
+
+    const metrics = {
+        avgDuration7, streak, cumulativeDebt, bedtimeStdDev, wakeStdDev,
+        weekdayAvg, weekendAvg, durationTrend, bedtimeShift,
+        consecutiveUnder6, dowAvgs, targetRatio, totalDays, settings, last7data, last14data
+    };
+
+    // Run all generators
+    const generators = [
+        insightBedtimeInconsistent, insightBedtimeConsistent,
+        insightWakeInconsistent, insightWeekendOversleep, insightWeekendConsistent,
+        insightDurationUp, insightDurationDown, insightBedtimeShiftingLater,
+        insightBestWorstDay, insightTargetHitRatio,
+        insightDebtCritical, insightDebtModerate, insightDebtSurplus,
+        insightStreakActive, insightStreakRecord, insightStreakBroken,
+        insightHealthCritical, insightHealthWarning, insightConsecutiveUnder6,
+        insightGoodHealth
+    ];
+
+    const allInsights = [];
+    for (const gen of generators) {
+        const result = gen(metrics);
+        if (result) allInsights.push(result);
+    }
+
+    // Sort by typeWeight + priority
+    const typeWeight = { critical: 40, warning: 20, neutral: 0, positive: -10 };
+    allInsights.sort((a, b) => {
+        const wa = (typeWeight[a.type] || 0) + a.priority;
+        const wb = (typeWeight[b.type] || 0) + b.priority;
+        return wb - wa;
+    });
+
+    // Take top 4 ensuring at least 1 positive
+    const top4 = allInsights.slice(0, 4);
+    if (!top4.some(i => i.type === 'positive')) {
+        const firstPositive = allInsights.find(i => i.type === 'positive' && !top4.includes(i));
+        if (firstPositive) {
+            top4[3] = firstPositive;
+        }
+    }
+
+    return top4;
+}
+
+// --- 20 Insight Generators ---
+
+function insightBedtimeInconsistent(m) {
+    if (m.totalDays < 7 || m.bedtimeStdDev === null || m.bedtimeStdDev <= 60) return null;
+    return {
+        id: 'bedtime-inconsistent', category: 'Consistency', type: 'warning', priority: 70,
+        title: 'Irregular Bedtime',
+        body: `Your bedtime varies by ±${Math.round(m.bedtimeStdDev)} min. A consistent window strengthens your circadian rhythm.`
+    };
+}
+
+function insightBedtimeConsistent(m) {
+    if (m.totalDays < 7 || m.bedtimeStdDev === null || m.bedtimeStdDev > 30) return null;
+    return {
+        id: 'bedtime-consistent', category: 'Consistency', type: 'positive', priority: 30,
+        title: 'Solid Bedtime Routine',
+        body: `Only ±${Math.round(m.bedtimeStdDev)} min bedtime variance. Your circadian clock is well-calibrated.`
+    };
+}
+
+function insightWakeInconsistent(m) {
+    if (m.totalDays < 7 || m.wakeStdDev === null || m.wakeStdDev <= 45) return null;
+    return {
+        id: 'wake-inconsistent', category: 'Consistency', type: 'warning', priority: 65,
+        title: 'Unstable Wake Time',
+        body: `Wake time swings ±${Math.round(m.wakeStdDev)} min. Anchoring your alarm helps more than fixing bedtime.`
+    };
+}
+
+function insightWeekendOversleep(m) {
+    if (m.totalDays < 7 || m.weekdayAvg === null || m.weekendAvg === null) return null;
+    const diff = m.weekendAvg - m.weekdayAvg;
+    if (diff <= 1) return null;
+    return {
+        id: 'weekend-oversleep', category: 'Consistency', type: 'warning', priority: 60,
+        title: 'Weekend Sleep Gap',
+        body: `You sleep ${diff.toFixed(1)}h more on weekends \u2014 a sign of weekday under-recovery.`
+    };
+}
+
+function insightWeekendConsistent(m) {
+    if (m.totalDays < 7 || m.weekdayAvg === null || m.weekendAvg === null) return null;
+    if (Math.abs(m.weekendAvg - m.weekdayAvg) > 0.5) return null;
+    return {
+        id: 'weekend-consistent', category: 'Consistency', type: 'positive', priority: 20,
+        title: 'Even Weekly Rhythm',
+        body: 'Weekday and weekend sleep within 30 min. No social jet lag detected.'
+    };
+}
+
+function insightDurationUp(m) {
+    if (m.totalDays < 7 || m.durationTrend !== 'up') return null;
+    return {
+        id: 'duration-up', category: 'Trends', type: 'positive', priority: 40,
+        title: 'Duration Trending Up',
+        body: 'Your recent nights are longer than earlier this period. Recovery is improving.'
+    };
+}
+
+function insightDurationDown(m) {
+    if (m.totalDays < 7 || m.durationTrend !== 'down') return null;
+    return {
+        id: 'duration-down', category: 'Trends', type: 'warning', priority: 75,
+        title: 'Sleep Is Shrinking',
+        body: 'Duration is trending down. Consider protecting your wind-down time.'
+    };
+}
+
+function insightBedtimeShiftingLater(m) {
+    if (m.totalDays < 7 || Math.abs(m.bedtimeShift) < 30) return null;
+    if (m.bedtimeShift <= 0) return null;
+    return {
+        id: 'bedtime-shifting', category: 'Trends', type: 'warning', priority: 55,
+        title: 'Bedtime Creeping Later',
+        body: `Bedtime shifted ~${Math.round(m.bedtimeShift)} min later recently. This often snowballs.`
+    };
+}
+
+function insightBestWorstDay(m) {
+    if (m.totalDays < 14) return null;
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const valid = m.dowAvgs.map((avg, i) => avg !== null ? { avg, day: dayNames[i] } : null).filter(Boolean);
+    if (valid.length < 4) return null;
+    valid.sort((a, b) => b.avg - a.avg);
+    const best = valid[0];
+    const worst = valid[valid.length - 1];
+    if (best.avg - worst.avg < 0.5) return null;
+    return {
+        id: 'best-worst-day', category: 'Patterns', type: 'neutral', priority: 25,
+        title: 'Day-of-Week Pattern',
+        body: `Best sleep: ${best.day} (${best.avg.toFixed(1)}h). Worst: ${worst.day} (${worst.avg.toFixed(1)}h).`
+    };
+}
+
+function insightTargetHitRatio(m) {
+    if (m.totalDays < 7) return null;
+    const pct = Math.round(m.targetRatio * 100);
+    if (pct >= 80) {
+        return {
+            id: 'target-ratio', category: 'Patterns', type: 'positive', priority: 35,
+            title: 'Hitting Your Target',
+            body: `${pct}% of recent nights met your ${m.settings.targetHours}h goal. Consistency pays off.`
+        };
+    }
+    if (pct < 50) {
+        return {
+            id: 'target-ratio', category: 'Patterns', type: 'warning', priority: 35,
+            title: 'Below Target',
+            body: `Only ${pct}% of recent nights reached ${m.settings.targetHours}h. Small adjustments compound.`
+        };
+    }
+    return null;
+}
+
+function insightDebtCritical(m) {
+    if (m.cumulativeDebt >= -5) return null;
+    return {
+        id: 'debt-critical', category: 'Debt', type: 'critical', priority: 90,
+        title: 'Heavy Sleep Debt',
+        body: `${Math.abs(m.cumulativeDebt).toFixed(1)}h in the red over 14 days. This compounds \u2014 prioritize recovery nights.`
+    };
+}
+
+function insightDebtModerate(m) {
+    if (m.cumulativeDebt < -5 || m.cumulativeDebt >= -2) return null;
+    return {
+        id: 'debt-moderate', category: 'Debt', type: 'warning', priority: 65,
+        title: 'Building Sleep Debt',
+        body: `${Math.abs(m.cumulativeDebt).toFixed(1)}h debt. Not critical yet, but trend is worth watching.`
+    };
+}
+
+function insightDebtSurplus(m) {
+    if (m.cumulativeDebt <= 1) return null;
+    return {
+        id: 'debt-surplus', category: 'Debt', type: 'positive', priority: 25,
+        title: 'Sleep Surplus',
+        body: `+${m.cumulativeDebt.toFixed(1)}h banked over 14 days. Your recovery buffer is healthy.`
+    };
+}
+
+function insightStreakActive(m) {
+    if (m.streak.current < 3) return null;
+    const priority = Math.min(60, 45 + m.streak.current * 2);
+    const labels = { 3: 'Good', 5: 'Strong', 7: 'Incredible', 10: 'Elite' };
+    const tier = m.streak.current >= 10 ? 'Elite' : m.streak.current >= 7 ? 'Incredible' : m.streak.current >= 5 ? 'Strong' : 'Good';
+    return {
+        id: 'streak-active', category: 'Achievements', type: 'positive', priority,
+        title: `${m.streak.current}-Day Streak`,
+        body: `${tier}. ${m.streak.current} consecutive nights near target. Momentum is everything.`
+    };
+}
+
+function insightStreakRecord(m) {
+    if (m.streak.current < 3 || m.streak.current < m.streak.longest) return null;
+    if (m.streak.current === m.streak.longest && m.streak.longest >= 3) {
+        return {
+            id: 'streak-record', category: 'Achievements', type: 'positive', priority: 55,
+            title: 'New Personal Best',
+            body: `${m.streak.current}-day streak is your all-time record. Keep extending it.`
+        };
+    }
+    return null;
+}
+
+function insightStreakBroken(m) {
+    if (m.streak.current > 0 || m.streak.longest < 5) return null;
+    return {
+        id: 'streak-broken', category: 'Achievements', type: 'warning', priority: 50,
+        title: 'Streak Lost',
+        body: `Your ${m.streak.longest}-day record streak ended. One good night starts a new one.`
+    };
+}
+
+function insightHealthCritical(m) {
+    if (m.avgDuration7 === null || m.avgDuration7 >= 5.5) return null;
+    return {
+        id: 'health-critical', category: 'Health', type: 'critical', priority: 95,
+        title: 'Severe Sleep Deficit',
+        body: `Averaging ${m.avgDuration7.toFixed(1)}h this week. Below 5.5h impairs hormones, immunity, and cognitive function.`
+    };
+}
+
+function insightHealthWarning(m) {
+    if (m.avgDuration7 === null || m.avgDuration7 < 5.5 || m.avgDuration7 >= 6.5) return null;
+    return {
+        id: 'health-warning', category: 'Health', type: 'warning', priority: 80,
+        title: 'Under-Recovered',
+        body: `${m.avgDuration7.toFixed(1)}h average this week. Below 7h reduces memory consolidation and growth hormone release.`
+    };
+}
+
+function insightConsecutiveUnder6(m) {
+    if (m.consecutiveUnder6 < 3) return null;
+    const isCritical = m.consecutiveUnder6 >= 5;
+    return {
+        id: 'consecutive-under6', category: 'Health',
+        type: isCritical ? 'critical' : 'warning',
+        priority: isCritical ? 88 : 72,
+        title: `${m.consecutiveUnder6} Short Nights`,
+        body: `${m.consecutiveUnder6} consecutive nights under 6h. Cognitive impairment accumulates with each night.`
+    };
+}
+
+function insightGoodHealth(m) {
+    if (m.avgDuration7 === null || m.avgDuration7 < 7) return null;
+    if (m.bedtimeStdDev !== null && m.bedtimeStdDev > 45) return null;
+    return {
+        id: 'good-health', category: 'Health', type: 'positive', priority: 15,
+        title: 'Optimized Recovery',
+        body: 'Averaging 7h+ with consistent timing. Hormone balance, immunity, and cognition are well-supported.'
+    };
+}
+
 function getLastNDaysLog(n = 7) {
     const log = loadSleepLog();
     const now = new Date();
