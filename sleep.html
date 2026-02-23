@@ -1976,7 +1976,7 @@ function renderMiniBars() {
     const container = document.getElementById('mini-bars');
     const weekData = getLastNDaysLog(7);
     const maxHours = 10;
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDateStr(new Date());
 
     // Use larger multiplier for more pronounced height differences
     // Desktop has 140px container, mobile has smaller - this scales well for both
@@ -2049,7 +2049,7 @@ function renderHeatmap() {
     monthLabel.textContent = monthName;
 
     const firstDayOfWeek = new Date(heatmapYear, heatmapMonth, 1).getDay();
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDateStr(new Date());
 
     let html = '';
 
@@ -2892,7 +2892,7 @@ function checkBedtimeNotification() {
 
     // Check if we're in the 30-31 minute window
     if (minutesUntil > 29 && minutesUntil <= 31) {
-        const today = new Date().toISOString().split('T')[0];
+        const today = localDateStr(new Date());
         const lastNotification = localStorage.getItem(LAST_NOTIFICATION_KEY);
 
         // Only show once per day

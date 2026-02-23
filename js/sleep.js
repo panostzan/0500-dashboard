@@ -10,6 +10,12 @@ let sleepLogCache = null;
 
 const SLEEP_DEFAULTS = { wakeTime: '05:00', targetHours: 7.5 };
 
+// Local "YYYY-MM-DD" (avoids UTC shift from toISOString)
+function localDateStr(d) {
+    const y = d.getFullYear(), m = d.getMonth() + 1, day = d.getDate();
+    return `${y}-${m.toString().padStart(2,'0')}-${day.toString().padStart(2,'0')}`;
+}
+
 // Parse "HH:MM" → { hour, minute }
 function parseTime(str) {
     const [h, m] = (str || '05:00').split(':').map(Number);
@@ -81,7 +87,7 @@ async function logBedtime() {
         lastEntry.bedtime = bedtime.toISOString();
     } else {
         log.push({
-            date: bedtime.toISOString().split('T')[0],
+            date: localDateStr(bedtime),
             bedtime: bedtime.toISOString(),
             wakeTime: null,
             hours: null
@@ -112,7 +118,7 @@ async function logWakeUp() {
         estimatedBedtime.setHours(wake.hour - settings.targetHours);
 
         log.push({
-            date: now.toISOString().split('T')[0],
+            date: localDateStr(now),
             bedtime: estimatedBedtime.toISOString(),
             wakeTime: now.toISOString(),
             hours: settings.targetHours
@@ -137,7 +143,7 @@ function getMonthLog(year, month) {
 
     for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month, day);
-        const dateStr = date.toISOString().split('T')[0];
+        const dateStr = localDateStr(date);
         const entry = log.find(e => e.date === dateStr && e.hours);
 
         result.push({
@@ -595,7 +601,7 @@ function getLastNDaysLog(n = 7) {
     for (let i = n - 1; i >= 0; i--) {
         const date = new Date(now);
         date.setDate(date.getDate() - i);
-        const dateStr = date.toISOString().split('T')[0];
+        const dateStr = localDateStr(date);
 
         const entry = log.find(e => e.date === dateStr && e.hours);
         result.push({
@@ -974,7 +980,7 @@ function renderMonthlyHeatmap() {
     monthData.forEach(day => {
         const color = getSleepColor(day.hours);
         const today = new Date();
-        const isToday = day.date === today.toISOString().split('T')[0];
+        const isToday = day.date === localDateStr(today);
         const isFuture = new Date(day.date) > today;
 
         let tooltip = day.hours
