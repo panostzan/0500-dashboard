@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co https://cdn.jsdelivr.net;">
     <title>Sleep - 0500</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1914,8 +1915,11 @@
 </nav>
 
 <!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js?v=5"></script>
+<script src="js/data.js?v=5"></script>
 <script src="js/config.js?v=5"></script>
-<script src="js/sleep.js?v=15"></script>
+<script src="js/sleep.js?v=16"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════════════════
 // SLEEP PAGE - Aurora Theme Integration
@@ -1982,8 +1986,8 @@ function renderMiniBars() {
 
     let html = '';
     weekData.forEach(day => {
-        const height = day.duration ? Math.max(minHeight, (day.duration / maxHours) * heightMultiplier) : minHeight;
-        const colorClass = getBarColor(day.duration);
+        const height = day.hours ? Math.max(minHeight, (day.hours / maxHours) * heightMultiplier) : minHeight;
+        const colorClass = getBarColor(day.hours);
         const isToday = day.date === today;
 
         html += `
@@ -2056,14 +2060,14 @@ function renderHeatmap() {
 
     // Day cells
     monthData.forEach(day => {
-        const color = getSleepColor(day.duration);
+        const color = getSleepColor(day.hours);
         const isToday = day.date === today;
         const isFuture = new Date(day.date) > new Date();
 
         html += `
             <div class="heatmap-cell ${color} ${isToday ? 'today' : ''} ${isFuture ? 'future' : ''}"
                  data-date="${day.date}"
-                 title="${day.duration ? day.duration.toFixed(1) + 'h' : 'No data'}">
+                 title="${day.hours ? day.hours.toFixed(1) + 'h' : 'No data'}">
                 ${day.day}
             </div>
         `;
@@ -2106,7 +2110,8 @@ function updateCountdown() {
     // Stats
     document.getElementById('bedtime-display').textContent = formatTime12HourShort(bedtime.hour, bedtime.minute);
     document.getElementById('if-now-display').textContent = formatHoursMinutes(msIfSleepNow);
-    document.getElementById('wake-display').textContent = formatTime12HourShort(settings.wakeHour, settings.wakeMinute);
+    const wake = parseTime(settings.wakeTime);
+    document.getElementById('wake-display').textContent = formatTime12HourShort(wake.hour, wake.minute);
 
     // Quality marker
     document.getElementById('quality-marker').style.marginLeft = `calc(${qualityPercent}% - 2px)`;
@@ -2139,7 +2144,7 @@ function renderDebtMeter() {
 
     const settings = loadSleepSettings();
     const last14 = getLastNDaysLog(14);
-    const daysWithData = last14.filter(d => d.duration);
+    const daysWithData = last14.filter(d => d.hours);
 
     // Need at least 3 days of data
     if (daysWithData.length < 3) {
@@ -2151,7 +2156,7 @@ function renderDebtMeter() {
     // Calculate debt: sum of (actual - target) for each day
     let totalDebt = 0;
     daysWithData.forEach(day => {
-        totalDebt += day.duration - settings.targetSleepHours;
+        totalDebt += day.hours - settings.targetHours;
     });
 
     // Dynamic scale based on actual debt (minimum -30h to +10h)
@@ -2242,7 +2247,7 @@ function renderHealthImpact() {
     const container = document.getElementById('health-impact');
     if (!container) return;
 
-    const log = loadSleepLog().filter(e => e.duration);
+    const log = loadSleepLog().filter(e => e.hours);
     const settings = loadSleepSettings();
 
     // Need at least 3 days of data
@@ -2252,16 +2257,16 @@ function renderHealthImpact() {
     }
 
     // Calculate metrics
-    const last7 = getLastNDaysLog(7).filter(d => d.duration);
+    const last7 = getLastNDaysLog(7).filter(d => d.hours);
     const avgDuration = last7.length > 0
-        ? last7.reduce((sum, d) => sum + d.duration, 0) / last7.length
+        ? last7.reduce((sum, d) => sum + d.hours, 0) / last7.length
         : null;
 
     // Count consecutive nights under 6h (from most recent)
     let consecutiveUnder6 = 0;
     const sortedLog = [...log].sort((a, b) => new Date(b.date) - new Date(a.date));
     for (const entry of sortedLog) {
-        if (entry.duration < 6) {
+        if (entry.hours < 6) {
             consecutiveUnder6++;
         } else {
             break;
@@ -2498,48 +2503,42 @@ function closeTimelineModal() {
     document.getElementById('timeline-overlay').classList.remove('active');
 }
 
-function saveTimelineEntry() {
+async function saveTimelineEntry() {
     const bedDate = new Date(timelineDate + 'T00:00:00');
     bedDate.setHours(timelineBedHour, timelineBedMin, 0, 0);
-    if (timelineBedHour >= 12) {
-        bedDate.setDate(bedDate.getDate() - 1);
-    }
+    if (timelineBedHour >= 12) bedDate.setDate(bedDate.getDate() - 1);
 
     const wakeDate = new Date(timelineDate + 'T00:00:00');
     wakeDate.setHours(timelineWakeHour, timelineWakeMin, 0, 0);
 
-    const duration = (wakeDate - bedDate) / 1000 / 60 / 60;
-
-    const raw = localStorage.getItem('0500_sleep_log');
-    const log = raw ? JSON.parse(raw) : [];
-    const existingIdx = log.findIndex(e => e.date === timelineDate);
     const entry = {
         date: timelineDate,
         bedtime: bedDate.toISOString(),
         wakeTime: wakeDate.toISOString(),
-        duration: duration
+        hours: (wakeDate - bedDate) / 3600000
     };
 
-    if (existingIdx >= 0) {
-        log[existingIdx] = entry;
-    } else {
-        log.push(entry);
-        log.sort((a, b) => new Date(a.date) - new Date(b.date));
-    }
-
-    localStorage.setItem('0500_sleep_log', JSON.stringify(log));
+    // Update cache + persist
+    const log = loadSleepLog();
+    const idx = log.findIndex(e => e.date === timelineDate);
+    if (idx >= 0) { log[idx] = entry; } else { log.push(entry); log.sort((a, b) => a.date.localeCompare(b.date)); }
     sleepLogCache = log;
+    await DataService.addSleepEntry(entry);
 
     closeTimelineModal();
     refreshAll();
 }
 
-function deleteTimelineEntry() {
-    const raw = localStorage.getItem('0500_sleep_log');
-    const log = raw ? JSON.parse(raw) : [];
+async function deleteTimelineEntry() {
+    // Update local cache
+    const log = loadSleepLog();
     const filtered = log.filter(e => e.date !== timelineDate);
-    localStorage.setItem('0500_sleep_log', JSON.stringify(filtered));
     sleepLogCache = filtered;
+
+    // Persist via DataService
+    await DataService.deleteSleepEntry(timelineDate);
+    // Also update localStorage for anon fallback
+    safeSetItem('0500_sleep_log', JSON.stringify(filtered));
 
     closeTimelineModal();
     refreshAll();
@@ -2616,19 +2615,24 @@ function initTimelineModal() {
     document.addEventListener('touchend', endDrag);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Load settings into inputs
-    const settings = loadSleepSettings();
+document.addEventListener('DOMContentLoaded', async () => {
+    // Initialize Supabase (sets up currentUser / isSignedIn)
+    await initSupabase();
+
+    // Load data from DataService into caches before rendering
+    await loadSleepLogAsync();
+    const settings = await loadSleepSettingsAsync();
+
     const wakeInput = document.getElementById('wake-input');
     const hoursInput = document.getElementById('hours-input');
 
-    wakeInput.value = `${settings.wakeHour.toString().padStart(2, '0')}:${settings.wakeMinute.toString().padStart(2, '0')}`;
-    hoursInput.value = settings.targetSleepHours;
+    wakeInput.value = settings.wakeTime;
+    hoursInput.value = settings.targetHours;
 
     // Initialize timeline modal
     initTimelineModal();
 
-    // Initial render
+    // Initial render (caches are now populated, sync reads work)
     refreshAll();
 
     // Re-render weekly chart bars on resize (debounced)
@@ -2644,9 +2648,9 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(updateCountdown, 1000);
 
     // Going to bed button
-    document.getElementById('btn-going-to-bed').addEventListener('click', function() {
+    document.getElementById('btn-going-to-bed').addEventListener('click', async function() {
         if (!this.classList.contains('disabled')) {
-            const bedtime = logBedtime();
+            const bedtime = await logBedtime();
             this.innerHTML = `Logged ${formatTime12HourShort(bedtime.getHours(), bedtime.getMinutes())}`;
             setTimeout(() => {
                 this.innerHTML = '<span class="emoji">&#127769;</span> Going to bed';
@@ -2656,9 +2660,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Woke up button
-    document.getElementById('btn-woke-up').addEventListener('click', function() {
+    document.getElementById('btn-woke-up').addEventListener('click', async function() {
         if (!this.classList.contains('disabled')) {
-            const wakeTime = logWakeUp();
+            const wakeTime = await logWakeUp();
             this.innerHTML = `Logged ${formatTime12HourShort(wakeTime.getHours(), wakeTime.getMinutes())}`;
             setTimeout(() => {
                 this.innerHTML = '<span class="emoji">&#9728;&#65039;</span> Just woke up';
@@ -2668,19 +2672,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Settings changes
-    wakeInput.addEventListener('change', () => {
-        const [h, m] = wakeInput.value.split(':').map(Number);
+    wakeInput.addEventListener('change', async () => {
         const settings = loadSleepSettings();
-        settings.wakeHour = h;
-        settings.wakeMinute = m;
-        saveSleepSettings(settings);
+        settings.wakeTime = wakeInput.value;
+        await saveSleepSettings(settings);
         refreshAll();
     });
 
-    hoursInput.addEventListener('change', () => {
+    hoursInput.addEventListener('change', async () => {
         const settings = loadSleepSettings();
-        settings.targetSleepHours = parseFloat(hoursInput.value) || 7.5;
-        saveSleepSettings(settings);
+        settings.targetHours = parseFloat(hoursInput.value) || 7.5;
+        await saveSleepSettings(settings);
         refreshAll();
     });
 

@@ -1,85 +1,66 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// SLEEP - Comprehensive Sleep Dashboard (localStorage only)
+// SLEEP - Sleep Dashboard (DataService: Supabase + localStorage fallback)
+//
+// Settings shape: { wakeTime: "05:00", targetHours: 7.5 }  (matches DataService)
+// Log entry shape: { date, bedtime, wakeTime, hours }       (matches DataService)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const SLEEP_STORAGE_KEY = '0500_sleep_settings';
-const SLEEP_LOG_KEY = '0500_sleep_log';
-
-// Cache for sync data
 let sleepSettingsCache = null;
 let sleepLogCache = null;
 
-function getDefaultBedtime() {
-    const now = new Date();
-    const currentHour = now.getHours();
-    const currentMin = now.getMinutes();
-    const currentMinutes = currentHour * 60 + currentMin;
-    const nineThirtyPM = 21 * 60 + 30; // 21:30 = 9:30 PM
+const SLEEP_DEFAULTS = { wakeTime: '05:00', targetHours: 7.5 };
 
-    if (currentMinutes >= nineThirtyPM) {
-        // Past 9:30 PM - use current time
-        const h = currentHour.toString().padStart(2, '0');
-        const m = currentMin.toString().padStart(2, '0');
-        return `${h}:${m}`;
-    }
-    // Before 9:30 PM - default to 9:30 PM
-    return '21:30';
+// Parse "HH:MM" → { hour, minute }
+function parseTime(str) {
+    const [h, m] = (str || '05:00').split(':').map(Number);
+    return { hour: h, minute: m };
 }
 
-const SLEEP_DEFAULTS = {
-    wakeHour: 5,
-    wakeMinute: 0,
-    targetSleepHours: 7.5,
-    idealBedtimeStart: '21:30', // 9:30 PM
-    idealBedtimeEnd: '22:30'    // 10:30 PM (1 hour window)
-};
+// { hour, minute } → "HH:MM"
+function toTimeStr(hour, minute) {
+    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// DATA STORAGE - localStorage only
+// DATA — reads from cache (sync), writes through DataService (async)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function loadSleepSettings() {
-    // Use cache if available (for sync operations)
-    if (sleepSettingsCache) {
-        return { ...SLEEP_DEFAULTS, ...sleepSettingsCache };
-    }
-
-    const saved = localStorage.getItem(SLEEP_STORAGE_KEY);
-    if (saved) {
-        return { ...SLEEP_DEFAULTS, ...JSON.parse(saved) };
-    }
-    // First time - set dynamic bedtime based on current time
-    const dynamicDefaults = { ...SLEEP_DEFAULTS };
-    dynamicDefaults.idealBedtimeStart = getDefaultBedtime();
-    // Set end time to 1 hour after start
-    const [h, m] = dynamicDefaults.idealBedtimeStart.split(':').map(Number);
-    let endH = h + 1;
-    if (endH >= 24) endH -= 24;
-    dynamicDefaults.idealBedtimeEnd = `${endH.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-    return dynamicDefaults;
-}
-
-
-function saveSleepSettings(settings) {
-    sleepSettingsCache = settings;
-    localStorage.setItem(SLEEP_STORAGE_KEY, JSON.stringify(settings));
+    return { ...SLEEP_DEFAULTS, ...sleepSettingsCache };
 }
 
 function loadSleepLog() {
-    if (sleepLogCache) {
-        return sleepLogCache;
-    }
-    const saved = localStorage.getItem(SLEEP_LOG_KEY);
-    if (saved) {
-        return JSON.parse(saved);
-    }
-    return [];
+    return sleepLogCache || [];
 }
 
+async function loadSleepSettingsAsync() {
+    if (sleepSettingsCache) return { ...SLEEP_DEFAULTS, ...sleepSettingsCache };
+    const s = await DataService.loadSleepSettings();
+    // Handle old localStorage format {wakeHour, wakeMinute, targetSleepHours}
+    if (s.wakeHour !== undefined) {
+        sleepSettingsCache = { wakeTime: toTimeStr(s.wakeHour, s.wakeMinute || 0), targetHours: s.targetSleepHours || 7.5 };
+    } else {
+        sleepSettingsCache = { wakeTime: s.wakeTime || '05:00', targetHours: s.targetHours || 7.5 };
+    }
+    return { ...SLEEP_DEFAULTS, ...sleepSettingsCache };
+}
 
-function saveSleepLog(log) {
+async function saveSleepSettings(settings) {
+    sleepSettingsCache = settings;
+    await DataService.saveSleepSettings(settings);
+}
+
+async function loadSleepLogAsync() {
+    if (sleepLogCache) return sleepLogCache;
+    const log = await DataService.loadSleepLog();
+    // Normalize: old localStorage entries may use "duration" instead of "hours"
+    sleepLogCache = log.map(e => e.hours !== undefined ? e : { ...e, hours: e.duration ?? null });
+    return sleepLogCache;
+}
+
+async function saveSleepLog(log) {
     sleepLogCache = log;
-    localStorage.setItem(SLEEP_LOG_KEY, JSON.stringify(log));
+    await DataService.saveSleepLog(log);
 }
 
 
@@ -87,7 +68,7 @@ function saveSleepLog(log) {
 // LOGGING FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function logBedtime() {
+async function logBedtime() {
     const now = new Date();
     // Add 20 minutes for fall asleep buffer
     const bedtime = new Date(now.getTime() + 20 * 60 * 1000);
@@ -103,52 +84,44 @@ function logBedtime() {
             date: bedtime.toISOString().split('T')[0],
             bedtime: bedtime.toISOString(),
             wakeTime: null,
-            duration: null
+            hours: null
         });
     }
 
-    saveSleepLog(log);
-    updateSleepDashboard();
+    await saveSleepLog(log);
 
-    if (typeof updateSleepTrackingStatus === 'function') {
-        updateSleepTrackingStatus();
-    }
+    if (typeof updateSleepDashboard === 'function') updateSleepDashboard();
+    if (typeof updateSleepTrackingStatus === 'function') updateSleepTrackingStatus();
 
     return bedtime;
 }
 
-function logWakeUp() {
-    // Subtract 10 minutes (user typically presses ~10 min after waking)
+async function logWakeUp() {
     const now = new Date(Date.now() - 10 * 60 * 1000);
     const log = loadSleepLog();
-
     const lastEntry = log[log.length - 1];
 
     if (lastEntry && lastEntry.bedtime && !lastEntry.wakeTime) {
         lastEntry.wakeTime = now.toISOString();
-        const bedtime = new Date(lastEntry.bedtime);
-        lastEntry.duration = (now - bedtime) / 1000 / 60 / 60;
-        saveSleepLog(log);
+        lastEntry.hours = (now - new Date(lastEntry.bedtime)) / 3600000;
+        await saveSleepLog(log);
     } else {
-        // No bedtime logged, estimate based on settings
         const settings = loadSleepSettings();
+        const wake = parseTime(settings.wakeTime);
         let estimatedBedtime = new Date(now);
-        estimatedBedtime.setHours(settings.wakeHour - settings.targetSleepHours);
+        estimatedBedtime.setHours(wake.hour - settings.targetHours);
 
         log.push({
             date: now.toISOString().split('T')[0],
             bedtime: estimatedBedtime.toISOString(),
             wakeTime: now.toISOString(),
-            duration: settings.targetSleepHours
+            hours: settings.targetHours
         });
-        saveSleepLog(log);
+        await saveSleepLog(log);
     }
 
-    updateSleepDashboard();
-
-    if (typeof updateSleepTrackingStatus === 'function') {
-        updateSleepTrackingStatus();
-    }
+    if (typeof updateSleepDashboard === 'function') updateSleepDashboard();
+    if (typeof updateSleepTrackingStatus === 'function') updateSleepTrackingStatus();
 
     return now;
 }
@@ -165,13 +138,13 @@ function getMonthLog(year, month) {
     for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month, day);
         const dateStr = date.toISOString().split('T')[0];
-        const entry = log.find(e => e.date === dateStr && e.duration);
+        const entry = log.find(e => e.date === dateStr && e.hours);
 
         result.push({
             date: dateStr,
             day: day,
             dayOfWeek: date.getDay(),
-            duration: entry ? entry.duration : null,
+            hours: entry ? entry.hours : null,
             bedtime: entry ? new Date(entry.bedtime) : null,
             wakeTime: entry ? new Date(entry.wakeTime) : null
         });
@@ -215,7 +188,7 @@ function calculateWakeTimeConsistency(days) {
 
 function calculateSleepScore(days) {
     const settings = loadSleepSettings();
-    const daysWithData = days.filter(d => d.duration);
+    const daysWithData = days.filter(d => d.hours);
 
     if (daysWithData.length === 0) return null;
 
@@ -258,8 +231,8 @@ function calculateSleepScore(days) {
     }
 
     // --- 2. Duration (25%) — Asymmetric penalty ---
-    const avgDuration = daysWithData.reduce((sum, d) => sum + d.duration, 0) / daysWithData.length;
-    const durationDiff = avgDuration - settings.targetSleepHours;
+    const avgDuration = daysWithData.reduce((sum, d) => sum + d.hours, 0) / daysWithData.length;
+    const durationDiff = avgDuration - settings.targetHours;
     let durationScore;
     if (durationDiff < 0) {
         // Under target: -30 pts/hr
@@ -273,7 +246,7 @@ function calculateSleepScore(days) {
     const last7 = daysWithData.slice(-7);
     let debt = 0;
     for (const d of last7) {
-        const diff = d.duration - settings.targetSleepHours;
+        const diff = d.hours - settings.targetHours;
         if (diff < 0) debt += diff; // Only accumulate deficits, not surpluses
     }
     const debtScore = Math.max(0, Math.round(100 + (debt * 14.3)));
@@ -283,8 +256,9 @@ function calculateSleepScore(days) {
     const daysWithBedtime = daysWithData.filter(d => d.bedtime);
     if (daysWithBedtime.length > 0) {
         // Target bedtime = wake target - target hours (in minutes from midnight)
-        const wakeTargetMin = settings.wakeHour * 60 + (settings.wakeMinute || 0);
-        const targetBedMin = wakeTargetMin - (settings.targetSleepHours * 60);
+        const wake = parseTime(settings.wakeTime);
+        const wakeTargetMin = wake.hour * 60 + wake.minute;
+        const targetBedMin = wakeTargetMin - (settings.targetHours * 60);
         // targetBedMin may be negative (before midnight), that's fine for diff calculation
 
         // Average actual bedtime in minutes from midnight (handle overnight)
@@ -334,7 +308,7 @@ function calculateSleepScore(days) {
 
 function calculateSleepStreak() {
     const settings = loadSleepSettings();
-    const log = loadSleepLog().filter(e => e.duration);
+    const log = loadSleepLog().filter(e => e.hours);
     const tolerance = 0.5; // ±30 minutes
 
     if (log.length === 0) return { current: 0, longest: 0 };
@@ -354,7 +328,7 @@ function calculateSleepStreak() {
     for (let i = 0; i < sorted.length; i++) {
         const entryDate = new Date(sorted[i].date);
         entryDate.setHours(0, 0, 0, 0);
-        const meetsGoal = Math.abs(sorted[i].duration - settings.targetSleepHours) <= tolerance;
+        const meetsGoal = Math.abs(sorted[i].hours - settings.targetHours) <= tolerance;
 
         if (i === 0) {
             const daysDiff = Math.floor((today - entryDate) / (1000 * 60 * 60 * 24));
@@ -381,7 +355,7 @@ function calculateSleepStreak() {
 
     for (const entry of sorted) {
         const entryDate = new Date(entry.date);
-        const meetsGoal = Math.abs(entry.duration - settings.targetSleepHours) <= tolerance;
+        const meetsGoal = Math.abs(entry.hours - settings.targetHours) <= tolerance;
 
         if (!meetsGoal) {
             longestStreak = Math.max(longestStreak, tempStreak);
@@ -415,10 +389,10 @@ function calculateCumulativeSleepDebt(days = 14) {
     const log = getLastNDaysLog(days);
 
     let totalDebt = 0;
-    const daysWithData = log.filter(d => d.duration);
+    const daysWithData = log.filter(d => d.hours);
 
     daysWithData.forEach(day => {
-        totalDebt += day.duration - settings.targetSleepHours;
+        totalDebt += day.hours - settings.targetHours;
     });
 
     // Cap debt at reasonable limits
@@ -436,7 +410,7 @@ function calculateCumulativeSleepDebt(days = 14) {
 
 function calculatePeriodStats(days) {
     const settings = loadSleepSettings();
-    const daysWithData = days.filter(d => d.duration);
+    const daysWithData = days.filter(d => d.hours);
 
     if (daysWithData.length === 0) {
         return {
@@ -450,7 +424,7 @@ function calculatePeriodStats(days) {
     }
 
     // Average duration
-    const avgDuration = daysWithData.reduce((sum, d) => sum + d.duration, 0) / daysWithData.length;
+    const avgDuration = daysWithData.reduce((sum, d) => sum + d.hours, 0) / daysWithData.length;
 
     // Average bedtime
     const bedtimeMinutes = daysWithData
@@ -477,7 +451,7 @@ function calculatePeriodStats(days) {
         : null;
 
     // Best and worst nights
-    const sorted = [...daysWithData].sort((a, b) => b.duration - a.duration);
+    const sorted = [...daysWithData].sort((a, b) => b.hours - a.hours);
     const bestNight = sorted[0];
     const worstNight = sorted[sorted.length - 1];
 
@@ -519,7 +493,7 @@ function calculateTrend(values) {
 }
 
 function generateSleepInsights() {
-    const log = loadSleepLog().filter(e => e.duration);
+    const log = loadSleepLog().filter(e => e.hours);
     const settings = loadSleepSettings();
     const insights = [];
 
@@ -560,7 +534,7 @@ function generateSleepInsights() {
     }
 
     // Weekend vs weekday pattern
-    const last14 = getLastNDaysLog(14).filter(d => d.duration);
+    const last14 = getLastNDaysLog(14).filter(d => d.hours);
     const weekdays = last14.filter(d => {
         const dow = new Date(d.date).getDay();
         return dow >= 1 && dow <= 5;
@@ -571,8 +545,8 @@ function generateSleepInsights() {
     });
 
     if (weekdays.length >= 3 && weekends.length >= 2) {
-        const weekdayAvg = weekdays.reduce((s, d) => s + d.duration, 0) / weekdays.length;
-        const weekendAvg = weekends.reduce((s, d) => s + d.duration, 0) / weekends.length;
+        const weekdayAvg = weekdays.reduce((s, d) => s + d.hours, 0) / weekdays.length;
+        const weekendAvg = weekends.reduce((s, d) => s + d.hours, 0) / weekends.length;
 
         if (weekendAvg - weekdayAvg > 1) {
             insights.push({
@@ -623,11 +597,11 @@ function getLastNDaysLog(n = 7) {
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().split('T')[0];
 
-        const entry = log.find(e => e.date === dateStr && e.duration);
+        const entry = log.find(e => e.date === dateStr && e.hours);
         result.push({
             date: dateStr,
             dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
-            duration: entry ? entry.duration : null,
+            hours: entry ? entry.hours : null,
             bedtime: entry ? new Date(entry.bedtime) : null,
             wakeTime: entry ? new Date(entry.wakeTime) : null
         });
@@ -644,29 +618,29 @@ function calculateSleepDebt(days = 7) {
     let totalActual = 0;
 
     log.forEach(day => {
-        totalTarget += settings.targetSleepHours;
-        if (day.duration) {
-            totalActual += day.duration;
+        totalTarget += settings.targetHours;
+        if (day.hours) {
+            totalActual += day.hours;
         }
     });
 
     // Only count days that have data
-    const daysWithData = log.filter(d => d.duration).length;
+    const daysWithData = log.filter(d => d.hours).length;
     if (daysWithData === 0) return 0;
 
     // Adjust target to only count days with data
-    const adjustedTarget = daysWithData * settings.targetSleepHours;
+    const adjustedTarget = daysWithData * settings.targetHours;
 
     return totalActual - adjustedTarget;
 }
 
 function calculateWeeklyAverage() {
     const log = getLastNDaysLog(7);
-    const daysWithData = log.filter(d => d.duration);
+    const daysWithData = log.filter(d => d.hours);
 
     if (daysWithData.length === 0) return null;
 
-    const total = daysWithData.reduce((sum, d) => sum + d.duration, 0);
+    const total = daysWithData.reduce((sum, d) => sum + d.hours, 0);
     return total / daysWithData.length;
 }
 
@@ -686,25 +660,33 @@ function getQualityPercent(hours) {
     return ((hours - 4) / 5) * 100;
 }
 
+// Ideal bedtime window: computed bedtime ± 30 minutes
+function getIdealBedtimeWindow(settings) {
+    const bt = calculateBedtime(settings);
+    const center = bt.hour * 60 + bt.minute;
+    let startMin = center - 30;
+    let endMin = center + 30;
+    if (startMin < 0) startMin += 1440;
+    if (endMin >= 1440) endMin -= 1440;
+    return {
+        startH: Math.floor(startMin / 60), startM: startMin % 60,
+        endH: Math.floor(endMin / 60), endM: endMin % 60
+    };
+}
+
 function isBedtimeInIdealZone(bedtime, settings) {
     if (!bedtime) return null;
 
-    const [startH, startM] = settings.idealBedtimeStart.split(':').map(Number);
-    const [endH, endM] = settings.idealBedtimeEnd.split(':').map(Number);
+    const { startH, startM, endH, endM } = getIdealBedtimeWindow(settings);
+    const bedMinutes = bedtime.getHours() * 60 + bedtime.getMinutes();
 
-    const bedHour = bedtime.getHours();
-    const bedMin = bedtime.getMinutes();
-    const bedMinutes = bedHour * 60 + bedMin;
-
-    // Handle overnight (e.g., 21:00 to 23:00)
     let startMinutes = startH * 60 + startM;
     let endMinutes = endH * 60 + endM;
 
-    // Adjust for overnight spans
     if (endMinutes < startMinutes) {
-        endMinutes += 24 * 60;
+        endMinutes += 1440;
         if (bedMinutes < startMinutes) {
-            return (bedMinutes + 24 * 60) <= endMinutes;
+            return (bedMinutes + 1440) <= endMinutes;
         }
     }
 
@@ -716,10 +698,10 @@ function isBedtimeInIdealZone(bedtime, settings) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function calculateBedtime(settings) {
-    const { wakeHour, wakeMinute, targetSleepHours } = settings;
+    const wake = parseTime(settings.wakeTime);
 
-    const wakeMinutes = wakeHour * 60 + wakeMinute;
-    const sleepMinutes = targetSleepHours * 60;
+    const wakeMinutes = wake.hour * 60 + wake.minute;
+    const sleepMinutes = settings.targetHours * 60;
     let bedtimeMinutes = wakeMinutes - sleepMinutes;
 
     if (bedtimeMinutes < 0) {
@@ -776,18 +758,19 @@ function formatHoursMinutes(ms) {
 
 function getTimeUntilBedtime(settings) {
     const bedtime = calculateBedtime(settings);
+    const wake = parseTime(settings.wakeTime);
     const now = new Date();
 
     let bedtimeDate = new Date();
     bedtimeDate.setHours(bedtime.hour, bedtime.minute, 0, 0);
 
-    if (bedtime.hour > settings.wakeHour || (bedtime.hour === settings.wakeHour && bedtime.minute > settings.wakeMinute)) {
-        if (now.getHours() < settings.wakeHour || (now.getHours() === settings.wakeHour && now.getMinutes() < settings.wakeMinute)) {
+    if (bedtime.hour > wake.hour || (bedtime.hour === wake.hour && bedtime.minute > wake.minute)) {
+        if (now.getHours() < wake.hour || (now.getHours() === wake.hour && now.getMinutes() < wake.minute)) {
             bedtimeDate.setDate(bedtimeDate.getDate() - 1);
         }
     } else {
         const wakeDate = new Date();
-        wakeDate.setHours(settings.wakeHour, settings.wakeMinute, 0, 0);
+        wakeDate.setHours(wake.hour, wake.minute, 0, 0);
         if (now > bedtimeDate && now < wakeDate) {
             // Past bedtime
         } else if (now >= wakeDate) {
@@ -800,9 +783,10 @@ function getTimeUntilBedtime(settings) {
 
 function getSleepIfNow(settings) {
     const now = new Date();
+    const wake = parseTime(settings.wakeTime);
 
     let wakeDate = new Date();
-    wakeDate.setHours(settings.wakeHour, settings.wakeMinute, 0, 0);
+    wakeDate.setHours(wake.hour, wake.minute, 0, 0);
 
     if (now >= wakeDate) {
         wakeDate.setDate(wakeDate.getDate() + 1);
@@ -828,15 +812,16 @@ function getSleepState(msUntilBedtime) {
 function getProgressPercent(settings) {
     const now = new Date();
     const bedtime = calculateBedtime(settings);
+    const wake = parseTime(settings.wakeTime);
 
     let wakeDate = new Date();
-    wakeDate.setHours(settings.wakeHour, settings.wakeMinute, 0, 0);
+    wakeDate.setHours(wake.hour, wake.minute, 0, 0);
 
     let bedtimeDate = new Date();
     bedtimeDate.setHours(bedtime.hour, bedtime.minute, 0, 0);
 
-    if (bedtime.hour < settings.wakeHour) {
-        if (now.getHours() >= settings.wakeHour) {
+    if (bedtime.hour < wake.hour) {
+        if (now.getHours() >= wake.hour) {
             bedtimeDate.setDate(bedtimeDate.getDate() + 1);
         } else {
             wakeDate.setDate(wakeDate.getDate() - 1);
@@ -987,19 +972,19 @@ function renderMonthlyHeatmap() {
 
     // Add day cells
     monthData.forEach(day => {
-        const color = getSleepColor(day.duration);
+        const color = getSleepColor(day.hours);
         const today = new Date();
         const isToday = day.date === today.toISOString().split('T')[0];
         const isFuture = new Date(day.date) > today;
 
-        let tooltip = day.duration
-            ? `${day.duration.toFixed(1)}h`
+        let tooltip = day.hours
+            ? `${day.hours.toFixed(1)}h`
             : (isFuture ? '' : 'No data');
 
         html += `
             <div class="heatmap-cell heatmap-${color} ${isToday ? 'today' : ''} ${isFuture ? 'future' : ''}"
                  data-date="${day.date}"
-                 data-duration="${day.duration || ''}"
+                 data-duration="${day.hours || ''}"
                  title="${day.day}: ${tooltip}">
                 <span class="heatmap-day">${day.day}</span>
             </div>
@@ -1037,7 +1022,7 @@ function renderEnhancedStats() {
     const stats = calculatePeriodStats(days);
 
     // Calculate trend for duration
-    const durations = days.filter(d => d.duration).map(d => d.duration);
+    const durations = days.filter(d => d.hours).map(d => d.hours);
     const trend = calculateTrend(durations);
     const trendArrow = trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→';
     const trendClass = trend === 'up' ? 'trend-up' : trend === 'down' ? 'trend-down' : 'trend-neutral';
@@ -1069,12 +1054,12 @@ function renderEnhancedStats() {
                 <span class="stat-card-label">AVG WAKE</span>
             </div>
             <div class="stat-card">
-                <span class="stat-card-value">${stats.bestNight ? stats.bestNight.duration.toFixed(1) + 'h' : '--'}</span>
+                <span class="stat-card-value">${stats.bestNight ? stats.bestNight.hours.toFixed(1) + 'h' : '--'}</span>
                 <span class="stat-card-label">BEST NIGHT</span>
                 <span class="stat-card-date">${formatDate(stats.bestNight)}</span>
             </div>
             <div class="stat-card">
-                <span class="stat-card-value">${stats.worstNight ? stats.worstNight.duration.toFixed(1) + 'h' : '--'}</span>
+                <span class="stat-card-value">${stats.worstNight ? stats.worstNight.hours.toFixed(1) + 'h' : '--'}</span>
                 <span class="stat-card-label">WORST NIGHT</span>
                 <span class="stat-card-date">${formatDate(stats.worstNight)}</span>
             </div>
@@ -1170,13 +1155,13 @@ function renderWeeklyChart() {
     let html = '<div class="weekly-bars">';
 
     weekData.forEach(day => {
-        const height = day.duration ? (day.duration / maxHours) * 100 : 0;
-        const color = getSleepColor(day.duration);
+        const height = day.hours ? (day.hours / maxHours) * 100 : 0;
+        const color = getSleepColor(day.hours);
 
         html += `
             <div class="weekly-bar-container">
                 <div class="weekly-bar color-${color}" style="height: ${height}%">
-                    ${day.duration ? `<span class="bar-value">${day.duration.toFixed(1)}</span>` : ''}
+                    ${day.hours ? `<span class="bar-value">${day.hours.toFixed(1)}</span>` : ''}
                 </div>
                 <span class="bar-label">${day.dayName}</span>
             </div>
@@ -1186,8 +1171,8 @@ function renderWeeklyChart() {
     html += '</div>';
 
     // Target line
-    const targetHeight = (settings.targetSleepHours / maxHours) * 100;
-    html += `<div class="target-line" style="bottom: ${targetHeight}%"><span>${settings.targetSleepHours}h goal</span></div>`;
+    const targetHeight = (settings.targetHours / maxHours) * 100;
+    html += `<div class="target-line" style="bottom: ${targetHeight}%"><span>${settings.targetHours}h goal</span></div>`;
 
     container.innerHTML = html;
 }
@@ -1205,8 +1190,7 @@ function renderBedtimeBand() {
     const range = maxHour - minHour;
 
     // Ideal zone
-    const [startH, startM] = settings.idealBedtimeStart.split(':').map(Number);
-    const [endH, endM] = settings.idealBedtimeEnd.split(':').map(Number);
+    const { startH, startM, endH, endM } = getIdealBedtimeWindow(settings);
 
     let idealStart = startH + startM / 60;
     let idealEnd = endH + endM / 60;
@@ -1339,7 +1323,8 @@ function updateSleepDisplay() {
 
     const wakeDisplayEl = document.getElementById('sleep-wake-display');
     if (wakeDisplayEl) {
-        wakeDisplayEl.textContent = formatTime12Hour(settings.wakeHour, settings.wakeMinute);
+        const wake = parseTime(settings.wakeTime);
+        wakeDisplayEl.textContent = formatTime12Hour(wake.hour, wake.minute);
     }
 
     // Update sleep quality marker

@@ -271,6 +271,12 @@ const DataService = {
         if (isSignedIn()) {
             await withRetry(async () => {
                 const userId = currentUser.id;
+
+                // Delete all existing entries then insert fresh
+                const { error: deleteError } = await supabaseClient
+                    .from('sleep_log').delete().eq('user_id', userId);
+                if (deleteError) throw deleteError;
+
                 const rows = log.map(entry => ({
                     user_id: userId,
                     date: entry.date,
@@ -281,9 +287,7 @@ const DataService = {
 
                 if (rows.length > 0) {
                     const { error } = await supabaseClient
-                        .from('sleep_log')
-                        .upsert(rows, { onConflict: 'user_id,date' });
-
+                        .from('sleep_log').insert(rows);
                     if (error) throw error;
                 }
             });
@@ -310,16 +314,20 @@ const DataService = {
     async addSleepEntry(entry) {
         if (isSignedIn()) {
             await withRetry(async () => {
+                const userId = currentUser.id;
+
+                // Delete existing entry for this date, then insert
+                await supabaseClient
+                    .from('sleep_log').delete()
+                    .eq('user_id', userId).eq('date', entry.date);
+
                 const { error } = await supabaseClient
-                    .from('sleep_log')
-                    .upsert({
-                        user_id: currentUser.id,
+                    .from('sleep_log').insert({
+                        user_id: userId,
                         date: entry.date,
                         bedtime: entry.bedtime,
                         wake_time: entry.wakeTime,
                         hours: entry.hours
-                    }, {
-                        onConflict: 'user_id,date'
                     });
 
                 if (error) throw error;
@@ -362,7 +370,7 @@ const DataService = {
             }
 
             return {
-                wakeTime: data.wake_time || '05:00',
+                wakeTime: (data.wake_time || '05:00').slice(0, 5),
                 targetHours: data.target_sleep_hours || 7.5
             };
         } else {
