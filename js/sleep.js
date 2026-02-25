@@ -1048,6 +1048,113 @@ function isBedtimeInIdealZone(bedtime, settings) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// SLEEP ARCHITECTURE — Estimated stage breakdown
+// Based on polysomnography population averages, adjusted for duration/timing/consistency
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function estimateSleepArchitecture() {
+    const log = loadSleepLog().filter(e => e.hours);
+    if (log.length === 0) return null;
+
+    // Use most recent completed entry
+    const sorted = [...log].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const latest = sorted[0];
+    if (!latest.hours || !latest.bedtime) return null;
+
+    const totalHours = latest.hours;
+
+    // Base percentages (polysomnography averages for healthy adults)
+    let deep = 17.5;
+    let rem = 22.5;
+    let light = 52.5;
+    let awake = 7.5;
+
+    // 1. Duration adjustments
+    // Short sleep cuts REM first (REM concentrates in later cycles)
+    if (totalHours < 7) {
+        const deficit = 7 - totalHours;
+        rem -= deficit * 3;
+    }
+    // Very short sleep also cuts deep
+    if (totalHours < 6) {
+        const deficit = 6 - totalHours;
+        deep -= deficit * 2.5;
+    }
+    // Long sleep adds more REM/light, proportionally less deep
+    if (totalHours > 8.5) {
+        const excess = totalHours - 8.5;
+        rem += excess * 1.5;
+        light += excess * 1;
+        deep -= excess * 1;
+    }
+
+    // 2. Timing adjustments (late bedtime reduces deep sleep)
+    const bedtime = new Date(latest.bedtime);
+    let bedHour = bedtime.getHours() + bedtime.getMinutes() / 60;
+    if (bedHour < 18) bedHour += 24; // After midnight
+
+    if (bedHour >= 24) {
+        const lateHours = Math.min(bedHour - 24, 3);
+        deep -= lateHours * 2;
+    } else if (bedHour < 22) {
+        deep += 1;
+    }
+
+    // 3. Consistency adjustments (irregular schedule reduces deep)
+    const last14 = getLastNDaysLog(14).filter(d => d.hours);
+    const bedtimeStd = calculateBedtimeConsistency(last14);
+    if (bedtimeStd !== null && bedtimeStd > 60) {
+        const penalty = Math.min((bedtimeStd - 60) / 60, 1) * 3;
+        deep -= penalty;
+    }
+
+    // Clamp individual stages
+    deep = Math.max(5, Math.min(25, deep));
+    rem = Math.max(10, Math.min(30, rem));
+    awake = Math.max(3, Math.min(15, awake));
+    light = 100 - deep - rem - awake;
+    light = Math.max(35, light);
+
+    // Normalize to 100%
+    const sum = deep + rem + light + awake;
+    deep = (deep / sum) * 100;
+    rem = (rem / sum) * 100;
+    light = (light / sum) * 100;
+    awake = (awake / sum) * 100;
+
+    // Convert to hours
+    const deepH = (deep / 100) * totalHours;
+    const remH = (rem / 100) * totalHours;
+    const lightH = (light / 100) * totalHours;
+    const awakeH = (awake / 100) * totalHours;
+
+    // Ideal percentages (for goal lines)
+    const idealDeep = 17.5;
+    const idealRem = 22.5;
+    const idealLight = 52.5;
+    const idealAwake = 7.5;
+
+    function getStatus(actual, ideal, tolerance) {
+        if (actual < ideal - tolerance) return 'low';
+        if (actual > ideal + tolerance) return 'high';
+        return 'in-range';
+    }
+
+    return {
+        date: latest.date,
+        totalHours,
+        bedtime: latest.bedtime,
+        stages: {
+            deep:  { percent: deep,  hours: deepH,  ideal: idealDeep,  status: getStatus(deep, idealDeep, 5) },
+            rem:   { percent: rem,   hours: remH,   ideal: idealRem,   status: getStatus(rem, idealRem, 5) },
+            light: { percent: light, hours: lightH, ideal: idealLight, status: getStatus(light, idealLight, 8) },
+            awake: { percent: awake, hours: awakeH, ideal: idealAwake, status: getStatus(awake, idealAwake, 4) }
+        },
+        cycles: Math.round(totalHours / 1.5)
+    };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // TIME CALCULATIONS (for countdown)
 // ═══════════════════════════════════════════════════════════════════════════════
 

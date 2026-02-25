@@ -53,6 +53,11 @@
     /* Data colors - None/Empty */
     --data-none: rgba(255, 255, 255, 0.06);
 
+    /* Base background & orbs */
+    --bg-base: #0f0a12;
+    --orb-1: rgba(255, 176, 144, 0.4);
+    --orb-2: rgba(200, 112, 144, 0.35);
+
     /* Shadows */
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
     --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.3);
@@ -70,6 +75,97 @@
     --radius-lg: 16px;
     --radius-xl: 20px;
     --radius-2xl: 24px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   THEME OVERRIDES (Aurora = default / no selector)
+   ───────────────────────────────────────────────────────────────────────────── */
+[data-theme="arctic"] {
+    --bg-gradient:
+        radial-gradient(ellipse at 20% 0%, rgba(100, 160, 255, 0.25) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(80, 140, 220, 0.2) 0%, transparent 45%),
+        radial-gradient(ellipse at 40% 80%, rgba(120, 180, 255, 0.15) 0%, transparent 50%),
+        linear-gradient(170deg, #0a0e14 0%, #0e1420 40%, #101824 70%, #0c1018 100%);
+    --bg-base: #0a0e14;
+    --card-bg: rgba(140, 200, 255, 0.06);
+    --card-border: rgba(140, 200, 255, 0.12);
+    --card-bg-hover: rgba(140, 200, 255, 0.1);
+    --card-border-hover: rgba(140, 200, 255, 0.22);
+    --accent: #8cc8ff;
+    --accent-glow: rgba(140, 200, 255, 0.35);
+    --score-gradient: linear-gradient(135deg, #5090d0, #8cc8ff);
+    --text-primary: #e8f0ff;
+    --text-secondary: rgba(232, 240, 255, 0.8);
+    --text-muted: rgba(232, 240, 255, 0.4);
+    --orb-1: rgba(100, 170, 255, 0.35);
+    --orb-2: rgba(80, 130, 220, 0.3);
+    --shadow-glow: 0 0 30px rgba(140, 200, 255, 0.3);
+}
+
+[data-theme="solar"] {
+    --bg-gradient:
+        radial-gradient(ellipse at 20% 0%, rgba(255, 176, 64, 0.3) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(255, 140, 40, 0.22) 0%, transparent 45%),
+        radial-gradient(ellipse at 40% 80%, rgba(255, 200, 80, 0.18) 0%, transparent 50%),
+        linear-gradient(170deg, #120a04 0%, #1a1008 40%, #201810 70%, #141008 100%);
+    --bg-base: #120a04;
+    --card-bg: rgba(255, 176, 64, 0.06);
+    --card-border: rgba(255, 176, 64, 0.14);
+    --card-bg-hover: rgba(255, 176, 64, 0.1);
+    --card-border-hover: rgba(255, 200, 100, 0.22);
+    --accent: #ffb040;
+    --accent-glow: rgba(255, 176, 64, 0.4);
+    --score-gradient: linear-gradient(135deg, #e08820, #ffb040);
+    --text-primary: #fff8f0;
+    --text-secondary: rgba(255, 248, 240, 0.8);
+    --text-muted: rgba(255, 248, 240, 0.42);
+    --orb-1: rgba(255, 176, 64, 0.4);
+    --orb-2: rgba(255, 140, 40, 0.3);
+    --shadow-glow: 0 0 30px rgba(255, 176, 64, 0.3);
+}
+
+[data-theme="lavender"] {
+    --bg-gradient:
+        radial-gradient(ellipse at 20% 0%, rgba(184, 136, 232, 0.28) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(160, 100, 220, 0.22) 0%, transparent 45%),
+        radial-gradient(ellipse at 40% 80%, rgba(200, 160, 240, 0.18) 0%, transparent 50%),
+        linear-gradient(170deg, #0e0a14 0%, #141020 40%, #181424 70%, #100e18 100%);
+    --bg-base: #0e0a14;
+    --card-bg: rgba(184, 136, 232, 0.06);
+    --card-border: rgba(184, 136, 232, 0.14);
+    --card-bg-hover: rgba(184, 136, 232, 0.1);
+    --card-border-hover: rgba(200, 160, 240, 0.22);
+    --accent: #b888e8;
+    --accent-glow: rgba(184, 136, 232, 0.35);
+    --score-gradient: linear-gradient(135deg, #8860c0, #b888e8);
+    --text-primary: #f0e8ff;
+    --text-secondary: rgba(240, 232, 255, 0.8);
+    --text-muted: rgba(240, 232, 255, 0.42);
+    --orb-1: rgba(184, 136, 232, 0.35);
+    --orb-2: rgba(140, 100, 200, 0.3);
+    --shadow-glow: 0 0 30px rgba(184, 136, 232, 0.3);
+}
+
+[data-theme="mono"] {
+    --bg-gradient:
+        radial-gradient(ellipse at 20% 0%, rgba(255, 255, 255, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(255, 255, 255, 0.04) 0%, transparent 45%),
+        radial-gradient(ellipse at 40% 80%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
+        linear-gradient(170deg, #0a0a0a 0%, #111 40%, #141414 70%, #0c0c0c 100%);
+    --bg-base: #0a0a0a;
+    --card-bg: rgba(255, 255, 255, 0.05);
+    --card-border: rgba(255, 255, 255, 0.1);
+    --card-bg-hover: rgba(255, 255, 255, 0.08);
+    --card-border-hover: rgba(255, 255, 255, 0.18);
+    --accent: #fff;
+    --accent-glow: rgba(255, 255, 255, 0.25);
+    --score-gradient: linear-gradient(135deg, #999, #fff);
+    --text-primary: #fff;
+    --text-secondary: rgba(255, 255, 255, 0.75);
+    --text-muted: rgba(255, 255, 255, 0.4);
+    --orb-1: rgba(255, 255, 255, 0.12);
+    --orb-2: rgba(255, 255, 255, 0.08);
+    --shadow-glow: 0 0 30px rgba(255, 255, 255, 0.15);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -115,7 +211,7 @@ body {
 .orb-1 {
     width: 180px;
     height: 180px;
-    background: rgba(255, 176, 144, 0.4);
+    background: var(--orb-1);
     top: 5%;
     left: -5%;
 }
@@ -123,7 +219,7 @@ body {
 .orb-2 {
     width: 140px;
     height: 140px;
-    background: rgba(200, 112, 144, 0.35);
+    background: var(--orb-2);
     bottom: 25%;
     right: -5%;
     animation-delay: -5s;

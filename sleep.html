@@ -19,6 +19,14 @@
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/icons/icon-180.png">
 
+    <!-- Apply theme before first paint to avoid flash -->
+    <script>
+        (function() {
+            var t = localStorage.getItem('0500_theme');
+            if (t && t !== 'aurora') document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
+
     <style>
         * {
             margin: 0;
@@ -26,39 +34,13 @@
             box-sizing: border-box;
         }
 
-        /* Aurora Warm Theme */
-        :root {
-            --bg-gradient:
-                radial-gradient(ellipse at 20% 0%, rgba(255, 150, 100, 0.3) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 20%, rgba(200, 100, 150, 0.25) 0%, transparent 45%),
-                radial-gradient(ellipse at 40% 80%, rgba(255, 180, 100, 0.2) 0%, transparent 50%),
-                linear-gradient(170deg, #0f0a12 0%, #1a1018 40%, #201520 70%, #151015 100%);
-            --card-bg: rgba(255, 255, 255, 0.05);
-            --card-border: rgba(255, 180, 150, 0.15);
-            --text-primary: #fff;
-            --text-secondary: rgba(255, 255, 255, 0.8);
-            --text-muted: rgba(255, 255, 255, 0.45);
-            --accent: #ffb090;
-            --accent-glow: rgba(255, 176, 144, 0.4);
-            --score-gradient: linear-gradient(135deg, #c87090, #ffb090);
-
-            /* Data colors */
-            --data-good-start: #7dd4a0;
-            --data-good-end: #4ab078;
-            --data-ok-start: #ffc878;
-            --data-ok-end: #e0a050;
-            --data-poor-start: #ff9080;
-            --data-poor-end: #d06060;
-            --data-none: rgba(255, 255, 255, 0.06);
-        }
-
         html {
-            background-color: #0f0a12;
+            background-color: var(--bg-base);
         }
 
         body {
             font-family: 'Outfit', -apple-system, sans-serif;
-            background-color: #0f0a12;
+            background-color: var(--bg-base);
             background-image: var(--bg-gradient);
             background-attachment: fixed;
             color: var(--text-primary);
@@ -122,7 +104,7 @@
         .phone-frame::before {
             width: 180px;
             height: 180px;
-            background: rgba(255, 176, 144, 0.4);
+            background: var(--orb-1);
             top: 5%;
             left: -5%;
         }
@@ -130,7 +112,7 @@
         .phone-frame::after {
             width: 140px;
             height: 140px;
-            background: rgba(200, 112, 144, 0.35);
+            background: var(--orb-2);
             bottom: 25%;
             right: -5%;
             animation-delay: -5s;
@@ -954,6 +936,169 @@
             margin-bottom: 16px;
         }
 
+        /* ═══════════════════════════════════════════════════════════════════════
+           SLEEP ARCHITECTURE
+           ═══════════════════════════════════════════════════════════════════════ */
+        .arch-section {
+            padding: 22px;
+            margin-bottom: 16px;
+        }
+
+        .arch-section:empty {
+            display: none;
+        }
+
+        .arch-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin: 18px 0 12px;
+        }
+
+        .arch-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .arch-label {
+            width: 48px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+
+        .arch-bar-track {
+            flex: 1;
+            height: 22px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 11px;
+            overflow: visible;
+            position: relative;
+        }
+
+        .arch-bar-fill {
+            height: 100%;
+            border-radius: 11px;
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+            transition: width 0.5s ease;
+        }
+
+        .arch-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(180deg, rgba(255,255,255,0.2), transparent);
+        }
+
+        .arch-ideal-zone {
+            position: absolute;
+            top: -3px;
+            width: 1.5px;
+            height: calc(100% + 6px);
+            background: rgba(255,255,255,0.3);
+            border-radius: 1px;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .arch-val {
+            width: 72px;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: right;
+            color: var(--text-primary);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 4px;
+        }
+
+        .arch-status {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+
+        .arch-status.in-range {
+            color: #7dd4a0;
+            background: rgba(125, 212, 160, 0.12);
+        }
+
+        .arch-status.low {
+            color: #ffa94d;
+            background: rgba(255, 169, 77, 0.12);
+        }
+
+        .arch-status.high {
+            color: var(--accent);
+            background: rgba(255, 176, 144, 0.12);
+        }
+
+        .arch-note {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 14px;
+            font-style: italic;
+        }
+
+        .stage-compare {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .stage-card {
+            padding: 12px;
+            border-radius: 14px;
+            border: 1px solid var(--card-border);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .stage-card-header {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 6px;
+        }
+
+        .stage-card-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .stage-card-name {
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .stage-card-role {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .stage-card-body {
+            font-size: 10px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
         /* Timeline Modal */
         .timeline-overlay {
             position: fixed;
@@ -1447,6 +1592,67 @@
             margin-top: 8px;
         }
 
+        /* Theme Picker */
+        .theme-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .theme-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+        }
+
+        .theme-dots {
+            display: flex;
+            gap: 10px;
+        }
+
+        .theme-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+            flex-shrink: 0;
+        }
+
+        .theme-dot:hover {
+            transform: scale(1.15);
+        }
+
+        .theme-dot.active {
+            border-color: #fff;
+            box-shadow: 0 0 10px rgba(255,255,255,0.3);
+        }
+
+        .theme-dot[data-theme="aurora"] {
+            background: linear-gradient(135deg, #ffb090, #c87090);
+        }
+
+        .theme-dot[data-theme="arctic"] {
+            background: linear-gradient(135deg, #8cc8ff, #5090d0);
+        }
+
+        .theme-dot[data-theme="solar"] {
+            background: linear-gradient(135deg, #ffb040, #e08820);
+        }
+
+        .theme-dot[data-theme="lavender"] {
+            background: linear-gradient(135deg, #b888e8, #8860c0);
+        }
+
+        .theme-dot[data-theme="mono"] {
+            background: linear-gradient(135deg, #fff, #888);
+        }
+
         /* ═══════════════════════════════════════════════════════════════════════════
            DESKTOP GRID LAYOUT (min-width: 900px)
            Mobile stays exactly the same - single column phone-frame
@@ -1763,6 +1969,11 @@
             <!-- Populated by JS based on sleep data -->
         </div>
 
+        <!-- Sleep Architecture -->
+        <div class="glass-card arch-section" id="architecture-section">
+            <!-- Populated by JS -->
+        </div>
+
         <!-- Stats Section -->
         <div class="glass-card stats-section">
             <div class="stats-header">
@@ -1810,6 +2021,16 @@
                 <button class="notification-toggle" id="notification-toggle"></button>
             </div>
             <div class="notification-status" id="notification-status"></div>
+            <div class="theme-row">
+                <span class="theme-label">THEME</span>
+                <div class="theme-dots">
+                    <div class="theme-dot active" data-theme="aurora" title="Aurora"></div>
+                    <div class="theme-dot" data-theme="arctic" title="Arctic"></div>
+                    <div class="theme-dot" data-theme="solar" title="Solar"></div>
+                    <div class="theme-dot" data-theme="lavender" title="Lavender"></div>
+                    <div class="theme-dot" data-theme="mono" title="Mono"></div>
+                </div>
+            </div>
         </div>
 
         <!-- Hint -->
@@ -1888,7 +2109,8 @@
 <script src="js/supabase.js?v=5"></script>
 <script src="js/data.js?v=5"></script>
 <script src="js/config.js?v=5"></script>
-<script src="js/sleep.js?v=16"></script>
+<script src="js/sleep.js?v=17"></script>
+<script src="js/theme.js?v=1"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════════════════
 // SLEEP PAGE - Aurora Theme Integration
@@ -2250,11 +2472,93 @@ function renderDynamicInsights() {
     container.innerHTML = html;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// SLEEP ARCHITECTURE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function renderArchitecture() {
+    const container = document.getElementById('architecture-section');
+    if (!container) return;
+
+    const arch = estimateSleepArchitecture();
+    if (!arch) {
+        container.innerHTML = '';
+        return;
+    }
+
+    // Scale percentages to visual bar widths
+    function toBarWidth(pct) {
+        return Math.max(8, (pct / 58) * 88);
+    }
+
+    const stages = [
+        { key: 'deep',  label: 'Deep',  color: '#7080e0', gradient: 'linear-gradient(90deg, #5060c0, #7080e0)' },
+        { key: 'rem',   label: 'REM',   color: '#a070d0', gradient: 'linear-gradient(90deg, #8050b0, #a070d0)' },
+        { key: 'light', label: 'Light', color: 'var(--accent)', gradient: 'linear-gradient(90deg, var(--accent), #c87090)' },
+        { key: 'awake', label: 'Awake', color: 'rgba(255,255,255,0.5)', gradient: 'linear-gradient(90deg, rgba(255,255,255,0.3), rgba(255,255,255,0.15))' }
+    ];
+
+    let barsHtml = '';
+    for (const stage of stages) {
+        const data = arch.stages[stage.key];
+        const barWidth = toBarWidth(data.percent);
+        const idealPos = toBarWidth(data.ideal);
+        const statusClass = data.status;
+        const statusLabel = data.status === 'in-range' ? 'OK' : data.status.toUpperCase();
+
+        barsHtml += `
+            <div class="arch-row">
+                <div class="arch-label" style="color:${stage.color}">${stage.label}</div>
+                <div class="arch-bar-track">
+                    <div class="arch-ideal-zone" style="left:${idealPos}%"></div>
+                    <div class="arch-bar-fill" style="width:${barWidth}%;background:${stage.gradient}"></div>
+                </div>
+                <div class="arch-val">${data.hours.toFixed(1)}h<span class="arch-status ${statusClass}">${statusLabel}</span></div>
+            </div>`;
+    }
+
+    const bt = new Date(arch.bedtime);
+    const btStr = formatTime12HourShort(bt.getHours(), bt.getMinutes());
+
+    container.innerHTML = `
+        <div class="section-header">SLEEP ARCHITECTURE</div>
+        <div class="arch-bars">${barsHtml}</div>
+        <div class="arch-note">Based on ${arch.totalHours.toFixed(1)}h sleep, bedtime ${btStr}, ~${arch.cycles} cycles</div>
+        <div class="stage-compare">
+            <div class="stage-card">
+                <div class="stage-card-header">
+                    <div class="stage-card-dot" style="background:#7080e0"></div>
+                    <div class="stage-card-name" style="color:#7080e0">Deep</div>
+                </div>
+                <div class="stage-card-role">Body repair</div>
+                <div class="stage-card-body">Tissue recovery, immune boost, growth hormone. Heaviest in the first half of the night.</div>
+            </div>
+            <div class="stage-card">
+                <div class="stage-card-header">
+                    <div class="stage-card-dot" style="background:#a070d0"></div>
+                    <div class="stage-card-name" style="color:#a070d0">REM</div>
+                </div>
+                <div class="stage-card-role">Brain repair</div>
+                <div class="stage-card-body">Emotional processing, memory, dreaming. Concentrated in the second half. Cut first when sleep is short.</div>
+            </div>
+            <div class="stage-card">
+                <div class="stage-card-header">
+                    <div class="stage-card-dot" style="background:var(--accent)"></div>
+                    <div class="stage-card-name" style="color:var(--accent)">Light</div>
+                </div>
+                <div class="stage-card-role">Transition stage</div>
+                <div class="stage-card-body">Bridges deep and REM cycles. Makes up most of your sleep. Still restorative.</div>
+            </div>
+        </div>
+    `;
+}
+
 function refreshAll() {
     renderScoreHero();
     renderMiniBars();
     renderDebtMeter();
     renderDynamicInsights();
+    renderArchitecture();
     renderStats();
     renderHeatmap();
     updateCountdown();
@@ -2472,6 +2776,9 @@ function initTimelineModal() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Apply theme immediately before any data loads
+    initTheme();
+
     // Initialize Supabase (sets up currentUser / isSignedIn)
     await initSupabase();
 

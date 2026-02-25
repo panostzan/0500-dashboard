@@ -166,7 +166,7 @@ function hideAuthModal() {
     }
 }
 
-// User menu (shown when signed in)
+// User menu (always visible — holds theme picker + auth actions)
 function createUserMenu() {
     const menu = document.createElement('div');
     menu.id = 'user-menu';
@@ -176,12 +176,20 @@ function createUserMenu() {
             <span class="user-avatar" id="user-avatar">?</span>
         </button>
         <div class="user-dropdown" id="user-dropdown">
+            <div class="dropdown-theme-dots">
+                <div class="theme-dot" data-theme="aurora" title="Aurora"></div>
+                <div class="theme-dot" data-theme="arctic" title="Arctic"></div>
+                <div class="theme-dot" data-theme="solar" title="Solar"></div>
+                <div class="theme-dot" data-theme="lavender" title="Lavender"></div>
+                <div class="theme-dot" data-theme="mono" title="Mono"></div>
+            </div>
             <div class="user-info" id="user-info"></div>
-            <button class="user-dropdown-item" id="user-signout">Sign Out</button>
+            <button class="user-dropdown-item" id="user-signin" style="display:none;">Sign In</button>
+            <button class="user-dropdown-item" id="user-signout" style="display:none;">Sign Out</button>
         </div>
     `;
 
-    document.querySelector('.top-bar').appendChild(menu);
+    (document.getElementById('top-right-group') || document.querySelector('.top-bar')).appendChild(menu);
 
     const btn = document.getElementById('user-menu-btn');
     const dropdown = document.getElementById('user-dropdown');
@@ -200,22 +208,50 @@ function createUserMenu() {
         await signOut();
         dropdown.classList.remove('active');
     });
+
+    document.getElementById('user-signin').addEventListener('click', () => {
+        dropdown.classList.remove('active');
+        createAuthModal();
+        showAuthModal();
+    });
+
+    // Wire theme dot clicks inside dropdown
+    menu.querySelectorAll('.theme-dot').forEach(dot => {
+        dot.addEventListener('click', () => {
+            const name = dot.dataset.theme;
+            localStorage.setItem('0500_theme', name);
+            applyTheme(name);
+        });
+    });
+
+    // Set active dot to match current theme
+    const current = localStorage.getItem('0500_theme') || 'aurora';
+    menu.querySelectorAll('.theme-dot').forEach(d => {
+        d.classList.toggle('active', d.dataset.theme === current);
+    });
 }
 
 function updateUserMenu() {
     const menu = document.getElementById('user-menu');
     const avatar = document.getElementById('user-avatar');
     const info = document.getElementById('user-info');
+    const signinBtn = document.getElementById('user-signin');
+    const signoutBtn = document.getElementById('user-signout');
 
     if (!menu) return;
 
     if (isSignedIn()) {
-        menu.style.display = 'block';
         const email = currentUser.email || '';
         avatar.textContent = email.charAt(0).toUpperCase();
         info.textContent = email;
+        info.style.display = '';
+        signoutBtn.style.display = '';
+        signinBtn.style.display = 'none';
     } else {
-        menu.style.display = 'none';
+        avatar.textContent = '?';
+        info.style.display = 'none';
+        signoutBtn.style.display = 'none';
+        signinBtn.style.display = '';
     }
 }
 

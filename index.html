@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-title" content="0500">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="format-detection" content="telephone=no">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.open-meteo.com https://*.supabase.co https://cdn.jsdelivr.net;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.open-meteo.com https://*.supabase.co https://cdn.jsdelivr.net;">
 
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
@@ -38,7 +38,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&family=Inter:wght@200;300;400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/styles.css?v=17">
+    <link rel="stylesheet" href="css/styles.css?v=18">
+
+    <!-- Apply theme before first paint to avoid flash -->
+    <script>
+        (function() {
+            var t = localStorage.getItem('0500_theme');
+            if (t && t !== 'aurora') document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
 </head>
 <body>
 
@@ -62,7 +70,7 @@
             </div>
             <div class="clock-hud-line right"></div>
         </div>
-        <div class="top-bar-spacer"></div>
+        <div id="top-right-group"></div>
     </div>
 
     <div class="main-content">
@@ -199,8 +207,9 @@
 <script src="js/hud.js?v=4"></script>
 <script src="js/weather.js?v=5"></script>
 <script src="js/notes.js?v=5"></script>
-<script src="js/sleep.js?v=16"></script>
+<script src="js/sleep.js?v=17"></script>
 <script src="js/weekly-review.js?v=2"></script>
+<script src="js/theme.js?v=1"></script>
 <script src="js/main.js?v=7"></script>
 
 </body>

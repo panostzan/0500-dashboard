@@ -127,6 +127,9 @@ window.addEventListener('storage', (e) => {
 // Initialize all components when DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        // Apply theme + wire dot click handlers
+        initTheme();
+
         // Initialize Supabase and check auth state first
         await initSupabase();
 

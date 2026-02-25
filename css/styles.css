@@ -45,6 +45,112 @@
     --success: #7dd4a0;
     --warning: #ffc878;
     --danger: #ff9080;
+
+    /* Base background & orbs */
+    --bg-base: #0f0a12;
+    --orb-1: rgba(255, 176, 144, 0.4);
+    --orb-2: rgba(200, 112, 144, 0.35);
+}
+
+/* ─── Theme overrides ───────────────────────────────────────────────────── */
+[data-theme="arctic"] {
+    --bg-base: #0a0e14;
+    --orb-1: rgba(100, 170, 255, 0.35);
+    --orb-2: rgba(80, 130, 220, 0.3);
+    --hud-amber: #8cc8ff;
+    --hud-gold: #a8d8ff;
+    --hud-orange: #6ab0e8;
+    --hud-line: rgba(140, 200, 255, 0.15);
+    --hud-line-bright: rgba(140, 200, 255, 0.3);
+    --accent: #8cc8ff;
+    --accent-glow: rgba(140, 200, 255, 0.35);
+    --card-bg: rgba(140, 200, 255, 0.06);
+    --card-border: rgba(140, 200, 255, 0.12);
+    --card-bg-hover: rgba(140, 200, 255, 0.1);
+    --card-border-hover: rgba(140, 200, 255, 0.22);
+    --text-primary: #e8f0ff;
+    --text-secondary: rgba(232, 240, 255, 0.8);
+    --text-muted: rgba(232, 240, 255, 0.4);
+    --bg-gradient:
+        radial-gradient(ellipse at 20% 0%, rgba(100, 160, 255, 0.25) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(80, 140, 220, 0.2) 0%, transparent 45%),
+        radial-gradient(ellipse at 40% 80%, rgba(120, 180, 255, 0.15) 0%, transparent 50%),
+        linear-gradient(170deg, #0a0e14 0%, #0e1420 40%, #101824 70%, #0c1018 100%);
+}
+
+[data-theme="solar"] {
+    --bg-base: #120a04;
+    --orb-1: rgba(255, 176, 64, 0.4);
+    --orb-2: rgba(255, 140, 40, 0.3);
+    --hud-amber: #ffb040;
+    --hud-gold: #ffc868;
+    --hud-orange: #e09020;
+    --hud-line: rgba(255, 176, 64, 0.15);
+    --hud-line-bright: rgba(255, 176, 64, 0.3);
+    --accent: #ffb040;
+    --accent-glow: rgba(255, 176, 64, 0.4);
+    --card-bg: rgba(255, 176, 64, 0.06);
+    --card-border: rgba(255, 176, 64, 0.14);
+    --card-bg-hover: rgba(255, 176, 64, 0.1);
+    --card-border-hover: rgba(255, 200, 100, 0.22);
+    --text-primary: #fff8f0;
+    --text-secondary: rgba(255, 248, 240, 0.8);
+    --text-muted: rgba(255, 248, 240, 0.42);
+    --bg-gradient:
+        radial-gradient(ellipse at 20% 0%, rgba(255, 176, 64, 0.3) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(255, 140, 40, 0.22) 0%, transparent 45%),
+        radial-gradient(ellipse at 40% 80%, rgba(255, 200, 80, 0.18) 0%, transparent 50%),
+        linear-gradient(170deg, #120a04 0%, #1a1008 40%, #201810 70%, #141008 100%);
+}
+
+[data-theme="lavender"] {
+    --bg-base: #0e0a14;
+    --orb-1: rgba(184, 136, 232, 0.35);
+    --orb-2: rgba(140, 100, 200, 0.3);
+    --hud-amber: #b888e8;
+    --hud-gold: #d0a8f0;
+    --hud-orange: #9868c8;
+    --hud-line: rgba(184, 136, 232, 0.15);
+    --hud-line-bright: rgba(184, 136, 232, 0.3);
+    --accent: #b888e8;
+    --accent-glow: rgba(184, 136, 232, 0.35);
+    --card-bg: rgba(184, 136, 232, 0.06);
+    --card-border: rgba(184, 136, 232, 0.14);
+    --card-bg-hover: rgba(184, 136, 232, 0.1);
+    --card-border-hover: rgba(200, 160, 240, 0.22);
+    --text-primary: #f0e8ff;
+    --text-secondary: rgba(240, 232, 255, 0.8);
+    --text-muted: rgba(240, 232, 255, 0.42);
+    --bg-gradient:
+        radial-gradient(ellipse at 20% 0%, rgba(184, 136, 232, 0.28) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(160, 100, 220, 0.22) 0%, transparent 45%),
+        radial-gradient(ellipse at 40% 80%, rgba(200, 160, 240, 0.18) 0%, transparent 50%),
+        linear-gradient(170deg, #0e0a14 0%, #141020 40%, #181424 70%, #100e18 100%);
+}
+
+[data-theme="mono"] {
+    --bg-base: #0a0a0a;
+    --orb-1: rgba(255, 255, 255, 0.12);
+    --orb-2: rgba(255, 255, 255, 0.08);
+    --hud-amber: #ffffff;
+    --hud-gold: #dddddd;
+    --hud-orange: #bbbbbb;
+    --hud-line: rgba(255, 255, 255, 0.15);
+    --hud-line-bright: rgba(255, 255, 255, 0.3);
+    --accent: #ffffff;
+    --accent-glow: rgba(255, 255, 255, 0.25);
+    --card-bg: rgba(255, 255, 255, 0.05);
+    --card-border: rgba(255, 255, 255, 0.1);
+    --card-bg-hover: rgba(255, 255, 255, 0.08);
+    --card-border-hover: rgba(255, 255, 255, 0.18);
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.75);
+    --text-muted: rgba(255, 255, 255, 0.4);
+    --bg-gradient:
+        radial-gradient(ellipse at 20% 0%, rgba(255, 255, 255, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(255, 255, 255, 0.04) 0%, transparent 45%),
+        radial-gradient(ellipse at 40% 80%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
+        linear-gradient(170deg, #0a0a0a 0%, #111 40%, #141414 70%, #0c0c0c 100%);
 }
 
 /* Breathing animation */
@@ -70,7 +176,7 @@ html, body {
     overscroll-behavior: none;
     font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
     color: var(--text-primary);
-    background-color: #0f0a12;
+    background-color: var(--bg-base);
     background-image: var(--bg-gradient);
     background-attachment: fixed;
 }
@@ -100,7 +206,7 @@ html, body {
 .background::before {
     width: 400px;
     height: 400px;
-    background: rgba(255, 176, 144, 0.4);
+    background: var(--orb-1);
     top: -10%;
     left: -10%;
 }
@@ -108,7 +214,7 @@ html, body {
 .background::after {
     width: 300px;
     height: 300px;
-    background: rgba(200, 112, 144, 0.35);
+    background: var(--orb-2);
     bottom: 10%;
     right: -5%;
     animation-delay: -6s;
@@ -2685,10 +2791,66 @@ html, body {
     color: var(--text-secondary);
 }
 
+/* Top-right group (theme dots + user menu) */
+#top-right-group {
+    position: absolute;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Theme dots inside user dropdown */
+.dropdown-theme-dots {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--hud-line);
+}
+
+.dropdown-theme-dots .theme-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    flex-shrink: 0;
+}
+
+.dropdown-theme-dots .theme-dot:hover {
+    transform: scale(1.15);
+}
+
+.dropdown-theme-dots .theme-dot.active {
+    border-color: #fff;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+.theme-dot[data-theme="aurora"] {
+    background: linear-gradient(135deg, #ffb090, #c87090);
+}
+
+.theme-dot[data-theme="arctic"] {
+    background: linear-gradient(135deg, #8cc8ff, #5090d0);
+}
+
+.theme-dot[data-theme="solar"] {
+    background: linear-gradient(135deg, #ffb040, #e08820);
+}
+
+.theme-dot[data-theme="lavender"] {
+    background: linear-gradient(135deg, #b888e8, #8860c0);
+}
+
+.theme-dot[data-theme="mono"] {
+    background: linear-gradient(135deg, #fff, #888);
+}
+
 /* User Menu */
 .user-menu {
     position: relative;
-    display: none;
 }
 
 .user-menu-btn {
@@ -2703,7 +2865,7 @@ html, body {
     height: 32px;
     border-radius: 50%;
     background: var(--hud-amber);
-    color: white;
+    color: var(--bg-base);
     display: flex;
     align-items: center;
     justify-content: center;
