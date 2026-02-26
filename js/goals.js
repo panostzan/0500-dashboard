@@ -252,7 +252,7 @@ async function renderGoals() {
 
     const sections = [
         { key: 'daily', title: 'DAILY', items: goals.daily, collapsible: true },
-        { key: 'midTerm', title: '3 MONTH', items: goals.midTerm, collapsible: true },
+        { key: 'midTerm', title: 'UNTIL APRIL', items: goals.midTerm, collapsible: true },
         { key: 'oneYear', title: '1 YEAR', items: goals.oneYear, collapsible: true },
         { key: 'longTerm', title: 'LONG-TERM', items: goals.longTerm, collapsible: true }
     ];
