@@ -163,11 +163,11 @@ function renderWeeklyReview(data) {
     let midTermHtml = '';
     if (g.midTermCompleted.length > 0) {
         const items = g.midTermCompleted.map(m =>
-            `<div class="review-midterm-item">Completed <em>${m.text}</em> from until April goals</div>`
+            `<div class="review-midterm-item">Completed <em>${m.text}</em> from 3 month goals</div>`
         ).join('');
         midTermHtml = `
             <div class="review-midterm-section">
-                <div class="review-subsection-title">UNTIL APRIL</div>
+                <div class="review-subsection-title">3 MONTH</div>
                 ${items}
             </div>`;
     }
