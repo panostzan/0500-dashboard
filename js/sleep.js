@@ -236,8 +236,8 @@ function calculateSleepScore(days) {
         regularityScore = pairs > 0 ? Math.round(totalOverlapPct / pairs) : 100;
     }
 
-    // --- 2. Duration (25%) — Asymmetric penalty ---
-    const avgDuration = daysWithData.reduce((sum, d) => sum + d.hours, 0) / daysWithData.length;
+    // --- 2. Duration (25%) — Asymmetric penalty (includes naps) ---
+    const avgDuration = daysWithData.reduce((sum, d) => sum + (d.totalHours || d.hours), 0) / daysWithData.length;
     const durationDiff = avgDuration - settings.targetHours;
     let durationScore;
     if (durationDiff < 0) {
@@ -248,11 +248,11 @@ function calculateSleepScore(days) {
         durationScore = Math.max(0, 100 - (durationDiff * 15));
     }
 
-    // --- 3. Sleep Debt (20%) — 7-day rolling deficit ---
+    // --- 3. Sleep Debt (20%) — 7-day rolling deficit (includes naps) ---
     const last7 = daysWithData.slice(-7);
     let debt = 0;
     for (const d of last7) {
-        const diff = d.hours - settings.targetHours;
+        const diff = (d.totalHours || d.hours) - settings.targetHours;
         if (diff < 0) debt += diff; // Only accumulate deficits, not surpluses
     }
     const debtScore = Math.max(0, Math.round(100 + (debt * 14.3)));
@@ -395,10 +395,10 @@ function calculateCumulativeSleepDebt(days = 14) {
     const log = getLastNDaysLog(days);
 
     let totalDebt = 0;
-    const daysWithData = log.filter(d => d.hours);
+    const daysWithData = log.filter(d => d.totalHours);
 
     daysWithData.forEach(day => {
-        totalDebt += day.hours - settings.targetHours;
+        totalDebt += day.totalHours - settings.targetHours;
     });
 
     // Cap debt at reasonable limits
@@ -943,6 +943,7 @@ function insightGoodHealth(m) {
 
 function getLastNDaysLog(n = 7) {
     const log = loadSleepLog();
+    const napLog = DataService.loadNapLog();
     const now = new Date();
     const result = [];
 
@@ -952,10 +953,16 @@ function getLastNDaysLog(n = 7) {
         const dateStr = localDateStr(date);
 
         const entry = log.find(e => e.date === dateStr && e.hours);
+        const dayNaps = napLog.filter(e => e.date === dateStr);
+        const napHours = dayNaps.reduce((sum, e) => sum + (e.hours || 0), 0);
+
+        const nightHours = entry ? entry.hours : null;
         result.push({
             date: dateStr,
             dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
-            hours: entry ? entry.hours : null,
+            hours: nightHours,
+            napHours: napHours,
+            totalHours: nightHours !== null ? nightHours + napHours : (napHours > 0 ? napHours : null),
             bedtime: entry ? new Date(entry.bedtime) : null,
             wakeTime: entry ? new Date(entry.wakeTime) : null
         });
@@ -973,13 +980,13 @@ function calculateSleepDebt(days = 7) {
 
     log.forEach(day => {
         totalTarget += settings.targetHours;
-        if (day.hours) {
-            totalActual += day.hours;
+        if (day.totalHours) {
+            totalActual += day.totalHours;
         }
     });
 
     // Only count days that have data
-    const daysWithData = log.filter(d => d.hours).length;
+    const daysWithData = log.filter(d => d.totalHours).length;
     if (daysWithData === 0) return 0;
 
     // Adjust target to only count days with data

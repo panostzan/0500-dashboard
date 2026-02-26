@@ -465,5 +465,36 @@ const DataService = {
 
     saveCollapsedState(state) {
         safeSetItem('0500_goals_collapsed', JSON.stringify(state));
+    },
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // NAP LOG (local only — future Supabase table)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    loadNapLog() {
+        const saved = localStorage.getItem('0500_nap_log');
+        if (saved) return JSON.parse(saved);
+        return [];
+    },
+
+    saveNapLog(log) {
+        safeSetItem('0500_nap_log', JSON.stringify(log));
+    },
+
+    addNapEntry(entry) {
+        const log = this.loadNapLog();
+        const idx = log.findIndex(e => e.date === entry.date && e.startTime === entry.startTime);
+        if (idx >= 0) {
+            log[idx] = entry;
+        } else {
+            log.push(entry);
+        }
+        this.saveNapLog(log);
+    },
+
+    deleteNapEntry(date, startTime) {
+        const log = this.loadNapLog();
+        const filtered = log.filter(e => !(e.date === date && e.startTime === startTime));
+        this.saveNapLog(filtered);
     }
 };

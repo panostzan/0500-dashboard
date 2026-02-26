@@ -171,48 +171,6 @@
             transition: all 0.3s ease;
         }
 
-        /* Quick Log */
-        .quick-log {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .log-btn {
-            flex: 1;
-            padding: 20px 16px;
-            background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--card-border);
-            border-radius: 20px;
-            color: var(--text-primary);
-            font-family: 'Outfit', sans-serif;
-            font-size: 15px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .log-btn:hover {
-            background: rgba(255,255,255,0.1);
-            transform: translateY(-3px);
-            box-shadow: 0 8px 30px var(--accent-glow);
-        }
-
-        .log-btn.disabled {
-            opacity: 0.4;
-            pointer-events: none;
-        }
-
-        .log-btn .emoji {
-            font-size: 26px;
-        }
-
         /* Score Hero */
         .score-hero {
             text-align: center;
@@ -669,6 +627,14 @@
             margin-bottom: 16px;
         }
 
+        .settings-section.collapsed .settings-body {
+            display: none;
+        }
+
+        .settings-section.collapsed .settings-chevron {
+            transform: rotate(-90deg);
+        }
+
         .settings-row {
             display: flex;
             gap: 12px;
@@ -712,6 +678,10 @@
         .debt-meter-section {
             padding: 22px;
             margin-bottom: 16px;
+        }
+
+        .debt-meter-section:empty {
+            display: none;
         }
 
         .debt-meter-value {
@@ -946,6 +916,10 @@
 
         .arch-section:empty {
             display: none;
+        }
+
+        .arch-placeholder {
+            opacity: 0.35;
         }
 
         .arch-bars {
@@ -1654,6 +1628,112 @@
         }
 
         /* ═══════════════════════════════════════════════════════════════════════════
+           NAP CARD
+           ═══════════════════════════════════════════════════════════════════════════ */
+
+        .nap-section {
+            padding: 22px;
+            margin-bottom: 16px;
+        }
+
+        .nap-today-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 16px;
+        }
+
+        .nap-entry {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 10px;
+            font-size: 13px;
+        }
+
+        .nap-entry-time {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .nap-entry-duration {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .nap-entry-delete {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 2px 6px;
+            border-radius: 6px;
+            transition: color 0.2s, background 0.2s;
+        }
+
+        .nap-entry-delete:hover {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .nap-quick-log {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .nap-quick-btn {
+            flex: 1;
+            min-width: 52px;
+            padding: 10px 6px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .nap-quick-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: var(--accent);
+        }
+
+        .nap-quick-btn:active {
+            transform: scale(0.95);
+        }
+
+        .nap-recommendation {
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .nap-recommendation strong {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .nap-empty {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            opacity: 0.6;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════════════
            DESKTOP GRID LAYOUT (min-width: 900px)
            Mobile stays exactly the same - single column phone-frame
            ═══════════════════════════════════════════════════════════════════════════ */
@@ -1670,96 +1750,181 @@
 
             .view {
                 display: grid;
-                grid-template-columns: 280px 1fr 1fr 1fr;
-                grid-template-rows: auto auto auto auto auto;
-                gap: 20px;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 14px;
                 padding: 0;
             }
 
             /* Back button - full width row 1 */
             .desktop-back-btn {
                 grid-column: 1 / -1;
-                grid-row: 1;
                 justify-self: start;
                 margin-bottom: 0;
             }
 
-            /* Score Hero - left sidebar, spans rows 2-4 */
+            /* ── ROW 2: Score | Architecture | Insights ── */
+
+            /* Score Hero - compact horizontal layout */
             .score-hero {
                 grid-column: 1;
-                grid-row: 2 / 5;
+                grid-row: 2;
                 margin-bottom: 0;
                 display: flex;
-                flex-direction: column;
-                justify-content: center;
+                flex-direction: row;
                 align-items: center;
+                gap: 20px;
+                padding: 20px 24px;
+                text-align: left;
             }
 
-            /* Quick Log buttons - row 2, col 2 */
-            .quick-log {
+            .score-hero .score-ring-container {
+                width: 100px;
+                height: 100px;
+                margin: 0;
+                flex-shrink: 0;
+            }
+
+            .score-hero .score-ring {
+                width: 100px;
+                height: 100px;
+            }
+
+            .score-hero .score-number {
+                font-size: 36px;
+            }
+
+            .score-hero .score-label {
+                font-size: 9px;
+            }
+
+            .score-hero .key-stats {
+                display: none;
+            }
+
+            .score-hero .score-breakdown {
+                margin-top: 0;
+                gap: 5px;
+                flex: 1;
+                min-width: 0;
+            }
+
+            .score-hero .factor-label {
+                width: 65px;
+                font-size: 10px;
+            }
+
+            .score-hero .factor-bar {
+                height: 4px;
+            }
+
+            .score-hero .factor-value {
+                font-size: 11px;
+                width: 24px;
+            }
+
+            /* Architecture - col 2, stretch to fill row */
+            .arch-section {
                 grid-column: 2;
                 grid-row: 2;
                 margin-bottom: 0;
+                align-self: stretch;
+                display: flex;
                 flex-direction: column;
-                gap: 10px;
-                align-self: start;
             }
 
-            .quick-log .log-btn {
-                padding: 14px 16px;
+            .arch-section .arch-bars {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                gap: 18px;
             }
 
-            /* Countdown Section - row 2, col 3 */
-            .countdown-section {
+            .arch-section .arch-bar-track {
+                height: 28px;
+                border-radius: 14px;
+            }
+
+            .arch-section .arch-bar-fill {
+                border-radius: 14px;
+            }
+
+            /* Insights - col 3, cap height to match row */
+            .health-impact-section {
                 grid-column: 3;
                 grid-row: 2;
                 margin-bottom: 0;
+                align-self: stretch;
+                max-height: 420px;
+                overflow-y: auto;
+                scrollbar-width: thin;
+                scrollbar-color: rgba(255,255,255,0.06) transparent;
             }
 
-            /* Debt Meter - row 2, col 4 */
-            .debt-meter-section {
-                grid-column: 4;
-                grid-row: 2;
+            /* ── ROW 3: Countdown | Mini Week | Debt ── */
+
+            .countdown-section {
+                grid-column: 1;
+                grid-row: 3;
                 margin-bottom: 0;
             }
 
-            /* Mini Week (Weekly Chart) - row 3, cols 2-3 */
             .mini-week {
-                grid-column: 2 / 4;
+                grid-column: 2;
                 grid-row: 3;
                 margin-bottom: 0;
             }
 
             /* Desktop: enhanced weekly bars */
             .mini-week .mini-bars {
-                height: 140px;
-                gap: 16px;
-                padding: 10px 20px;
+                height: 120px;
+                gap: 14px;
+                padding: 6px 10px;
             }
 
             .mini-week .mini-bar {
                 border-radius: 6px;
-                min-width: 40px;
+                min-width: 30px;
             }
 
             .mini-week .color-legend {
                 justify-content: center;
-                gap: 24px;
-                padding-top: 12px;
+                gap: 20px;
+                padding-top: 10px;
                 border-top: 1px solid rgba(255,255,255,0.08);
             }
 
-            /* Health Impact - row 3, col 4 */
-            .health-impact-section {
-                grid-column: 4;
+            .debt-meter-section {
+                grid-column: 3;
                 grid-row: 3;
                 margin-bottom: 0;
             }
 
-            /* Stats Section - row 4, cols 2-3 */
-            .stats-section {
-                grid-column: 2 / 4;
+            /* ── ROW 4: Nap Card (full width) ── */
+
+            .nap-section {
+                grid-column: 1 / -1;
                 grid-row: 4;
+                margin-bottom: 0;
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 14px;
+                align-items: start;
+            }
+
+            .nap-section .section-header {
+                grid-column: 1 / -1;
+            }
+
+            .nap-section .nap-col {
+                min-width: 0;
+            }
+
+            /* ── ROW 5: Stats (2 cols) | Heatmap ── */
+
+            .stats-section {
+                grid-column: 1 / 3;
+                grid-row: 5;
                 margin-bottom: 0;
             }
 
@@ -1767,10 +1932,9 @@
                 grid-template-columns: repeat(4, 1fr);
             }
 
-            /* Heatmap - rows 4, col 4 */
             .heatmap-section {
-                grid-column: 4;
-                grid-row: 4;
+                grid-column: 3;
+                grid-row: 5;
                 margin-bottom: 0;
             }
 
@@ -1792,14 +1956,15 @@
                 background: linear-gradient(145deg, #60c8b0, #40a890);
             }
 
-            /* Settings - full width, row 5 */
+            /* ── ROW 6: Settings (collapsed, full width) ── */
+
             .settings-section {
                 grid-column: 1 / -1;
-                grid-row: 5;
+                grid-row: 6;
                 margin-bottom: 0;
             }
 
-            .settings-section .settings-row {
+            .settings-section .settings-body .settings-row {
                 justify-content: flex-start;
                 gap: 40px;
             }
@@ -1810,13 +1975,6 @@
 
             .settings-section .notification-row {
                 margin-left: auto;
-            }
-
-            /* Calendar hint - full width, row 6 */
-            .calendar-hint {
-                grid-column: 1 / -1;
-                grid-row: 6;
-                margin-bottom: 0;
             }
         }
 
@@ -1864,17 +2022,8 @@
         <!-- Desktop Back Button -->
         <a href="index.html" class="desktop-back-btn">← Back to Dashboard</a>
 
-        <!-- Quick Log -->
-        <div class="quick-log">
-            <button class="log-btn" id="btn-going-to-bed">
-                <span class="emoji">&#127769;</span>
-                Going to bed
-            </button>
-            <button class="log-btn disabled" id="btn-woke-up">
-                <span class="emoji">&#9728;&#65039;</span>
-                Just woke up
-            </button>
-        </div>
+        <!-- Sleep Architecture -->
+        <div class="glass-card arch-section" id="architecture-section"></div>
 
         <!-- Score Hero Card -->
         <div class="glass-card score-hero">
@@ -1928,21 +2077,6 @@
                 </div>
             </div>
 
-            <div class="quality-bar-container">
-                <div class="quality-bar">
-                    <div class="quality-zone poor"></div>
-                    <div class="quality-zone ok"></div>
-                    <div class="quality-zone good"></div>
-                    <div class="quality-zone ideal"></div>
-                </div>
-                <div class="quality-marker" id="quality-marker"></div>
-                <div class="quality-labels">
-                    <span>Terrible</span>
-                    <span>Low</span>
-                    <span>Solid</span>
-                    <span>Ideal</span>
-                </div>
-            </div>
         </div>
 
         <!-- Mini Week -->
@@ -1959,19 +2093,14 @@
         </div>
 
         <!-- Sleep Debt Meter -->
-        <div class="glass-card debt-meter-section" id="debt-meter-section">
-            <div class="section-header">SLEEP DEBT</div>
-            <!-- Populated by JS -->
-        </div>
+        <div class="glass-card debt-meter-section" id="debt-meter-section"></div>
+
+        <!-- Nap Card -->
+        <div class="glass-card nap-section" id="nap-section"></div>
 
         <!-- Health Impact Section -->
         <div class="health-impact-section" id="health-impact">
             <!-- Populated by JS based on sleep data -->
-        </div>
-
-        <!-- Sleep Architecture -->
-        <div class="glass-card arch-section" id="architecture-section">
-            <!-- Populated by JS -->
         </div>
 
         <!-- Stats Section -->
@@ -2003,39 +2132,39 @@
             </div>
         </div>
 
-        <!-- Settings -->
-        <div class="glass-card settings-section">
-            <div class="section-header">SETTINGS</div>
-            <div class="settings-row">
-                <div class="setting-item">
-                    <label>WAKE TIME</label>
-                    <input type="time" id="wake-input" value="05:00" autocomplete="off">
+        <!-- Settings (collapsed by default) -->
+        <div class="glass-card settings-section collapsed" id="settings-section">
+            <div class="section-header settings-toggle" onclick="this.parentElement.classList.toggle('collapsed')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
+                SETTINGS
+                <span class="settings-chevron" style="font-size:0.85rem;font-weight:300;color:var(--text-muted);transition:transform 0.3s;">&#9662;</span>
+            </div>
+            <div class="settings-body">
+                <div class="settings-row">
+                    <div class="setting-item">
+                        <label>WAKE TIME</label>
+                        <input type="time" id="wake-input" value="05:00" autocomplete="off">
+                    </div>
+                    <div class="setting-item">
+                        <label>TARGET HOURS</label>
+                        <input type="number" id="hours-input" value="7.5" min="4" max="12" step="0.5" autocomplete="off">
+                    </div>
                 </div>
-                <div class="setting-item">
-                    <label>TARGET HOURS</label>
-                    <input type="number" id="hours-input" value="7.5" min="4" max="12" step="0.5" autocomplete="off">
+                <div class="notification-row">
+                    <span class="notification-label">Bedtime reminder (30 min before)</span>
+                    <button class="notification-toggle" id="notification-toggle"></button>
+                </div>
+                <div class="notification-status" id="notification-status"></div>
+                <div class="theme-row">
+                    <span class="theme-label">THEME</span>
+                    <div class="theme-dots">
+                        <div class="theme-dot active" data-theme="aurora" title="Aurora"></div>
+                        <div class="theme-dot" data-theme="arctic" title="Arctic"></div>
+                        <div class="theme-dot" data-theme="solar" title="Solar"></div>
+                        <div class="theme-dot" data-theme="lavender" title="Lavender"></div>
+                        <div class="theme-dot" data-theme="mono" title="Mono"></div>
+                    </div>
                 </div>
             </div>
-            <div class="notification-row">
-                <span class="notification-label">Bedtime reminder (30 min before)</span>
-                <button class="notification-toggle" id="notification-toggle"></button>
-            </div>
-            <div class="notification-status" id="notification-status"></div>
-            <div class="theme-row">
-                <span class="theme-label">THEME</span>
-                <div class="theme-dots">
-                    <div class="theme-dot active" data-theme="aurora" title="Aurora"></div>
-                    <div class="theme-dot" data-theme="arctic" title="Arctic"></div>
-                    <div class="theme-dot" data-theme="solar" title="Solar"></div>
-                    <div class="theme-dot" data-theme="lavender" title="Lavender"></div>
-                    <div class="theme-dot" data-theme="mono" title="Mono"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Hint -->
-        <div class="calendar-hint">
-            Tap any day on the calendar to add or edit sleep data
         </div>
 
     </div>
@@ -2304,26 +2433,9 @@ function updateCountdown() {
     const wake = parseTime(settings.wakeTime);
     document.getElementById('wake-display').textContent = formatTime12HourShort(wake.hour, wake.minute);
 
-    // Quality marker
-    document.getElementById('quality-marker').style.marginLeft = `calc(${qualityPercent}% - 2px)`;
 }
 
-function updateButtonStates() {
-    const log = loadSleepLog();
-    const lastEntry = log[log.length - 1];
-    const pendingBedtime = lastEntry && lastEntry.bedtime && !lastEntry.wakeTime;
-
-    const goingToBedBtn = document.getElementById('btn-going-to-bed');
-    const wokeUpBtn = document.getElementById('btn-woke-up');
-
-    if (pendingBedtime) {
-        goingToBedBtn.classList.add('disabled');
-        wokeUpBtn.classList.remove('disabled');
-    } else {
-        goingToBedBtn.classList.remove('disabled');
-        wokeUpBtn.classList.add('disabled');
-    }
-}
+// updateButtonStates removed — quick log buttons removed
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SLEEP DEBT METER
@@ -2335,19 +2447,26 @@ function renderDebtMeter() {
 
     const settings = loadSleepSettings();
     const last14 = getLastNDaysLog(14);
-    const daysWithData = last14.filter(d => d.hours);
+    const daysWithData = last14.filter(d => d.totalHours);
 
     // Need at least 3 days of data
     if (daysWithData.length < 3) {
-        container.style.display = 'none';
+        container.innerHTML = `
+            <div class="section-header">SLEEP DEBT</div>
+            <div class="debt-meter-value">
+                <div class="debt-meter-number neutral">0h</div>
+                <div class="debt-meter-label">CUMULATIVE (14d)</div>
+            </div>
+            <div class="debt-track"><div class="debt-zero-line" style="left:75%"></div></div>
+            <div class="arch-note" style="opacity:0.4;text-align:center;margin-top:10px">Needs 3+ nights</div>
+        `;
         return;
     }
-    container.style.display = 'block';
 
-    // Calculate debt: sum of (actual - target) for each day
+    // Calculate debt: sum of (actual - target) for each day (includes nap credit)
     let totalDebt = 0;
     daysWithData.forEach(day => {
-        totalDebt += day.hours - settings.targetHours;
+        totalDebt += day.totalHours - settings.targetHours;
     });
 
     // Dynamic scale based on actual debt (minimum -30h to +10h)
@@ -2482,7 +2601,16 @@ function renderArchitecture() {
 
     const arch = estimateSleepArchitecture();
     if (!arch) {
-        container.innerHTML = '';
+        container.innerHTML = `
+            <div class="section-header">SLEEP ARCHITECTURE</div>
+            <div class="arch-bars arch-placeholder">
+                <div class="arch-row"><div class="arch-label" style="color:#7080e0">Deep</div><div class="arch-bar-track"><div class="arch-bar-fill" style="width:0%;background:linear-gradient(90deg,#5060c0,#7080e0)"></div></div><div class="arch-val">--</div></div>
+                <div class="arch-row"><div class="arch-label" style="color:#a070d0">REM</div><div class="arch-bar-track"><div class="arch-bar-fill" style="width:0%;background:linear-gradient(90deg,#8050b0,#a070d0)"></div></div><div class="arch-val">--</div></div>
+                <div class="arch-row"><div class="arch-label" style="color:var(--accent)">Light</div><div class="arch-bar-track"><div class="arch-bar-fill" style="width:0%;background:linear-gradient(90deg,var(--accent),#c87090)"></div></div><div class="arch-val">--</div></div>
+                <div class="arch-row"><div class="arch-label" style="color:rgba(255,255,255,0.5)">Awake</div><div class="arch-bar-track"><div class="arch-bar-fill" style="width:0%;background:linear-gradient(90deg,rgba(255,255,255,0.3),rgba(255,255,255,0.15))"></div></div><div class="arch-val">--</div></div>
+            </div>
+            <div class="arch-note" style="opacity:0.4">Log sleep to see stages</div>
+        `;
         return;
     }
 
@@ -2524,45 +2652,198 @@ function renderArchitecture() {
         <div class="section-header">SLEEP ARCHITECTURE</div>
         <div class="arch-bars">${barsHtml}</div>
         <div class="arch-note">Based on ${arch.totalHours.toFixed(1)}h sleep, bedtime ${btStr}, ~${arch.cycles} cycles</div>
-        <div class="stage-compare">
-            <div class="stage-card">
-                <div class="stage-card-header">
-                    <div class="stage-card-dot" style="background:#7080e0"></div>
-                    <div class="stage-card-name" style="color:#7080e0">Deep</div>
-                </div>
-                <div class="stage-card-role">Body repair</div>
-                <div class="stage-card-body">Tissue recovery, immune boost, growth hormone. Heaviest in the first half of the night.</div>
-            </div>
-            <div class="stage-card">
-                <div class="stage-card-header">
-                    <div class="stage-card-dot" style="background:#a070d0"></div>
-                    <div class="stage-card-name" style="color:#a070d0">REM</div>
-                </div>
-                <div class="stage-card-role">Brain repair</div>
-                <div class="stage-card-body">Emotional processing, memory, dreaming. Concentrated in the second half. Cut first when sleep is short.</div>
-            </div>
-            <div class="stage-card">
-                <div class="stage-card-header">
-                    <div class="stage-card-dot" style="background:var(--accent)"></div>
-                    <div class="stage-card-name" style="color:var(--accent)">Light</div>
-                </div>
-                <div class="stage-card-role">Transition stage</div>
-                <div class="stage-card-body">Bridges deep and REM cycles. Makes up most of your sleep. Still restorative.</div>
-            </div>
-        </div>
     `;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// NAP TRACKING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let napLogCache = null;
+
+function loadNapLogLocal() {
+    if (napLogCache) return napLogCache;
+    napLogCache = DataService.loadNapLog();
+    return napLogCache;
+}
+
+function getTodayNaps() {
+    const log = loadNapLogLocal();
+    const today = localDateStr(new Date());
+    return log.filter(e => e.date === today);
+}
+
+function quickLogNap(durationMin) {
+    const now = new Date();
+    const start = new Date(now.getTime() - durationMin * 60 * 1000);
+    const today = localDateStr(now);
+
+    const entry = {
+        date: today,
+        startTime: start.toISOString(),
+        endTime: now.toISOString(),
+        hours: durationMin / 60
+    };
+
+    DataService.addNapEntry(entry);
+    napLogCache = DataService.loadNapLog(); // refresh cache
+    refreshAll();
+}
+
+function deleteNap(date, startTime) {
+    DataService.deleteNapEntry(date, startTime);
+    napLogCache = DataService.loadNapLog();
+    refreshAll();
+}
+
+function calculateNapRecommendation() {
+    const settings = loadSleepSettings();
+    const now = new Date();
+    const currentHour = now.getHours() + now.getMinutes() / 60;
+
+    // Wake time in decimal hours
+    const wake = parseTime(settings.wakeTime);
+    const wakeHour = wake.hour + wake.minute / 60;
+
+    // Estimated bedtime
+    const bedtimeHour = wakeHour - settings.targetHours;
+    const adjustedBedtime = bedtimeHour < 0 ? bedtimeHour + 24 : bedtimeHour;
+
+    // Hours until bedtime
+    let hoursUntilBed = adjustedBedtime - currentHour;
+    if (hoursUntilBed < 0) hoursUntilBed += 24;
+    if (hoursUntilBed > 18) hoursUntilBed = 0; // Past bedtime
+
+    // Today's total nap minutes
+    const todayNaps = getTodayNaps();
+    const totalNapMin = todayNaps.reduce((s, e) => s + (e.hours || 0) * 60, 0);
+
+    // Already napped enough
+    if (totalNapMin >= 90) {
+        return { text: "You've napped enough today", type: 'info' };
+    }
+
+    // Too late to nap
+    if (hoursUntilBed <= 5 && hoursUntilBed > 0) {
+        return { text: "Too late to nap — protect tonight's sleep", type: 'caution' };
+    }
+
+    // Check sleep debt
+    const debtObj = calculateCumulativeSleepDebt(7);
+    const debt = debtObj.total;
+
+    if (debt >= 0) {
+        return { text: "No nap needed — you're well rested", type: 'good' };
+    }
+
+    // Ideal nap window: 6-8h after wake
+    const hoursSinceWake = currentHour - wakeHour;
+    const adjustedHoursSinceWake = hoursSinceWake < 0 ? hoursSinceWake + 24 : hoursSinceWake;
+    const inIdealWindow = adjustedHoursSinceWake >= 6 && adjustedHoursSinceWake <= 8;
+    const windowNote = inIdealWindow ? ' — ideal window now' : '';
+
+    // Recommend based on debt severity
+    if (debt >= -2) {
+        return { text: `<strong>20min power nap</strong> recommended${windowNote}`, type: 'suggest' };
+    } else if (debt >= -5) {
+        return { text: `<strong>30min nap</strong> recommended${windowNote}`, type: 'suggest' };
+    } else if (debt >= -10) {
+        return { text: `<strong>60min nap</strong> (full cycle) recommended${windowNote}`, type: 'suggest' };
+    } else {
+        return { text: `<strong>90min nap</strong> (full cycle + REM) recommended${windowNote}`, type: 'suggest' };
+    }
+}
+
+function renderNapCard() {
+    const container = document.getElementById('nap-section');
+    if (!container) return;
+
+    const todayNaps = getTodayNaps();
+    const rec = calculateNapRecommendation();
+
+    // Format nap time for display
+    function fmtNapTime(isoStr) {
+        const d = new Date(isoStr);
+        let h = d.getHours();
+        const m = d.getMinutes();
+        const ampm = h >= 12 ? 'p' : 'a';
+        h = h % 12 || 12;
+        return m === 0 ? `${h}${ampm}` : `${h}:${m.toString().padStart(2, '0')}${ampm}`;
+    }
+
+    function fmtDuration(hours) {
+        const min = Math.round(hours * 60);
+        if (min >= 60) {
+            const h = Math.floor(min / 60);
+            const m = min % 60;
+            return m > 0 ? `${h}h ${m}m` : `${h}h`;
+        }
+        return `${min}min`;
+    }
+
+    // Today's naps list
+    let napsHtml = '';
+    if (todayNaps.length > 0) {
+        napsHtml = '<div class="nap-today-list">';
+        todayNaps.forEach(nap => {
+            napsHtml += `
+                <div class="nap-entry">
+                    <span class="nap-entry-time">${fmtNapTime(nap.startTime)} — ${fmtNapTime(nap.endTime)}</span>
+                    <span class="nap-entry-duration">${fmtDuration(nap.hours)}</span>
+                    <button class="nap-entry-delete" data-date="${nap.date}" data-start="${nap.startTime}" title="Delete">&times;</button>
+                </div>`;
+        });
+        napsHtml += '</div>';
+    } else {
+        napsHtml = '<div class="nap-empty">No naps today</div>';
+    }
+
+    // Quick-log buttons
+    const quickHtml = `
+        <div class="nap-quick-log">
+            <button class="nap-quick-btn" data-min="15">15m</button>
+            <button class="nap-quick-btn" data-min="20">20m</button>
+            <button class="nap-quick-btn" data-min="30">30m</button>
+            <button class="nap-quick-btn" data-min="60">60m</button>
+            <button class="nap-quick-btn" data-min="90">90m</button>
+        </div>`;
+
+    // Recommendation
+    const recHtml = `<div class="nap-recommendation">${rec.text}</div>`;
+
+    // On desktop, split into 3 columns
+    container.innerHTML = `
+        <div class="section-header">NAPS</div>
+        <div class="nap-col">${napsHtml}</div>
+        <div class="nap-col">${quickHtml}</div>
+        <div class="nap-col">${recHtml}</div>
+    `;
+
+    // Wire up quick-log buttons
+    container.querySelectorAll('.nap-quick-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            quickLogNap(parseInt(btn.dataset.min));
+        });
+    });
+
+    // Wire up delete buttons
+    container.querySelectorAll('.nap-entry-delete').forEach(btn => {
+        btn.addEventListener('click', () => {
+            deleteNap(btn.dataset.date, btn.dataset.start);
+        });
+    });
 }
 
 function refreshAll() {
     renderScoreHero();
     renderMiniBars();
     renderDebtMeter();
+    renderNapCard();
     renderDynamicInsights();
     renderArchitecture();
     renderStats();
     renderHeatmap();
     updateCountdown();
-    updateButtonStates();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -2792,6 +3073,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     wakeInput.value = settings.wakeTime;
     hoursInput.value = settings.targetHours;
 
+    // Load nap log into cache
+    napLogCache = DataService.loadNapLog();
+
     // Initialize timeline modal
     initTimelineModal();
 
@@ -2809,30 +3093,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Update countdown every second
     setInterval(updateCountdown, 1000);
-
-    // Going to bed button
-    document.getElementById('btn-going-to-bed').addEventListener('click', async function() {
-        if (!this.classList.contains('disabled')) {
-            const bedtime = await logBedtime();
-            this.innerHTML = `Logged ${formatTime12HourShort(bedtime.getHours(), bedtime.getMinutes())}`;
-            setTimeout(() => {
-                this.innerHTML = '<span class="emoji">&#127769;</span> Going to bed';
-            }, 2000);
-            refreshAll();
-        }
-    });
-
-    // Woke up button
-    document.getElementById('btn-woke-up').addEventListener('click', async function() {
-        if (!this.classList.contains('disabled')) {
-            const wakeTime = await logWakeUp();
-            this.innerHTML = `Logged ${formatTime12HourShort(wakeTime.getHours(), wakeTime.getMinutes())}`;
-            setTimeout(() => {
-                this.innerHTML = '<span class="emoji">&#9728;&#65039;</span> Just woke up';
-            }, 2000);
-            refreshAll();
-        }
-    });
 
     // Settings changes
     wakeInput.addEventListener('change', async () => {
@@ -2896,7 +3156,7 @@ function vibrate(pattern = 10) {
 
 function initHaptics() {
     // Add haptic feedback to all interactive elements
-    const buttons = document.querySelectorAll('.log-btn, .period-btn, .heatmap-nav, .heatmap-cell, .timeline-btn, .notification-toggle, .mobile-tab');
+    const buttons = document.querySelectorAll('.period-btn, .heatmap-nav, .heatmap-cell, .timeline-btn, .notification-toggle, .mobile-tab');
 
     buttons.forEach(btn => {
         btn.addEventListener('click', () => vibrate(10));
@@ -2904,8 +3164,6 @@ function initHaptics() {
 
     // Stronger feedback for important actions
     document.getElementById('timeline-save')?.addEventListener('click', () => vibrate([10, 50, 10]));
-    document.getElementById('btn-going-to-bed')?.addEventListener('click', () => vibrate([10, 30, 10]));
-    document.getElementById('btn-woke-up')?.addEventListener('click', () => vibrate([10, 30, 10]));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
