@@ -105,7 +105,11 @@ window.addEventListener('storage', (e) => {
     // Another tab changed our data — invalidate caches and refresh UI
     switch (e.key) {
         case '0500_goals':
-            if (typeof goalsCache !== 'undefined') goalsCache = null;
+            // Another tab updated goals — reload from localStorage (don't re-fetch from cloud)
+            if (typeof goalsCache !== 'undefined') {
+                goalsCache = null;
+                _goalsReady = false;
+            }
             if (typeof renderGoals === 'function') renderGoals();
             break;
         case '0500_schedule_entries':

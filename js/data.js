@@ -83,7 +83,7 @@ async function withSaveLock(lockName, saveFn) {
     }
 }
 
-// Guard: only allow saves after a successful cloud load (prevents wipe on load failure)
+// Tracks whether we got a successful cloud load this session
 let _goalsLoadedFromCloud = false;
 
 const DataService = {
@@ -101,7 +101,6 @@ const DataService = {
 
             if (error) {
                 console.error('Error loading goals:', error);
-                // Fall back to localStorage instead of empty
                 const fallback = localStorage.getItem('0500_goals');
                 if (fallback) return JSON.parse(fallback);
                 return this._getEmptyGoals();
@@ -109,7 +108,6 @@ const DataService = {
 
             _goalsLoadedFromCloud = true;
 
-            // Transform to app format
             const goals = { daily: [], midTerm: [], oneYear: [], longTerm: [] };
             data.forEach(g => {
                 if (goals[g.category]) {
@@ -121,12 +119,10 @@ const DataService = {
                 }
             });
 
-            // Also mirror to localStorage as crash-safe backup
+            // Always mirror to localStorage as crash-safe backup
             safeSetItem('0500_goals', JSON.stringify(goals));
-
             return goals;
         } else {
-            // Fallback to localStorage
             const saved = localStorage.getItem('0500_goals');
             if (saved) return JSON.parse(saved);
             return this._getEmptyGoals();
@@ -134,59 +130,54 @@ const DataService = {
     },
 
     async saveGoals(goals) {
-        if (isSignedIn()) {
-            // Safety: refuse to delete-then-insert-nothing if load never succeeded
-            const totalGoals = ['daily', 'midTerm', 'oneYear', 'longTerm']
-                .reduce((sum, cat) => sum + (goals[cat]?.length || 0), 0);
+        // Always save to localStorage first (instant, safe)
+        safeSetItem('0500_goals', JSON.stringify(goals));
 
-            if (totalGoals === 0 && !_goalsLoadedFromCloud) {
-                console.warn('saveGoals blocked: cloud load never succeeded, refusing to wipe');
-                return;
-            }
+        if (!isSignedIn()) return;
 
-            await withSaveLock('goals', async () => {
-                const userId = currentUser.id;
+        // Block saving empty goals if we never loaded successfully
+        const totalGoals = ['daily', 'midTerm', 'oneYear', 'longTerm']
+            .reduce((sum, cat) => sum + (goals[cat]?.length || 0), 0);
 
-                // Delete existing goals and insert new ones
-                const { error: deleteError } = await supabaseClient.from('goals').delete().eq('user_id', userId);
-                if (deleteError) {
-                    console.error('Error deleting goals:', deleteError);
-                    return; // Don't insert if delete failed
-                }
+        if (totalGoals === 0 && !_goalsLoadedFromCloud) {
+            console.warn('saveGoals blocked: refusing to wipe (cloud load never succeeded)');
+            return;
+        }
 
-                const inserts = [];
-                ['daily', 'midTerm', 'oneYear', 'longTerm'].forEach(category => {
-                    goals[category].forEach((g, idx) => {
-                        inserts.push({
-                            user_id: userId,
-                            category,
-                            text: g.text,
-                            checked: g.checked,
-                            sort_order: idx
-                        });
+        await withSaveLock('goals', async () => {
+            const userId = currentUser.id;
+
+            // Build rows to insert
+            const inserts = [];
+            ['daily', 'midTerm', 'oneYear', 'longTerm'].forEach(category => {
+                (goals[category] || []).forEach((g, idx) => {
+                    inserts.push({
+                        user_id: userId,
+                        category,
+                        text: g.text,
+                        checked: g.checked,
+                        sort_order: idx
                     });
                 });
-
-                if (inserts.length > 0) {
-                    const { error } = await supabaseClient.from('goals').insert(inserts);
-                    if (error) console.error('Error saving goals:', error);
-                }
             });
 
-            // Keep localStorage backup in sync
-            safeSetItem('0500_goals', JSON.stringify(goals));
-        } else {
-            safeSetItem('0500_goals', JSON.stringify(goals));
-        }
+            // Delete existing, then insert — with retry on failure
+            await withRetry(async () => {
+                const { error: deleteError } = await supabaseClient
+                    .from('goals').delete().eq('user_id', userId);
+                if (deleteError) throw deleteError;
+
+                if (inserts.length > 0) {
+                    const { error: insertError } = await supabaseClient
+                        .from('goals').insert(inserts);
+                    if (insertError) throw insertError;
+                }
+            });
+        });
     },
 
     _getEmptyGoals() {
-        return {
-            daily: [],
-            midTerm: [],
-            oneYear: [],
-            longTerm: []
-        };
+        return { daily: [], midTerm: [], oneYear: [], longTerm: [] };
     },
 
     // ═══════════════════════════════════════════════════════════════════════════

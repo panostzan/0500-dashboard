@@ -3,20 +3,26 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 
 let goalsCache = null;
+let _goalsReady = false; // true only after a successful load
 let swipeState = { el: null, startX: 0, currentX: 0 };
-let _pendingGoalSave = null; // Track in-flight save for sign-out guard
+let _pendingGoalSave = null;
 
 async function loadGoals() {
     if (!goalsCache) {
         goalsCache = await DataService.loadGoals();
-        // Ensure oneYear exists (migration from old data)
         if (!goalsCache.oneYear) goalsCache.oneYear = [];
         hydrateGoalTimestamps(goalsCache);
+        _goalsReady = true;
     }
     return goalsCache;
 }
 
 async function saveGoals(goals) {
+    // Never save if we haven't loaded yet
+    if (!_goalsReady) {
+        console.warn('saveGoals skipped: goals not loaded yet');
+        return;
+    }
     goalsCache = goals;
     _pendingGoalSave = DataService.saveGoals(goals);
     await _pendingGoalSave;
@@ -42,7 +48,6 @@ function createGoalItem(item, index, isNew = false) {
     div.className = `goal-item ${item?.checked ? 'checked' : ''} ${isNew ? 'new-goal' : ''}`;
     if (!isNew) div.dataset.index = index;
 
-    // Structure for swipe-to-delete support
     div.innerHTML = `
         <div class="swipe-delete-bg">Delete</div>
         <div class="goal-content-wrapper">
@@ -54,7 +59,6 @@ function createGoalItem(item, index, isNew = false) {
     return div;
 }
 
-// Update header meta count
 function updateHeaderCount(group) {
     const meta = group.querySelector('.goal-header-meta');
     if (meta) {
@@ -63,34 +67,30 @@ function updateHeaderCount(group) {
     }
 }
 
-// Attach event listeners to a goal item
 function attachGoalListeners(item, sectionKey, group) {
     const checkbox = item.querySelector('.goal-checkbox');
     const textEl = item.querySelector('.goal-text');
     const isNew = item.classList.contains('new-goal');
 
-    // Checkbox toggle (optimistic UI - toggle instantly, save in background)
     function toggleCheckbox() {
-        if (isNew) return;
+        if (isNew || !goalsCache) return;
 
-        // Toggle visual state immediately
         item.classList.toggle('checked');
         const isChecked = item.classList.contains('checked');
         checkbox.setAttribute('aria-checked', isChecked ? 'true' : 'false');
 
-        // Save in background (don't await)
         const index = parseInt(item.dataset.index);
-        loadGoals().then(goals => {
-            goals[sectionKey][index].checked = isChecked;
-            // Track completedAt for mid-term and one-year goals (for weekly review)
-            if (sectionKey === 'midTerm' || sectionKey === 'oneYear') {
-                const ts = isChecked ? new Date().toISOString() : null;
-                goals[sectionKey][index].completedAt = ts;
-                // Also persist to localStorage for cross-session tracking
-                _saveGoalTimestamp(sectionKey, goals[sectionKey][index].text, ts);
-            }
-            saveGoals(goals);
-        });
+        if (!goalsCache[sectionKey] || !goalsCache[sectionKey][index]) return;
+
+        goalsCache[sectionKey][index].checked = isChecked;
+
+        if (sectionKey === 'midTerm' || sectionKey === 'oneYear') {
+            const ts = isChecked ? new Date().toISOString() : null;
+            goalsCache[sectionKey][index].completedAt = ts;
+            _saveGoalTimestamp(sectionKey, goalsCache[sectionKey][index].text, ts);
+        }
+
+        saveGoals(goalsCache);
     }
 
     checkbox.addEventListener('click', (e) => {
@@ -98,7 +98,6 @@ function attachGoalListeners(item, sectionKey, group) {
         toggleCheckbox();
     });
 
-    // Keyboard: Space/Enter toggles checkbox
     checkbox.addEventListener('keydown', (e) => {
         if (e.key === ' ' || e.key === 'Enter') {
             e.preventDefault();
@@ -106,17 +105,15 @@ function attachGoalListeners(item, sectionKey, group) {
         }
     });
 
-    // Text editing - save on blur (optimistic UI - update DOM instantly, save in background)
     textEl.addEventListener('blur', () => {
+        if (!goalsCache) return;
+
         const text = textEl.textContent.trim();
 
         if (isNew) {
-            // Add new goal if text entered
             if (text) {
-                // Update DOM immediately
-                const goals = goalsCache;
-                goals[sectionKey].push({ text, checked: false });
-                const newItem = createGoalItem({ text, checked: false }, goals[sectionKey].length - 1);
+                goalsCache[sectionKey].push({ text, checked: false });
+                const newItem = createGoalItem({ text, checked: false }, goalsCache[sectionKey].length - 1);
                 newItem.classList.add('adding');
                 item.before(newItem);
                 attachGoalListeners(newItem, sectionKey, group);
@@ -125,25 +122,21 @@ function attachGoalListeners(item, sectionKey, group) {
                 updateHeaderCount(group);
                 setTimeout(() => newItem.classList.remove('adding'), 200);
                 reindexGoalItems(group);
-
-                // Save in background
-                saveGoals(goals);
+                saveGoals(goalsCache);
             }
         } else {
             const index = parseInt(item.dataset.index);
             if (text) {
-                // Update existing goal - save in background
-                const goals = goalsCache;
-                goals[sectionKey][index].text = text;
-                saveGoals(goals);
+                if (goalsCache[sectionKey] && goalsCache[sectionKey][index]) {
+                    goalsCache[sectionKey][index].text = text;
+                    saveGoals(goalsCache);
+                }
             } else {
-                // Delete goal if empty (with animation)
                 removeGoalWithAnimation(item, sectionKey, index, group);
             }
         }
     });
 
-    // Enter key = blur (save) and optionally focus next
     textEl.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -151,7 +144,6 @@ function attachGoalListeners(item, sectionKey, group) {
         }
     });
 
-    // Sanitize paste: strip HTML formatting, insert plain text only
     textEl.addEventListener('paste', (e) => {
         e.preventDefault();
         const text = e.clipboardData.getData('text/plain');
@@ -159,7 +151,6 @@ function attachGoalListeners(item, sectionKey, group) {
     });
 }
 
-// Reindex goal items after add/remove
 function reindexGoalItems(group) {
     const items = group.querySelectorAll('.goal-item:not(.new-goal)');
     items.forEach((item, idx) => {
@@ -167,11 +158,11 @@ function reindexGoalItems(group) {
     });
 }
 
-// Remove goal with animation
 async function removeGoalWithAnimation(item, sectionKey, index, group) {
-    const goals = await loadGoals();
-    goals[sectionKey].splice(index, 1);
-    await saveGoals(goals);
+    if (!goalsCache || !goalsCache[sectionKey]) return;
+
+    goalsCache[sectionKey].splice(index, 1);
+    await saveGoals(goalsCache);
 
     item.classList.add('removing');
     setTimeout(() => {
@@ -188,7 +179,6 @@ function attachSwipeListeners(item, sectionKey, group) {
     const isTouchDevice = 'ontouchstart' in window;
 
     const startSwipe = (e) => {
-        // Only handle touch or left mouse button
         if (e.type === 'mousedown' && e.button !== 0) return;
 
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -220,14 +210,14 @@ function attachSwipeListeners(item, sectionKey, group) {
         const el = swipeState.el;
 
         if (diff > 100) {
-            // Swiped far enough - delete
             const index = parseInt(el.dataset.index);
             el.classList.remove('swiping');
             el.classList.add('swipe-deleting');
 
-            const goals = await loadGoals();
-            goals[sectionKey].splice(index, 1);
-            await saveGoals(goals);
+            if (goalsCache && goalsCache[sectionKey]) {
+                goalsCache[sectionKey].splice(index, 1);
+                await saveGoals(goalsCache);
+            }
 
             setTimeout(() => {
                 el.remove();
@@ -235,7 +225,6 @@ function attachSwipeListeners(item, sectionKey, group) {
                 updateHeaderCount(group);
             }, 200);
         } else {
-            // Not enough - cancel
             el.classList.remove('swiping');
         }
 
@@ -247,11 +236,9 @@ function attachSwipeListeners(item, sectionKey, group) {
         document.removeEventListener('mouseup', endSwipe);
     };
 
-    // Attach swipe start listener
     if (isTouchDevice) {
         item.addEventListener('touchstart', startSwipe, { passive: true });
     } else {
-        // For desktop testing, only enable on narrow viewport
         item.addEventListener('mousedown', (e) => {
             if (window.innerWidth < 768) startSwipe(e);
         });
@@ -288,13 +275,11 @@ async function renderGoals() {
         `;
     }).join('');
 
-    // Populate each section with goal items
     container.querySelectorAll('.goal-group').forEach((group, sectionIdx) => {
         const sectionKey = sections[sectionIdx].key;
         const goalList = group.querySelector('.goal-list');
         const items = sections[sectionIdx].items;
 
-        // Add existing goals
         items.forEach((item, idx) => {
             const goalEl = createGoalItem(item, idx);
             goalList.appendChild(goalEl);
@@ -302,12 +287,10 @@ async function renderGoals() {
             attachSwipeListeners(goalEl, sectionKey, group);
         });
 
-        // Add "new goal" input
         const newGoalEl = createGoalItem(null, -1, true);
         goalList.appendChild(newGoalEl);
         attachGoalListeners(newGoalEl, sectionKey, group);
 
-        // Collapsible header toggle
         const headerToggle = group.querySelector('.goal-header-toggle');
         if (headerToggle) {
             headerToggle.addEventListener('click', () => {
@@ -343,7 +326,6 @@ function _saveGoalTimestamp(category, text, ts) {
     safeSetItem(key, JSON.stringify(map));
 }
 
-// Hydrate completedAt from localStorage into goalsCache (after load)
 function hydrateGoalTimestamps(goals) {
     for (const category of Object.keys(_TIMESTAMP_KEYS)) {
         const key = _TIMESTAMP_KEYS[category];
@@ -358,44 +340,40 @@ function hydrateGoalTimestamps(goals) {
     }
 }
 
-// Snapshot daily goals completion count to history, then uncheck all daily goals
 async function snapshotDailyGoals() {
-    const goals = await loadGoals();
-    const daily = goals.daily;
+    if (!goalsCache || !_goalsReady) return;
+
+    const daily = goalsCache.daily;
     if (daily.length === 0) return;
 
     const today = new Date().toISOString().split('T')[0];
     const completed = daily.filter(g => g.checked).length;
     const total = daily.length;
 
-    // Save to history
     const history = DataService.loadDailyGoalHistory();
-    // Avoid duplicate entries for the same date
     const existing = history.findIndex(h => h.date === today);
     if (existing >= 0) {
         history[existing] = { date: today, completed, total };
     } else {
         history.push({ date: today, completed, total });
     }
-    // Keep last 90 days max
     if (history.length > 90) history.splice(0, history.length - 90);
     DataService.saveDailyGoalHistory(history);
 
-    // Uncheck all daily goals
-    goals.daily = daily.map(g => ({ ...g, checked: false }));
-    await saveGoals(goals);
+    goalsCache.daily = daily.map(g => ({ ...g, checked: false }));
+    await saveGoals(goalsCache);
 
-    // Re-render goals UI
     goalsCache = null;
+    _goalsReady = false;
     await renderGoals();
 }
 
 async function initGoals() {
     await renderGoals();
 
-    // Re-render when user changes
     window.addEventListener('userChanged', async () => {
         goalsCache = null;
+        _goalsReady = false;
         await renderGoals();
     });
 }
