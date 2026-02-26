@@ -83,6 +83,9 @@ async function withSaveLock(lockName, saveFn) {
     }
 }
 
+// Guard: only allow saves after a successful cloud load (prevents wipe on load failure)
+let _goalsLoadedFromCloud = false;
+
 const DataService = {
     // ═══════════════════════════════════════════════════════════════════════════
     // GOALS
@@ -104,6 +107,8 @@ const DataService = {
                 return this._getEmptyGoals();
             }
 
+            _goalsLoadedFromCloud = true;
+
             // Transform to app format
             const goals = { daily: [], midTerm: [], oneYear: [], longTerm: [] };
             data.forEach(g => {
@@ -115,6 +120,10 @@ const DataService = {
                     });
                 }
             });
+
+            // Also mirror to localStorage as crash-safe backup
+            safeSetItem('0500_goals', JSON.stringify(goals));
+
             return goals;
         } else {
             // Fallback to localStorage
@@ -126,6 +135,15 @@ const DataService = {
 
     async saveGoals(goals) {
         if (isSignedIn()) {
+            // Safety: refuse to delete-then-insert-nothing if load never succeeded
+            const totalGoals = ['daily', 'midTerm', 'oneYear', 'longTerm']
+                .reduce((sum, cat) => sum + (goals[cat]?.length || 0), 0);
+
+            if (totalGoals === 0 && !_goalsLoadedFromCloud) {
+                console.warn('saveGoals blocked: cloud load never succeeded, refusing to wipe');
+                return;
+            }
+
             await withSaveLock('goals', async () => {
                 const userId = currentUser.id;
 
@@ -154,6 +172,9 @@ const DataService = {
                     if (error) console.error('Error saving goals:', error);
                 }
             });
+
+            // Keep localStorage backup in sync
+            safeSetItem('0500_goals', JSON.stringify(goals));
         } else {
             safeSetItem('0500_goals', JSON.stringify(goals));
         }
