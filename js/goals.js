@@ -1,38 +1,21 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// GOALS — Seamless inline editing with smooth animations and cloud sync
+// GOALS — Seamless inline editing with atomic cloud sync
 // ═══════════════════════════════════════════════════════════════════════════════
 
 let goalsCache = null;
-let _goalsReady = false; // true only after a successful load
 let swipeState = { el: null, startX: 0, currentX: 0 };
-let _pendingGoalSave = null;
 
 async function loadGoals() {
     if (!goalsCache) {
         goalsCache = await DataService.loadGoals();
         if (!goalsCache.oneYear) goalsCache.oneYear = [];
         hydrateGoalTimestamps(goalsCache);
-        _goalsReady = true;
     }
     return goalsCache;
 }
 
-async function saveGoals(goals) {
-    // Never save if we haven't loaded yet
-    if (!_goalsReady) {
-        console.warn('saveGoals skipped: goals not loaded yet');
-        return;
-    }
-    goalsCache = goals;
-    _pendingGoalSave = DataService.saveGoals(goals);
-    await _pendingGoalSave;
-    _pendingGoalSave = null;
-}
-
-// Wait for any in-flight save (called before sign-out)
-async function flushGoalSaves() {
-    if (_pendingGoalSave) await _pendingGoalSave;
-}
+// No-op — kept for supabase.js signOut compatibility
+async function flushGoalSaves() {}
 
 function loadCollapsedState() {
     return DataService.loadCollapsedState();
@@ -46,7 +29,10 @@ function saveCollapsedState(state) {
 function createGoalItem(item, index, isNew = false) {
     const div = document.createElement('div');
     div.className = `goal-item ${item?.checked ? 'checked' : ''} ${isNew ? 'new-goal' : ''}`;
-    if (!isNew) div.dataset.index = index;
+    if (!isNew) {
+        div.dataset.index = index;
+        div.dataset.id = item?.id || '';
+    }
 
     div.innerHTML = `
         <div class="swipe-delete-bg">Delete</div>
@@ -79,6 +65,7 @@ function attachGoalListeners(item, sectionKey, group) {
         const isChecked = item.classList.contains('checked');
         checkbox.setAttribute('aria-checked', isChecked ? 'true' : 'false');
 
+        const goalId = item.dataset.id;
         const index = parseInt(item.dataset.index);
         if (!goalsCache[sectionKey] || !goalsCache[sectionKey][index]) return;
 
@@ -90,7 +77,7 @@ function attachGoalListeners(item, sectionKey, group) {
             _saveGoalTimestamp(sectionKey, goalsCache[sectionKey][index].text, ts);
         }
 
-        saveGoals(goalsCache);
+        DataService.updateGoal(goalId, { checked: isChecked });
     }
 
     checkbox.addEventListener('click', (e) => {
@@ -105,15 +92,20 @@ function attachGoalListeners(item, sectionKey, group) {
         }
     });
 
-    textEl.addEventListener('blur', () => {
+    textEl.addEventListener('blur', async () => {
         if (!goalsCache) return;
 
         const text = textEl.textContent.trim();
 
         if (isNew) {
             if (text) {
-                goalsCache[sectionKey].push({ text, checked: false });
-                const newItem = createGoalItem({ text, checked: false }, goalsCache[sectionKey].length - 1);
+                const sortOrder = goalsCache[sectionKey].length;
+                const id = await DataService.insertGoal(sectionKey, text, sortOrder);
+
+                const goalObj = { id, text, checked: false };
+                goalsCache[sectionKey].push(goalObj);
+
+                const newItem = createGoalItem(goalObj, goalsCache[sectionKey].length - 1);
                 newItem.classList.add('adding');
                 item.before(newItem);
                 attachGoalListeners(newItem, sectionKey, group);
@@ -122,14 +114,14 @@ function attachGoalListeners(item, sectionKey, group) {
                 updateHeaderCount(group);
                 setTimeout(() => newItem.classList.remove('adding'), 200);
                 reindexGoalItems(group);
-                saveGoals(goalsCache);
             }
         } else {
             const index = parseInt(item.dataset.index);
+            const goalId = item.dataset.id;
             if (text) {
                 if (goalsCache[sectionKey] && goalsCache[sectionKey][index]) {
                     goalsCache[sectionKey][index].text = text;
-                    saveGoals(goalsCache);
+                    DataService.updateGoal(goalId, { text });
                 }
             } else {
                 removeGoalWithAnimation(item, sectionKey, index, group);
@@ -161,8 +153,9 @@ function reindexGoalItems(group) {
 async function removeGoalWithAnimation(item, sectionKey, index, group) {
     if (!goalsCache || !goalsCache[sectionKey]) return;
 
+    const goalId = item.dataset.id;
     goalsCache[sectionKey].splice(index, 1);
-    await saveGoals(goalsCache);
+    DataService.deleteGoal(goalId);
 
     item.classList.add('removing');
     setTimeout(() => {
@@ -211,12 +204,13 @@ function attachSwipeListeners(item, sectionKey, group) {
 
         if (diff > 100) {
             const index = parseInt(el.dataset.index);
+            const goalId = el.dataset.id;
             el.classList.remove('swiping');
             el.classList.add('swipe-deleting');
 
             if (goalsCache && goalsCache[sectionKey]) {
                 goalsCache[sectionKey].splice(index, 1);
-                await saveGoals(goalsCache);
+                DataService.deleteGoal(goalId);
             }
 
             setTimeout(() => {
@@ -341,7 +335,7 @@ function hydrateGoalTimestamps(goals) {
 }
 
 async function snapshotDailyGoals() {
-    if (!goalsCache || !_goalsReady) return;
+    if (!goalsCache) return;
 
     const daily = goalsCache.daily;
     if (daily.length === 0) return;
@@ -360,11 +354,11 @@ async function snapshotDailyGoals() {
     if (history.length > 90) history.splice(0, history.length - 90);
     DataService.saveDailyGoalHistory(history);
 
+    // Uncheck all daily goals atomically
+    await DataService.uncheckDailyGoals();
     goalsCache.daily = daily.map(g => ({ ...g, checked: false }));
-    await saveGoals(goalsCache);
 
     goalsCache = null;
-    _goalsReady = false;
     await renderGoals();
 }
 
@@ -373,7 +367,6 @@ async function initGoals() {
 
     window.addEventListener('userChanged', async () => {
         goalsCache = null;
-        _goalsReady = false;
         await renderGoals();
     });
 }

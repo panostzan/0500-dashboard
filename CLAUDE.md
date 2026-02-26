@@ -52,7 +52,7 @@ Open `index.html` in browser. No build step required.
 - **Anonymous** → localStorage (prefixed with `0500_`)
 
 All data functions are async. Key methods:
-- `DataService.loadGoals()` / `saveGoals(goals)`
+- `DataService.loadGoals()` / `insertGoal(category, text, sortOrder)` / `updateGoal(id, updates)` / `deleteGoal(id)` / `uncheckDailyGoals()`
 - `DataService.loadSchedule()` / `saveSchedule(entries)`
 - `DataService.loadSleepLog()` / `saveSleepLog(log)` / `addSleepEntry(entry)`
 - `DataService.loadNotes()` / `saveNotes(content)`

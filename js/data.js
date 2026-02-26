@@ -40,7 +40,6 @@ async function withRetry(fn, maxRetries = 2) {
 
 // Save locks to prevent concurrent saves from racing (delete-then-insert interleaving)
 const saveLocks = {
-    goals: { inProgress: false, pending: null },
     schedule: { inProgress: false, pending: null }
 };
 
@@ -83,18 +82,16 @@ async function withSaveLock(lockName, saveFn) {
     }
 }
 
-// Tracks whether we got a successful cloud load this session
-let _goalsLoadedFromCloud = false;
+// Counter for generating localStorage-only IDs (anon users)
+let _localIdCounter = Date.now();
+function _genLocalId() {
+    return 'local_' + (++_localIdCounter);
+}
 
 const DataService = {
     // ═══════════════════════════════════════════════════════════════════════════
-    // GOALS
+    // GOALS — Atomic operations (no more delete-all-then-insert)
     // ═══════════════════════════════════════════════════════════════════════════
-
-    _countGoals(goals) {
-        return ['daily', 'midTerm', 'oneYear', 'longTerm']
-            .reduce((sum, cat) => sum + (goals[cat]?.length || 0), 0);
-    },
 
     async loadGoals() {
         if (isSignedIn()) {
@@ -111,8 +108,6 @@ const DataService = {
                 return this._getEmptyGoals();
             }
 
-            _goalsLoadedFromCloud = true;
-
             const goals = { daily: [], midTerm: [], oneYear: [], longTerm: [] };
             data.forEach(g => {
                 if (goals[g.category]) {
@@ -124,81 +119,149 @@ const DataService = {
                 }
             });
 
-            const cloudCount = this._countGoals(goals);
-
-            // If Supabase is empty but localStorage has goals, restore from backup
-            if (cloudCount === 0) {
-                const fallback = localStorage.getItem('0500_goals');
-                if (fallback) {
-                    const local = JSON.parse(fallback);
-                    const localCount = this._countGoals(local);
-                    if (localCount > 0) {
-                        console.warn('Supabase goals empty but localStorage has data — restoring from backup');
-                        // Push localStorage backup to Supabase in the background
-                        this.saveGoals(local);
-                        return local;
-                    }
-                }
-            }
-
-            // Mirror to localStorage as backup (only when cloud has data)
-            if (cloudCount > 0) {
-                safeSetItem('0500_goals', JSON.stringify(goals));
-            }
-
+            // Mirror to localStorage as backup
+            safeSetItem('0500_goals', JSON.stringify(goals));
             return goals;
         } else {
             const saved = localStorage.getItem('0500_goals');
-            if (saved) return JSON.parse(saved);
+            if (saved) {
+                const goals = JSON.parse(saved);
+                // Ensure all items have IDs (migration for old data)
+                ['daily', 'midTerm', 'oneYear', 'longTerm'].forEach(cat => {
+                    if (goals[cat]) {
+                        goals[cat].forEach(g => {
+                            if (!g.id) g.id = _genLocalId();
+                        });
+                    }
+                });
+                return goals;
+            }
             return this._getEmptyGoals();
         }
     },
 
-    async saveGoals(goals) {
-        // Always save to localStorage first (instant, safe)
-        safeSetItem('0500_goals', JSON.stringify(goals));
-
-        if (!isSignedIn()) return;
-
-        const totalGoals = this._countGoals(goals);
-
-        if (totalGoals === 0 && !_goalsLoadedFromCloud) {
-            console.warn('saveGoals blocked: refusing to wipe (cloud load never succeeded)');
-            return;
+    async insertGoal(category, text, sortOrder) {
+        if (isSignedIn()) {
+            const { data, error } = await withRetry(async () => {
+                const result = await supabaseClient
+                    .from('goals')
+                    .insert({
+                        user_id: currentUser.id,
+                        category,
+                        text,
+                        checked: false,
+                        sort_order: sortOrder
+                    })
+                    .select('id')
+                    .single();
+                if (result.error) throw result.error;
+                return result;
+            });
+            this._mirrorGoalsToLocalStorage();
+            return data.id;
+        } else {
+            const id = _genLocalId();
+            const goals = JSON.parse(localStorage.getItem('0500_goals') || '{}');
+            if (!goals[category]) goals[category] = [];
+            goals[category].push({ id, text, checked: false });
+            safeSetItem('0500_goals', JSON.stringify(goals));
+            return id;
         }
+    },
 
+    async updateGoal(id, updates) {
+        if (isSignedIn()) {
+            await withRetry(async () => {
+                const supaUpdates = {};
+                if ('text' in updates) supaUpdates.text = updates.text;
+                if ('checked' in updates) supaUpdates.checked = updates.checked;
+                if ('sort_order' in updates) supaUpdates.sort_order = updates.sort_order;
+
+                const { error } = await supabaseClient
+                    .from('goals')
+                    .update(supaUpdates)
+                    .eq('id', id);
+                if (error) throw error;
+            });
+            this._mirrorGoalsToLocalStorage();
+        } else {
+            const goals = JSON.parse(localStorage.getItem('0500_goals') || '{}');
+            for (const cat of ['daily', 'midTerm', 'oneYear', 'longTerm']) {
+                if (!goals[cat]) continue;
+                const g = goals[cat].find(g => g.id === id);
+                if (g) {
+                    if ('text' in updates) g.text = updates.text;
+                    if ('checked' in updates) g.checked = updates.checked;
+                    break;
+                }
+            }
+            safeSetItem('0500_goals', JSON.stringify(goals));
+        }
+    },
+
+    async deleteGoal(id) {
+        if (isSignedIn()) {
+            await withRetry(async () => {
+                const { error } = await supabaseClient
+                    .from('goals')
+                    .delete()
+                    .eq('id', id);
+                if (error) throw error;
+            });
+            this._mirrorGoalsToLocalStorage();
+        } else {
+            const goals = JSON.parse(localStorage.getItem('0500_goals') || '{}');
+            for (const cat of ['daily', 'midTerm', 'oneYear', 'longTerm']) {
+                if (!goals[cat]) continue;
+                const idx = goals[cat].findIndex(g => g.id === id);
+                if (idx >= 0) {
+                    goals[cat].splice(idx, 1);
+                    break;
+                }
+            }
+            safeSetItem('0500_goals', JSON.stringify(goals));
+        }
+    },
+
+    async uncheckDailyGoals() {
+        if (isSignedIn()) {
+            await withRetry(async () => {
+                const { error } = await supabaseClient
+                    .from('goals')
+                    .update({ checked: false })
+                    .eq('user_id', currentUser.id)
+                    .eq('category', 'daily');
+                if (error) throw error;
+            });
+            this._mirrorGoalsToLocalStorage();
+        } else {
+            const goals = JSON.parse(localStorage.getItem('0500_goals') || '{}');
+            if (goals.daily) {
+                goals.daily.forEach(g => g.checked = false);
+            }
+            safeSetItem('0500_goals', JSON.stringify(goals));
+        }
+    },
+
+    // Re-read goals from Supabase and mirror to localStorage backup
+    async _mirrorGoalsToLocalStorage() {
+        if (!isSignedIn()) return;
         try {
-            await withSaveLock('goals', async () => {
-                const userId = currentUser.id;
-
-                const inserts = [];
-                ['daily', 'midTerm', 'oneYear', 'longTerm'].forEach(category => {
-                    (goals[category] || []).forEach((g, idx) => {
-                        inserts.push({
-                            user_id: userId,
-                            category,
-                            text: g.text,
-                            checked: g.checked,
-                            sort_order: idx
-                        });
-                    });
-                });
-
-                await withRetry(async () => {
-                    const { error: deleteError } = await supabaseClient
-                        .from('goals').delete().eq('user_id', userId);
-                    if (deleteError) throw deleteError;
-
-                    if (inserts.length > 0) {
-                        const { error: insertError } = await supabaseClient
-                            .from('goals').insert(inserts);
-                        if (insertError) throw insertError;
+            const { data } = await supabaseClient
+                .from('goals')
+                .select('*')
+                .order('category')
+                .order('sort_order');
+            if (data) {
+                const goals = { daily: [], midTerm: [], oneYear: [], longTerm: [] };
+                data.forEach(g => {
+                    if (goals[g.category]) {
+                        goals[g.category].push({ id: g.id, text: g.text, checked: g.checked });
                     }
                 });
-            });
-        } catch (err) {
-            console.error('saveGoals Supabase error (localStorage backup is safe):', err);
-        }
+                safeSetItem('0500_goals', JSON.stringify(goals));
+            }
+        } catch (_) { /* non-critical */ }
     },
 
     _getEmptyGoals() {
