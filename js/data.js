@@ -126,13 +126,12 @@ const DataService = {
             const saved = localStorage.getItem('0500_goals');
             if (saved) {
                 const goals = JSON.parse(saved);
-                // Ensure all items have IDs (migration for old data)
+                // Ensure all categories exist and items have IDs
                 ['daily', 'midTerm', 'oneYear', 'longTerm'].forEach(cat => {
-                    if (goals[cat]) {
-                        goals[cat].forEach(g => {
-                            if (!g.id) g.id = _genLocalId();
-                        });
-                    }
+                    if (!goals[cat]) goals[cat] = [];
+                    goals[cat].forEach(g => {
+                        if (!g.id) g.id = _genLocalId();
+                    });
                 });
                 return goals;
             }
@@ -219,6 +218,24 @@ const DataService = {
                     break;
                 }
             }
+            safeSetItem('0500_goals', JSON.stringify(goals));
+        }
+    },
+
+    async clearDailyGoals() {
+        if (isSignedIn()) {
+            await withRetry(async () => {
+                const { error } = await supabaseClient
+                    .from('goals')
+                    .delete()
+                    .eq('user_id', currentUser.id)
+                    .eq('category', 'daily');
+                if (error) throw error;
+            });
+            this._mirrorGoalsToLocalStorage();
+        } else {
+            const goals = JSON.parse(localStorage.getItem('0500_goals') || '{}');
+            goals.daily = [];
             safeSetItem('0500_goals', JSON.stringify(goals));
         }
     },
@@ -560,7 +577,7 @@ const DataService = {
     loadCollapsedState() {
         const saved = localStorage.getItem('0500_goals_collapsed');
         if (saved) return JSON.parse(saved);
-        return { daily: false, midTerm: true, oneYear: true, longTerm: true };
+        return { daily: false, midTerm: true, oneYear: false, longTerm: true };
     },
 
     saveCollapsedState(state) {

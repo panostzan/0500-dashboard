@@ -8,7 +8,9 @@ let swipeState = { el: null, startX: 0, currentX: 0 };
 async function loadGoals() {
     if (!goalsCache) {
         goalsCache = await DataService.loadGoals();
-        if (!goalsCache.oneYear) goalsCache.oneYear = [];
+        ['daily', 'midTerm', 'oneYear', 'longTerm'].forEach(cat => {
+            if (!goalsCache[cat]) goalsCache[cat] = [];
+        });
         hydrateGoalTimestamps(goalsCache);
     }
     return goalsCache;
@@ -259,6 +261,7 @@ async function renderGoals() {
             <div class="goal-group ${section.collapsible ? 'collapsible' : ''} ${isCollapsed ? 'collapsed' : ''}" data-section="${section.key}">
                 <h3 class="${section.collapsible ? 'goal-header-toggle' : ''}">
                     ${section.title}
+                    ${section.key === 'daily' ? '<button class="daily-clear-btn" title="Clear daily goals">CLR</button>' : ''}
                     ${section.collapsible ? `
                         <span class="goal-header-meta">${totalCount}</span>
                         <span class="goal-toggle-icon">${isCollapsed ? '+' : '−'}</span>
@@ -284,6 +287,18 @@ async function renderGoals() {
         const newGoalEl = createGoalItem(null, -1, true);
         goalList.appendChild(newGoalEl);
         attachGoalListeners(newGoalEl, sectionKey, group);
+
+        const clearBtn = group.querySelector('.daily-clear-btn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (!goalsCache || !goalsCache.daily || goalsCache.daily.length === 0) return;
+                await DataService.clearDailyGoals();
+                goalsCache.daily = [];
+                goalsCache = null;
+                await renderGoals();
+            });
+        }
 
         const headerToggle = group.querySelector('.goal-header-toggle');
         if (headerToggle) {
