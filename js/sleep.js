@@ -1757,11 +1757,14 @@ function updateSleepDisplay() {
     const progress = getProgressPercent(settings);
     const qualityPercent = getQualityPercent(msIfSleepNow / 1000 / 60 / 60);
 
-    // Update chip
+    // Update chip — show sleep you'd get if you sleep right now
     const chipCountdown = document.getElementById('chip-rest-countdown');
     const chip = document.getElementById('chip-rest');
     if (chipCountdown) {
-        chipCountdown.textContent = formatCountdownShort(Math.max(0, msUntilBedtime));
+        const sleepHours = msIfSleepNow / 1000 / 60 / 60;
+        const h = Math.floor(sleepHours);
+        const m = Math.floor((sleepHours - h) * 60);
+        chipCountdown.textContent = `${h}h${m.toString().padStart(2, '0')}m`;
     }
     if (chip) {
         chip.classList.remove('state-relaxed', 'state-caution', 'state-warning', 'state-urgent');
