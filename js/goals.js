@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// GOALS — Seamless inline editing with atomic cloud sync
+// GOALS — GLASS variant with progress rings, fraction counters, hover delete
 // ═══════════════════════════════════════════════════════════════════════════════
 
 let goalsCache = null;
@@ -27,6 +27,16 @@ function saveCollapsedState(state) {
     DataService.saveCollapsedState(state);
 }
 
+// Progress ring SVG helper
+function progressRingSVG(checked, total, r = 11) {
+    const c = 2 * Math.PI * r;
+    const pct = total === 0 ? 0 : checked / total;
+    const off = c * (1 - pct);
+    const s = (r + 3) * 2;
+    const cx = r + 3;
+    return `<svg class="goal-ring" viewBox="0 0 ${s} ${s}"><circle class="goal-ring-bg" cx="${cx}" cy="${cx}" r="${r}"/><circle class="goal-ring-fill" cx="${cx}" cy="${cx}" r="${r}" stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 ${cx} ${cx})"/></svg>`;
+}
+
 // Create a single goal item element
 function createGoalItem(item, index, isNew = false) {
     const div = document.createElement('div');
@@ -41,23 +51,42 @@ function createGoalItem(item, index, isNew = false) {
         <div class="goal-content-wrapper">
             <div class="goal-checkbox" role="checkbox" aria-checked="${item?.checked ? 'true' : 'false'}" tabindex="0"></div>
             <span class="goal-text" contenteditable="true" spellcheck="false" autocomplete="off" data-form-type="other" ${isNew ? 'data-placeholder="+ add goal"' : ''}>${item?.text || ''}</span>
+            ${!isNew ? '<button class="goal-del-btn">&times;</button>' : ''}
         </div>
     `;
 
     return div;
 }
 
-function updateHeaderCount(group) {
-    const meta = group.querySelector('.goal-header-meta');
-    if (meta) {
-        const count = group.querySelectorAll('.goal-item:not(.new-goal):not(.removing)').length;
-        meta.textContent = count;
+function updateHeaderMeta(group) {
+    const items = group.querySelectorAll('.goal-item:not(.new-goal):not(.removing)');
+    const total = items.length;
+    const checked = group.querySelectorAll('.goal-item.checked:not(.removing)').length;
+
+    // Update fraction
+    const frac = group.querySelector('.goal-frac');
+    if (frac) frac.textContent = `${checked}/${total}`;
+
+    // Update ring
+    const ringFill = group.querySelector('.goal-ring-fill');
+    if (ringFill) {
+        const r = 11;
+        const c = 2 * Math.PI * r;
+        const pct = total === 0 ? 0 : checked / total;
+        const off = c * (1 - pct);
+        ringFill.setAttribute('stroke-dashoffset', off);
     }
+
+    // Show/hide ring + frac if total changes to/from 0
+    const ringEl = group.querySelector('.goal-ring');
+    if (ringEl) ringEl.style.display = total > 0 ? '' : 'none';
+    if (frac) frac.style.display = total > 0 ? '' : 'none';
 }
 
 function attachGoalListeners(item, sectionKey, group) {
     const checkbox = item.querySelector('.goal-checkbox');
     const textEl = item.querySelector('.goal-text');
+    const delBtn = item.querySelector('.goal-del-btn');
     const isNew = item.classList.contains('new-goal');
 
     function toggleCheckbox() {
@@ -80,6 +109,7 @@ function attachGoalListeners(item, sectionKey, group) {
         }
 
         DataService.updateGoal(goalId, { checked: isChecked });
+        updateHeaderMeta(group);
     }
 
     checkbox.addEventListener('click', (e) => {
@@ -94,6 +124,15 @@ function attachGoalListeners(item, sectionKey, group) {
         }
     });
 
+    // Delete button (hover-reveal)
+    if (delBtn) {
+        delBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const index = parseInt(item.dataset.index);
+            removeGoalWithAnimation(item, sectionKey, index, group);
+        });
+    }
+
     textEl.addEventListener('blur', async () => {
         if (!goalsCache) return;
 
@@ -102,7 +141,13 @@ function attachGoalListeners(item, sectionKey, group) {
         if (isNew) {
             if (text) {
                 const sortOrder = goalsCache[sectionKey].length;
-                const id = await DataService.insertGoal(sectionKey, text, sortOrder);
+                let id;
+                try {
+                    id = await DataService.insertGoal(sectionKey, text, sortOrder);
+                } catch (err) {
+                    console.error('Failed to insert goal:', err);
+                    return;
+                }
 
                 const goalObj = { id, text, checked: false };
                 goalsCache[sectionKey].push(goalObj);
@@ -112,9 +157,9 @@ function attachGoalListeners(item, sectionKey, group) {
                 item.before(newItem);
                 attachGoalListeners(newItem, sectionKey, group);
                 attachSwipeListeners(newItem, sectionKey, group);
-                textEl.textContent = '';
-                updateHeaderCount(group);
-                setTimeout(() => newItem.classList.remove('adding'), 200);
+                textEl.innerHTML = '';
+                updateHeaderMeta(group);
+                setTimeout(() => newItem.classList.remove('adding'), 250);
                 reindexGoalItems(group);
             }
         } else {
@@ -163,7 +208,7 @@ async function removeGoalWithAnimation(item, sectionKey, index, group) {
     setTimeout(() => {
         item.remove();
         reindexGoalItems(group);
-        updateHeaderCount(group);
+        updateHeaderMeta(group);
     }, 200);
 }
 
@@ -218,7 +263,7 @@ function attachSwipeListeners(item, sectionKey, group) {
             setTimeout(() => {
                 el.remove();
                 reindexGoalItems(group);
-                updateHeaderCount(group);
+                updateHeaderMeta(group);
             }, 200);
         } else {
             el.classList.remove('swiping');
@@ -255,18 +300,19 @@ async function renderGoals() {
 
     container.innerHTML = sections.map(section => {
         const isCollapsed = section.collapsible && collapsed[section.key];
-        const totalCount = section.items.length;
+        const total = section.items.length;
+        const checked = section.items.filter(i => i.checked).length;
 
         return `
-            <div class="goal-group ${section.collapsible ? 'collapsible' : ''} ${isCollapsed ? 'collapsed' : ''}" data-section="${section.key}">
-                <h3 class="${section.collapsible ? 'goal-header-toggle' : ''}">
-                    ${section.title}
+            <div class="goal-group ${isCollapsed ? 'collapsed' : ''}" data-section="${section.key}">
+                <div class="goal-header">
+                    <span class="goal-header-title">${section.title}</span>
                     ${section.key === 'daily' ? '<button class="daily-clear-btn" title="Clear daily goals">CLR</button>' : ''}
-                    ${section.collapsible ? `
-                        <span class="goal-header-meta">${totalCount}</span>
-                        <span class="goal-toggle-icon">${isCollapsed ? '+' : '−'}</span>
-                    ` : ''}
-                </h3>
+                    ${total > 0 ? progressRingSVG(checked, total) : ''}
+                    ${total > 0 ? `<span class="goal-frac">${checked}/${total}</span>` : ''}
+                    <span class="goal-header-spacer"></span>
+                    <span class="goal-toggle-icon">${isCollapsed ? '+' : '−'}</span>
+                </div>
                 <div class="goal-list"></div>
             </div>
         `;
@@ -300,15 +346,18 @@ async function renderGoals() {
             });
         }
 
-        const headerToggle = group.querySelector('.goal-header-toggle');
-        if (headerToggle) {
-            headerToggle.addEventListener('click', () => {
+        const header = group.querySelector('.goal-header');
+        if (header) {
+            header.addEventListener('click', (e) => {
+                // Don't toggle when clicking CLR button
+                if (e.target.closest('.daily-clear-btn')) return;
+
                 const collapsed = loadCollapsedState();
                 collapsed[sectionKey] = !collapsed[sectionKey];
                 saveCollapsedState(collapsed);
 
                 group.classList.toggle('collapsed');
-                const icon = headerToggle.querySelector('.goal-toggle-icon');
+                const icon = header.querySelector('.goal-toggle-icon');
                 if (icon) {
                     icon.textContent = collapsed[sectionKey] ? '+' : '−';
                 }
