@@ -98,6 +98,9 @@ async function renderSchedule() {
 
     // Attach event listeners
     attachScheduleListeners();
+
+    // Render time rail
+    renderTimeRail();
 }
 
 function attachScheduleListeners() {
@@ -227,6 +230,7 @@ async function saveCurrentSchedule() {
     clearTimeout(scheduleSaveTimeout);
     scheduleSaveTimeout = setTimeout(async () => {
         await saveScheduleEntries(entries);
+        renderTimeRail();
     }, 500);
 }
 
@@ -379,6 +383,81 @@ async function clearScheduleWithAnimation() {
         await clearScheduleFull();
         await renderSchedule();
     }, delay);
+}
+
+function parseTimeToMinutes(str) {
+    if (!str || !str.trim()) return null;
+    const cleaned = str.trim();
+
+    // Match "H:MM AM/PM" or "H:MM" formats
+    const match = cleaned.match(/^(\d{1,2}):(\d{2})\s*(am|pm)?$/i);
+    if (!match) return null;
+
+    let hours = parseInt(match[1]);
+    const minutes = parseInt(match[2]);
+    const period = match[3];
+
+    if (period) {
+        const isPM = period.toLowerCase() === 'pm';
+        if (isPM && hours !== 12) hours += 12;
+        if (!isPM && hours === 12) hours = 0;
+    }
+
+    return hours * 60 + minutes;
+}
+
+function renderTimeRail() {
+    const rows = document.querySelectorAll('.schedule-row');
+    if (!rows.length) return;
+
+    // Remove existing rails
+    rows.forEach(row => {
+        const existing = row.querySelector('.time-rail');
+        if (existing) existing.remove();
+    });
+
+    // Parse times and compute durations between adjacent rows
+    const times = [];
+    rows.forEach(row => {
+        const timeInput = row.querySelector('[data-field="time"]');
+        times.push(parseTimeToMinutes(timeInput?.value || ''));
+    });
+
+    // Find max duration for scaling
+    const durations = [];
+    for (let i = 0; i < times.length; i++) {
+        if (times[i] !== null) {
+            // Find next row with a time
+            let nextTime = null;
+            for (let j = i + 1; j < times.length; j++) {
+                if (times[j] !== null) {
+                    nextTime = times[j];
+                    break;
+                }
+            }
+            if (nextTime !== null && nextTime > times[i]) {
+                durations[i] = nextTime - times[i];
+            } else {
+                durations[i] = null;
+            }
+        } else {
+            durations[i] = null;
+        }
+    }
+
+    const maxDuration = Math.max(...durations.filter(d => d !== null), 1);
+
+    // Add rail elements
+    rows.forEach((row, i) => {
+        if (durations[i] !== null) {
+            const rail = document.createElement('div');
+            rail.className = 'time-rail';
+            // Opacity scaled by duration (short = dimmer, long = brighter)
+            const opacity = 0.25 + 0.75 * (durations[i] / maxDuration);
+            rail.style.opacity = opacity.toFixed(2);
+            row.prepend(rail);
+        }
+    });
 }
 
 function scheduleMidnightReset() {

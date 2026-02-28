@@ -466,6 +466,7 @@ html, body {
     align-items: center;
     padding: 0.5rem 0 1.5rem;
     position: relative;
+    z-index: 20;
 }
 
 .weather-status-wrapper {
@@ -679,10 +680,28 @@ html, body {
 }
 
 /* Section accent borders */
-.goal-group[data-section="daily"] { border-left: 3px solid rgba(125, 212, 160, 0.3); }
-.goal-group[data-section="midTerm"] { border-left: 3px solid rgba(255, 176, 144, 0.3); }
-.goal-group[data-section="oneYear"] { border-left: 3px solid rgba(140, 200, 255, 0.3); }
-.goal-group[data-section="longTerm"] { border-left: 3px solid rgba(200, 112, 144, 0.3); }
+.goal-group[data-section="daily"] { border-left: 3px solid rgba(125, 212, 160, 0.5); }
+.goal-group[data-section="midTerm"] { border-left: 3px solid rgba(255, 176, 144, 0.5); }
+.goal-group[data-section="oneYear"] { border-left: 3px solid rgba(140, 200, 255, 0.5); }
+.goal-group[data-section="longTerm"] { border-left: 3px solid rgba(200, 112, 144, 0.5); }
+
+/* Per-section header title colors */
+.goal-group[data-section="daily"] .goal-header-title { color: var(--check-green); }
+.goal-group[data-section="midTerm"] .goal-header-title { color: var(--accent); }
+.goal-group[data-section="oneYear"] .goal-header-title { color: var(--blue); }
+.goal-group[data-section="longTerm"] .goal-header-title { color: var(--purple); }
+
+/* Per-section fraction counter colors */
+.goal-group[data-section="daily"] .goal-frac { color: rgba(125, 212, 160, 0.6); }
+.goal-group[data-section="midTerm"] .goal-frac { color: rgba(255, 176, 144, 0.6); }
+.goal-group[data-section="oneYear"] .goal-frac { color: rgba(140, 200, 255, 0.6); }
+.goal-group[data-section="longTerm"] .goal-frac { color: rgba(200, 112, 144, 0.6); }
+
+/* Per-section toggle icon colors */
+.goal-group[data-section="daily"] .goal-toggle-icon { color: rgba(125, 212, 160, 0.5); }
+.goal-group[data-section="midTerm"] .goal-toggle-icon { color: rgba(255, 176, 144, 0.5); }
+.goal-group[data-section="oneYear"] .goal-toggle-icon { color: rgba(140, 200, 255, 0.5); }
+.goal-group[data-section="longTerm"] .goal-toggle-icon { color: rgba(200, 112, 144, 0.5); }
 
 /* Per-section ring colors */
 .goal-group[data-section="midTerm"] .goal-ring-fill { stroke: var(--accent); filter: drop-shadow(0 0 4px var(--accent-glow)); }
@@ -870,6 +889,29 @@ html, body {
     box-shadow: 0 0 12px rgba(125, 212, 160, 0.3);
 }
 
+/* Per-section checked checkbox colors */
+.goal-group[data-section="midTerm"] .goal-item.checked .goal-checkbox {
+    border-color: var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow);
+}
+.goal-group[data-section="midTerm"] .goal-item.checked .goal-checkbox::after {
+    background: linear-gradient(135deg, var(--accent), #ff9070);
+}
+.goal-group[data-section="oneYear"] .goal-item.checked .goal-checkbox {
+    border-color: var(--blue);
+    box-shadow: 0 0 12px rgba(140, 200, 255, 0.3);
+}
+.goal-group[data-section="oneYear"] .goal-item.checked .goal-checkbox::after {
+    background: linear-gradient(135deg, var(--blue), #6ab0e8);
+}
+.goal-group[data-section="longTerm"] .goal-item.checked .goal-checkbox {
+    border-color: var(--purple);
+    box-shadow: 0 0 12px rgba(200, 112, 144, 0.3);
+}
+.goal-group[data-section="longTerm"] .goal-item.checked .goal-checkbox::after {
+    background: linear-gradient(135deg, var(--purple), #e090b0);
+}
+
 .goal-item.checked .goal-checkbox::after {
     opacity: 1;
     transform: scale(1);
@@ -942,6 +984,7 @@ html, body {
     justify-content: center;
     position: relative;
     min-height: 450px;
+    z-index: 1;
 }
 
 .globe-wrapper {
@@ -951,12 +994,212 @@ html, body {
     justify-content: center;
     width: 550px;
     height: 550px;
+    overflow: visible;
 }
 
-#globe-canvas {
+#globe-container {
     position: relative;
     z-index: 1;
+    width: 550px;
+    height: 550px;
+    -webkit-mask-image: radial-gradient(circle at center, black 35%, transparent 70%);
+    mask-image: radial-gradient(circle at center, black 35%, transparent 70%);
+}
+
+#globe-container canvas {
+    outline: none;
+}
+
+/* globe.gl injects a div > canvas structure — contain it */
+#globe-container > div {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* News floating panels */
+.news-panels-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
+    z-index: 10;
+}
+
+.news-panel {
+    position: absolute;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 176, 144, 0.15);
+    border-radius: 12px;
+    padding: 12px 16px;
+    width: 180px;
+    pointer-events: auto;
+    cursor: default;
+    transform: scale(0);
+    opacity: 0;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+}
+
+.news-panel.visible {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.news-panel.hiding {
+    transform: scale(0.95);
+    opacity: 0;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.news-panel-headline {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+
+.news-panel-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.55rem;
+    color: var(--text-muted);
+}
+
+.news-panel-source {
+    font-weight: 500;
+    color: var(--accent);
+    opacity: 0.7;
+}
+
+/* Scan line animation on panel appear */
+.news-panel::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 176, 144, 0.08), transparent);
+    border-radius: 12px;
+    pointer-events: none;
+}
+
+.news-panel.visible::after {
+    animation: scanLine 0.6s ease-out forwards;
+}
+
+@keyframes scanLine {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Connector lines (SVG overlay) */
+.news-connectors {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9;
+}
+
+.news-connector-line {
+    stroke: var(--accent);
+    stroke-width: 1;
+    stroke-dasharray: 4 4;
+    stroke-opacity: 0.3;
+    fill: none;
+    animation: dashFlow 2s linear infinite;
+}
+
+@keyframes dashFlow {
+    to { stroke-dashoffset: -16; }
+}
+
+/* NEWS chip active state */
+.chip-news.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow);
+    color: var(--accent);
+}
+
+/* CLOCK chip active state */
+.chip-clock.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow);
+    color: var(--accent);
+}
+
+/* World clock panels */
+.clock-panel {
+    width: 115px;
+    padding: 10px 14px;
+    text-align: center;
+}
+
+.clock-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin-bottom: 4px;
+}
+
+.clock-panel-city {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.5rem;
+    font-weight: 500;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+}
+
+.clock-panel-indicator {
+    font-size: 0.5rem;
+    opacity: 0.7;
+}
+
+.clock-panel-time {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+
+.clock-panel-sub {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.45rem;
+    color: var(--text-muted);
+    opacity: 0.5;
+    margin-top: 3px;
+    letter-spacing: 1px;
+}
+
+.clock-panel.clock-night {
+    opacity: 0.55;
+    border-color: rgba(74, 143, 168, 0.15);
+}
+
+.clock-panel.clock-night .clock-panel-time {
+    color: #4a8fa8;
+}
+
+.clock-panel.clock-night .clock-panel-indicator {
+    color: #4a8fa8;
 }
 
 #globe-hud-canvas {
@@ -968,14 +1211,6 @@ html, body {
     z-index: 2;
 }
 
-.globe-loading {
-    position: absolute;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 1rem;
-    color: var(--text-muted);
-    letter-spacing: 0.1em;
-    z-index: 3;
-}
 
 /* Schedule section */
 .schedule-section {
@@ -1231,6 +1466,18 @@ html, body {
     min-width: 0;
     max-width: 100%;
     overflow: hidden;
+    position: relative;
+}
+
+.time-rail {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 0 2px 2px 0;
+    transition: opacity 0.3s ease;
 }
 
 .schedule-row:hover {
@@ -1318,6 +1565,8 @@ html, body {
     align-items: center;
     gap: 0.8rem;
     padding: 1.25rem 0 0.5rem;
+    position: relative;
+    z-index: 20;
 }
 
 .timer-preset {
@@ -1374,6 +1623,8 @@ html, body {
     justify-content: center;
     gap: 1rem;
     padding: 0.75rem 0 0.5rem;
+    position: relative;
+    z-index: 20;
 }
 
 .chip {

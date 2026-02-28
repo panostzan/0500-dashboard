@@ -174,12 +174,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         deferInit(() => initWeeklyReview());
 
-        // Initialize HUD elements (globe arcs)
-        const hud = initHUD();
-
-        // Calculate initial globe size based on container
-        const globeContainer = document.querySelector('.globe-section');
-        const getGlobeSize = () => 450;
+        // Initialize HUD elements (gracefully skips globe HUD if canvas absent)
+        initHUD();
 
         // Get initial location (may be from localStorage or default)
         const savedLocation = localStorage.getItem('0500_user_location');
@@ -187,17 +183,227 @@ document.addEventListener('DOMContentLoaded', async () => {
             ? JSON.parse(savedLocation)
             : CONFIG.defaultLocation;
 
-        // Initialize globes
-        const mainGlobe = new DottedGlobe(document.getElementById('globe-canvas'), {
-            size: getGlobeSize(),
-            highlightLocation: initialLocation,
-            rotationSpeed: 0.001,
-            dotSpacing: 2.0,
-            dotColor: 'rgba(255, 180, 150, 0.5)',
-            highlightColor: '#ffb090',
-            initialRotation: 1.4
+        // Track current location for news layer
+        let currentUserLocation = initialLocation;
+
+        // ── Initialize globe.gl (Three.js globe) ──
+        const globeContainer = document.getElementById('globe-container');
+        const initLng = initialLocation.lon || initialLocation.lng;
+
+        // Start hidden — reveal only after globe + data are both ready
+        globeContainer.style.opacity = '0';
+        globeContainer.style.transition = 'opacity 2s ease';
+
+        let globeReady = false;
+        let dataReady = false;
+        function tryReveal() {
+            if (globeReady && dataReady) {
+                requestAnimationFrame(() => {
+                    globeContainer.style.opacity = '1';
+                });
+            }
+        }
+
+        const mainGlobe = Globe()
+            .backgroundColor('rgba(0,0,0,0)')
+            .showGlobe(false)
+            .showAtmosphere(true)
+            .atmosphereColor('#ffb090')
+            .atmosphereAltitude(0.25)
+            .width(550)
+            .height(550)
+            (globeContainer);
+
+        // Configure holographic look once WebGL is ready
+        mainGlobe.onGlobeReady(() => {
+            // ── Background-matched occluder — blocks far side, invisible against bg ──
+            try {
+                const occluderGeom = new THREE.SphereGeometry(99.8, 64, 64);
+                // MeshBasicMaterial ignores scene lighting — always renders as exact color
+                const occluderMat = new THREE.MeshBasicMaterial({
+                    color: 0x0f0a12
+                });
+                const occluder = new THREE.Mesh(occluderGeom, occluderMat);
+                occluder.renderOrder = -1;
+                mainGlobe.scene().add(occluder);
+            } catch (e) {
+                console.log('[GLOBE] Occluder skipped:', e.message);
+            }
+
+            // ── Lighting — warm ambient glow ──
+            const scene = mainGlobe.scene();
+            scene.traverse(obj => {
+                if (obj.isDirectionalLight) {
+                    obj.intensity = 0.4;
+                    obj.color.set('#ffcdaa');
+                }
+                if (obj.isAmbientLight) {
+                    obj.intensity = 2.0;
+                    obj.color.set('#1e1428');
+                }
+            });
+
+            // ── Graticule (lat/lon grid lines) ──
+            try {
+                const globeRadius = 100;
+                const gratPoints = [];
+
+                for (let lng = -180; lng < 180; lng += 30) {
+                    for (let lat = -90; lat < 90; lat += 2) {
+                        const phi1 = (90 - lat) * Math.PI / 180;
+                        const theta1 = (lng + 180) * Math.PI / 180;
+                        const phi2 = (90 - (lat + 2)) * Math.PI / 180;
+                        const r = globeRadius * 1.001;
+                        gratPoints.push(
+                            r * Math.sin(phi1) * Math.cos(theta1), r * Math.cos(phi1), -r * Math.sin(phi1) * Math.sin(theta1),
+                            r * Math.sin(phi2) * Math.cos(theta1), r * Math.cos(phi2), -r * Math.sin(phi2) * Math.sin(theta1)
+                        );
+                    }
+                }
+                for (let lat = -60; lat <= 60; lat += 30) {
+                    for (let lng = -180; lng < 180; lng += 2) {
+                        const phi = (90 - lat) * Math.PI / 180;
+                        const theta1 = (lng + 180) * Math.PI / 180;
+                        const theta2 = (lng + 2 + 180) * Math.PI / 180;
+                        const r = globeRadius * 1.001;
+                        gratPoints.push(
+                            r * Math.sin(phi) * Math.cos(theta1), r * Math.cos(phi), -r * Math.sin(phi) * Math.sin(theta1),
+                            r * Math.sin(phi) * Math.cos(theta2), r * Math.cos(phi), -r * Math.sin(phi) * Math.sin(theta2)
+                        );
+                    }
+                }
+
+                const gratGeom = new THREE.BufferGeometry();
+                gratGeom.setAttribute('position', new THREE.Float32BufferAttribute(gratPoints, 3));
+                const gratMat = new THREE.LineBasicMaterial({
+                    color: 0xffb090, transparent: true, opacity: 0.06, depthWrite: false
+                });
+                scene.add(new THREE.LineSegments(gratGeom, gratMat));
+            } catch (e) {
+                console.log('[GLOBE] Graticule skipped:', e.message);
+            }
+
+            // ── Fresnel edge glow ──
+            try {
+                const fresnelGeom = new THREE.SphereGeometry(100.8, 64, 64);
+                const fresnelMat = new THREE.ShaderMaterial({
+                    transparent: true, depthWrite: false, side: THREE.FrontSide,
+                    uniforms: {
+                        glowColor: { value: new THREE.Color(0xffb090) },
+                        intensity: { value: 1.4 },
+                        power: { value: 3.0 }
+                    },
+                    vertexShader: `
+                        varying vec3 vNormal;
+                        varying vec3 vViewDir;
+                        void main() {
+                            vNormal = normalize(normalMatrix * normal);
+                            vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+                            vViewDir = normalize(-mvPos.xyz);
+                            gl_Position = projectionMatrix * mvPos;
+                        }
+                    `,
+                    fragmentShader: `
+                        uniform vec3 glowColor;
+                        uniform float intensity;
+                        uniform float power;
+                        varying vec3 vNormal;
+                        varying vec3 vViewDir;
+                        void main() {
+                            float fresnel = 1.0 - dot(vNormal, vViewDir);
+                            fresnel = pow(fresnel, power) * intensity;
+                            gl_FragColor = vec4(glowColor, fresnel * 0.45);
+                        }
+                    `
+                });
+                scene.add(new THREE.Mesh(fresnelGeom, fresnelMat));
+            } catch (e) {
+                console.log('[GLOBE] Fresnel glow skipped:', e.message);
+            }
+
+            mainGlobe.pointOfView({ lat: initialLocation.lat, lng: initLng, altitude: 2.2 });
+            globeReady = true;
+            tryReveal();
         });
 
+        // ── Load hex bins + country borders ──
+        fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+            .then(r => r.json())
+            .then(worldData => {
+                if (!window.topojson) return;
+                const countries = window.topojson.feature(worldData, worldData.objects.countries);
+
+                mainGlobe
+                    .hexPolygonsData(countries.features)
+                    .hexPolygonResolution(3)
+                    .hexPolygonMargin(0.35)
+                    .hexPolygonUseDots(true)
+                    .hexPolygonColor(() => 'rgba(255, 176, 144, 0.55)')
+                    .hexPolygonAltitude(0.005);
+
+                try {
+                    const borders = window.topojson.mesh(worldData, worldData.objects.countries, (a, b) => a !== b);
+                    const R = 100.5;
+                    const pts = [];
+
+                    borders.coordinates.forEach(line => {
+                        for (let i = 0; i < line.length - 1; i++) {
+                            const [lng1, lat1] = line[i];
+                            const [lng2, lat2] = line[i + 1];
+                            const phi1 = (90 - lat1) * Math.PI / 180;
+                            const th1 = (lng1 + 180) * Math.PI / 180;
+                            const phi2 = (90 - lat2) * Math.PI / 180;
+                            const th2 = (lng2 + 180) * Math.PI / 180;
+                            pts.push(
+                                R * Math.sin(phi1) * Math.cos(th1), R * Math.cos(phi1), -R * Math.sin(phi1) * Math.sin(th1),
+                                R * Math.sin(phi2) * Math.cos(th2), R * Math.cos(phi2), -R * Math.sin(phi2) * Math.sin(th2)
+                            );
+                        }
+                    });
+
+                    const geom = new THREE.BufferGeometry();
+                    geom.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+                    const borderMat = new THREE.LineBasicMaterial({
+                        color: 0xffb090, transparent: true, opacity: 0.15, depthWrite: false
+                    });
+                    mainGlobe.scene().add(new THREE.LineSegments(geom, borderMat));
+                } catch (e) {
+                    console.log('[GLOBE] Borders skipped:', e.message);
+                }
+
+                dataReady = true;
+                tryReveal();
+            })
+            .catch(err => {
+                console.warn('[GLOBE] Hex/borders failed:', err);
+                dataReady = true;
+                tryReveal();
+            });
+
+        // Auto-rotation
+        const controls = mainGlobe.controls();
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.3;
+        controls.enableZoom = false;
+        controls.enablePan = false;
+        controls.minPolarAngle = Math.PI * 0.35;
+        controls.maxPolarAngle = Math.PI * 0.65;
+
+        // Ring pulse at user location
+        mainGlobe
+            .ringsData([{
+                lat: initialLocation.lat,
+                lng: initLng,
+                maxR: 3,
+                propagationSpeed: 1.5,
+                repeatPeriod: 1200
+            }])
+            .ringColor(() => t => `rgba(255, 176, 144, ${1 - t})`)
+            .ringMaxRadius('maxR')
+            .ringPropagationSpeed('propagationSpeed')
+            .ringRepeatPeriod('repeatPeriod');
+
+        // ── Timer globe (keep old canvas DottedGlobe) ──
         const timerGlobe = new DottedGlobe(document.getElementById('timer-globe-canvas'), {
             size: 650,
             highlightLocation: initialLocation,
@@ -207,27 +413,51 @@ document.addEventListener('DOMContentLoaded', async () => {
             highlightColor: '#ffb090',
             initialRotation: 1.4
         });
-
-        // Load land data for both globes
-        await Promise.all([
-            mainGlobe.loadLandData(),
-            timerGlobe.loadLandData()
-        ]);
+        timerGlobe.loadLandData();
 
         // Update globe location when weather fetches actual location
         const checkLocation = setInterval(() => {
             if (window.userLocation) {
-                mainGlobe.setHighlightLocation(window.userLocation);
+                currentUserLocation = window.userLocation;
+                const lng = window.userLocation.lon || window.userLocation.lng;
+
+                // Update location ring
+                mainGlobe.ringsData([{
+                    lat: window.userLocation.lat,
+                    lng: lng,
+                    maxR: 3,
+                    propagationSpeed: 1.5,
+                    repeatPeriod: 1200
+                }]);
+
                 timerGlobe.setHighlightLocation(window.userLocation);
                 clearInterval(checkLocation);
             }
         }, 500);
 
+        // ── Initialize NEWS layer ──
+        try {
+            if (typeof initNewsLayer === 'function') {
+                initNewsLayer(mainGlobe, () => currentUserLocation);
+                console.log('[NEWS] Layer initialized');
+            }
+        } catch (newsErr) {
+            console.error('[NEWS] Layer init failed:', newsErr);
+        }
+
+        // ── Initialize WORLD CLOCK layer ──
+        try {
+            if (typeof initClockLayer === 'function') {
+                initClockLayer(mainGlobe, () => currentUserLocation);
+                console.log('[CLOCK] Layer initialized');
+            }
+        } catch (clockErr) {
+            console.error('[CLOCK] Layer init failed:', clockErr);
+        }
+
         // Handle window resize
         window.addEventListener('resize', () => {
-            const newSize = getGlobeSize();
-            mainGlobe.size = newSize;
-            mainGlobe.resize();
+            mainGlobe.width(550).height(550);
             timerGlobe.resize();
         });
     } catch (error) {

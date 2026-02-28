@@ -113,6 +113,7 @@ class DottedGlobe {
         this.isLand = null;
         this.ready = false;
         this.breathPhase = 0;
+        this.dotSeeds = []; // Per-dot random seeds for size variation
 
         this.resize();
     }
@@ -160,6 +161,9 @@ class DottedGlobe {
                 }
             }
         }
+
+        // Generate per-dot random seeds for size variation
+        this.dotSeeds = this.landPoints.map(() => 0.7 + Math.random() * 0.6);
     }
 
     generateFallbackPoints() {
@@ -171,6 +175,7 @@ class DottedGlobe {
                 }
             }
         }
+        this.dotSeeds = this.landPoints.map(() => 0.7 + Math.random() * 0.6);
     }
 
     resize() {
@@ -216,22 +221,56 @@ class DottedGlobe {
         };
     }
 
+    getSubSolarPoint() {
+        const now = new Date();
+        const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+        // Solar declination (approximate): -23.44° * cos(360/365 * (dayOfYear + 10))
+        const declination = -23.44 * Math.cos((2 * Math.PI / 365) * (dayOfYear + 10));
+        // Hour angle: sun is at longitude based on UTC time
+        const utcHours = now.getUTCHours() + now.getUTCMinutes() / 60;
+        const sunLon = (12 - utcHours) * 15; // 15° per hour, noon = 0°
+        return { lat: declination, lon: sunLon };
+    }
+
     draw() {
         this.ctx.clearRect(0, 0, this.size, this.size);
 
-        const dots = [];
-        const dotRadius = this.size / 200;
+        // ── Atmospheric glow behind the globe ──
+        const atmosRadius = this.radius * 1.12;
+        const atmosGradient = this.ctx.createRadialGradient(
+            this.centerX, this.centerY, this.radius * 0.88,
+            this.centerX, this.centerY, atmosRadius
+        );
+        const breathGlow = 0.06 + Math.sin(this.breathPhase * 0.5) * 0.02;
+        atmosGradient.addColorStop(0, `rgba(255, 176, 144, ${breathGlow})`);
+        atmosGradient.addColorStop(0.6, `rgba(255, 176, 144, ${breathGlow * 0.3})`);
+        atmosGradient.addColorStop(1, 'transparent');
+        this.ctx.beginPath();
+        this.ctx.arc(this.centerX, this.centerY, atmosRadius, 0, Math.PI * 2);
+        this.ctx.fillStyle = atmosGradient;
+        this.ctx.fill();
 
-        this.landPoints.forEach(({ lat, lon }) => {
+        const dots = [];
+        const baseDotRadius = this.size / 200;
+
+        // Compute sun direction for day/night terminator
+        const sunPos = this.getSubSolarPoint();
+        const sunXYZ = this.latLonToXYZ(sunPos.lat, sunPos.lon);
+
+        this.landPoints.forEach(({ lat, lon }, i) => {
             const point = this.latLonToXYZ(lat, lon);
             const rotated = this.rotateY(point, this.rotation);
 
             if (rotated.z > -0.15) {
+                // Dot product with sun direction (unrotated space) for lighting
+                const dotSun = point.x * sunXYZ.x + point.y * sunXYZ.y + point.z * sunXYZ.z;
                 const projected = this.project(rotated);
                 dots.push({
                     x: projected.x,
                     y: projected.y,
                     z: rotated.z,
+                    sunDot: dotSun,
+                    seed: this.dotSeeds[i] || 1,
                     isHighlight: false
                 });
             }
@@ -254,8 +293,6 @@ class DottedGlobe {
 
         dots.sort((a, b) => a.z - b.z);
 
-        // Batch render non-highlight dots by setting fillStyle once
-        this.ctx.fillStyle = this.dotColor;
         const regularDots = [];
         const highlightDots = [];
         dots.forEach(dot => {
@@ -263,22 +300,94 @@ class DottedGlobe {
             else regularDots.push(dot);
         });
 
+        // ── Render land dots with golden terminator lighting ──
         regularDots.forEach(dot => {
-            const depthOpacity = Math.max(0.12, (dot.z + 0.15) / 1.15);
-            this.ctx.globalAlpha = depthOpacity;
+            // Base depth opacity
+            let depthOpacity = Math.max(0.12, (dot.z + 0.15) / 1.15);
+
+            // Smooth terminator with wider transition band
+            const sd = dot.sunDot;
+            let sunFactor;
+            if (sd > 0.2) {
+                sunFactor = 1.0;
+            } else if (sd < -0.2) {
+                sunFactor = 0.25;
+            } else {
+                sunFactor = 0.25 + 0.75 * ((sd + 0.2) / 0.4);
+            }
+            depthOpacity *= sunFactor;
+
+            // ── Golden terminator glow ──
+            // Dots near the terminator line (sunDot ~ 0) glow warm gold
+            // Bell curve centered at sunDot=0, width ~0.2
+            const terminatorProximity = Math.exp(-(sd * sd) / (2 * 0.06 * 0.06));
+            // Breathing pulse on the terminator
+            const terminatorPulse = 0.85 + Math.sin(this.breathPhase * 0.7) * 0.15;
+            const goldIntensity = terminatorProximity * terminatorPulse;
+
+            // Rim lighting on sun side
+            const edgeFactor = 1 - Math.abs(dot.z);
+            const rimBoost = sd > 0 ? edgeFactor * 0.35 * sd : 0;
+
+            // Per-dot size variation + terminator dots slightly larger
+            const sizeBoost = 1 + goldIntensity * 0.5;
+            const dotRadius = baseDotRadius * dot.seed * sizeBoost;
+
+            if (goldIntensity > 0.15) {
+                // ── Golden terminator dot ──
+                // Blend from warm amber to bright gold based on intensity
+                const r = 255;
+                const g = Math.round(160 + goldIntensity * 80); // 160 → 240
+                const b = Math.round(60 + goldIntensity * 40);  // 60 → 100
+                this.ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                this.ctx.globalAlpha = Math.min(1, depthOpacity + goldIntensity * 0.6);
+
+                // Draw glow halo behind golden dots
+                if (goldIntensity > 0.4) {
+                    const glowR = dotRadius * (2.5 + goldIntensity * 2);
+                    const glowAlpha = goldIntensity * 0.15 * terminatorPulse;
+                    const glow = this.ctx.createRadialGradient(
+                        dot.x, dot.y, dotRadius * 0.5,
+                        dot.x, dot.y, glowR
+                    );
+                    glow.addColorStop(0, `rgba(255, 200, 80, ${glowAlpha})`);
+                    glow.addColorStop(0.5, `rgba(255, 160, 60, ${glowAlpha * 0.4})`);
+                    glow.addColorStop(1, 'transparent');
+                    this.ctx.save();
+                    this.ctx.globalAlpha = 1;
+                    this.ctx.beginPath();
+                    this.ctx.arc(dot.x, dot.y, glowR, 0, Math.PI * 2);
+                    this.ctx.fillStyle = glow;
+                    this.ctx.fill();
+                    this.ctx.restore();
+                    // Restore fill for the dot itself
+                    this.ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                    this.ctx.globalAlpha = Math.min(1, depthOpacity + goldIntensity * 0.6);
+                }
+            } else if (rimBoost > 0.08) {
+                // Warm rim-lit dot (sun side edge)
+                const g = Math.round(180 + rimBoost * 60);
+                const b = Math.round(150 + rimBoost * 40);
+                this.ctx.fillStyle = `rgb(255, ${g}, ${b})`;
+                this.ctx.globalAlpha = Math.min(1, depthOpacity + rimBoost * 0.4);
+            } else {
+                this.ctx.fillStyle = this.dotColor;
+                this.ctx.globalAlpha = depthOpacity;
+            }
+
             this.ctx.beginPath();
             this.ctx.arc(dot.x, dot.y, dotRadius, 0, Math.PI * 2);
             this.ctx.fill();
         });
         this.ctx.globalAlpha = 1;
 
+        // ── Highlight location dot ──
         highlightDots.forEach(dot => {
-            // Breathing animation
             const breathScale = 1 + Math.sin(this.breathPhase) * 0.3;
             const breathOpacity = 0.7 + Math.sin(this.breathPhase) * 0.3;
 
             // Large outer glow
-            const outerGlowRadius = dotRadius * 12 * breathScale;
+            const outerGlowRadius = baseDotRadius * 12 * breathScale;
             const outerGradient = this.ctx.createRadialGradient(
                 dot.x, dot.y, 0,
                 dot.x, dot.y, outerGlowRadius
@@ -293,7 +402,7 @@ class DottedGlobe {
             this.ctx.fill();
 
             // Inner glow ring
-            const glowRadius = dotRadius * 6 * breathScale;
+            const glowRadius = baseDotRadius * 6 * breathScale;
             const gradient = this.ctx.createRadialGradient(
                 dot.x, dot.y, 0,
                 dot.x, dot.y, glowRadius
@@ -309,7 +418,7 @@ class DottedGlobe {
             this.ctx.fill();
 
             // Bright white core
-            const coreSize = dotRadius * (2 + Math.sin(this.breathPhase) * 0.3);
+            const coreSize = baseDotRadius * (2 + Math.sin(this.breathPhase) * 0.3);
             this.ctx.beginPath();
             this.ctx.arc(dot.x, dot.y, coreSize, 0, Math.PI * 2);
             this.ctx.fillStyle = '#ffffff';

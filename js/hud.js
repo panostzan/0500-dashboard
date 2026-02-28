@@ -291,8 +291,11 @@ class GlobeHUD {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function initHUD() {
-    // Globe HUD (450 is the globe size from main.js)
-    const globeHUD = new GlobeHUD(document.getElementById('globe-hud-canvas'), 450);
-
-    return { globeHUD };
+    // Globe HUD — only init if canvas exists (removed when using globe.gl)
+    const hudCanvas = document.getElementById('globe-hud-canvas');
+    if (hudCanvas) {
+        const globeHUD = new GlobeHUD(hudCanvas, 450);
+        return { globeHUD };
+    }
+    return {};
 }
