@@ -1824,7 +1824,7 @@ function updateSleepDisplay() {
 // INITIALIZATION
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function initSleepCard() {
+async function initSleepCard() {
     const chip = document.getElementById('chip-rest');
 
     // Navigate to sleep page on chip click
@@ -1832,7 +1832,8 @@ function initSleepCard() {
         window.location.href = 'sleep.html';
     });
 
-    // Initial update
+    // Load real settings from Supabase before first display
+    await loadSleepSettingsAsync();
     updateSleepDisplay();
 
     // Update chip countdown every second (pause when tab hidden to save CPU)
