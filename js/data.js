@@ -577,7 +577,7 @@ const DataService = {
     loadCollapsedState() {
         const saved = localStorage.getItem('0500_goals_collapsed');
         if (saved) return JSON.parse(saved);
-        return { daily: false, midTerm: true, oneYear: false, longTerm: true };
+        return { daily: false, midTerm: true, oneYear: true, longTerm: true };
     },
 
     saveCollapsedState(state) {
