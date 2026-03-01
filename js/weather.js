@@ -26,10 +26,26 @@ async function getUserLocation() {
                 });
             });
 
+            // Reverse geocode to get city name
+            let cityName = 'Current Location';
+            try {
+                const geoRes = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?lat=${position.coords.latitude}&lon=${position.coords.longitude}&format=json&zoom=10`
+                );
+                const geoData = await geoRes.json();
+                const addr = geoData.address || {};
+                const city = addr.city || addr.town || addr.village || addr.hamlet || '';
+                const state = addr.state || '';
+                if (city && state) cityName = city + ', ' + state;
+                else if (city) cityName = city;
+            } catch (e) {
+                console.warn('[WEATHER] Reverse geocode failed:', e.message);
+            }
+
             const location = {
                 lat: position.coords.latitude,
                 lon: position.coords.longitude,
-                name: 'Current Location',
+                name: cityName,
                 timestamp: Date.now()
             };
 

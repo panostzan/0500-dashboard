@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-title" content="0500">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="format-detection" content="telephone=no">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.open-meteo.com https://*.supabase.co https://cdn.jsdelivr.net https://unpkg.com https://api.rss2json.com; worker-src 'self' blob:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.open-meteo.com https://*.supabase.co https://cdn.jsdelivr.net https://unpkg.com https://api.rss2json.com https://nominatim.openstreetmap.org; worker-src 'self' blob:;">
 
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
@@ -38,7 +38,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&family=Inter:wght@200;300;400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/styles.css?v=28">
+    <link rel="stylesheet" href="css/styles.css?v=33">
 
     <!-- Apply theme before first paint to avoid flash -->
     <script>
@@ -122,10 +122,6 @@
 
     </div>
 
-    <div class="timer-bar" id="timer-bar">
-        <!-- Timer presets populated by JS -->
-    </div>
-
     <!-- Compact chips row -->
     <div class="bottom-chips" id="bottom-chips">
         <button class="chip chip-news" id="chip-news">
@@ -155,6 +151,11 @@
             <span class="chip-label">REST</span>
             <span class="chip-value" id="chip-rest-countdown">0:00:00</span>
         </button>
+
+        <div class="chips-divider"></div>
+        <div class="timer-bar" id="timer-bar">
+            <!-- Timer presets populated by JS -->
+        </div>
     </div>
 </div>
 
@@ -200,7 +201,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <!-- Three.js (loaded before globe.gl so it uses global THREE) -->
-<script src="https://unpkg.com/three@0.162.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
 <!-- Globe.gl (Three.js globe) + TopoJSON for country borders -->
 <script src="https://unpkg.com/globe.gl"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
@@ -217,14 +218,14 @@
 <script src="js/timer.js?v=4"></script>
 <script src="js/globe.js?v=11"></script>
 <script src="js/hud.js?v=5"></script>
-<script src="js/weather.js?v=5"></script>
+<script src="js/weather.js?v=6"></script>
 <script src="js/notes.js?v=5"></script>
 <script src="js/sleep.js?v=19"></script>
 <script src="js/weekly-review.js?v=2"></script>
 <script src="js/theme.js?v=1"></script>
-<script src="js/news.js?v=2"></script>
+<script src="js/news.js?v=5"></script>
 <script src="js/worldclock.js?v=4"></script>
-<script src="js/main.js?v=27"></script>
+<script src="js/main.js?v=46"></script>
 
 </body>
 </html>

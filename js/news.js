@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// NEWS LAYER — Globe-integrated breaking news with floating glass panels
+// NEWS LAYER — Globe-pinned HUD labels via globe.gl htmlElementsData
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // Country centroid lookup (lat, lng) for geotagging stories
@@ -95,40 +95,60 @@ const COUNTRY_CENTROIDS = {
     'united nations': { lat: 40.7, lng: -74.0 }
 };
 
-// Google News RSS → JSON (no API key needed)
-const NEWS_FEED_URL = 'https://api.rss2json.com/v1/api.json?rss_url=' +
-    encodeURIComponent('https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-US&gl=US&ceid=US:en');
+// ── Feed configuration ──
+const NEWS_FEEDS = {
+    WORLD:      { topic: 'WORLD',      label: 'WORLD',   color: '#ffb090' },
+    TECHNOLOGY: { topic: 'TECHNOLOGY',  label: 'TECH',    color: '#90c8ff' },
+    SCIENCE:    { topic: 'SCIENCE',     label: 'SCIENCE', color: '#a0ffb0' },
+    BUSINESS:   { topic: 'BUSINESS',    label: 'BIZ',     color: '#ffd080' }
+};
+
+// Fallback locations for stories that don't mention a country in the headline
+const CATEGORY_FALLBACK_LOCATIONS = {
+    WORLD:      'washington',
+    TECHNOLOGY: 'united states',
+    SCIENCE:    'switzerland',
+    BUSINESS:   'united states'
+};
+
+const STOP_WORDS = new Set([
+    'the','a','an','and','or','but','in','on','at','to','for','of','with','by',
+    'from','is','are','was','were','be','been','being','have','has','had','do',
+    'does','did','will','would','shall','should','may','might','can','could',
+    'not','no','nor','as','if','than','that','this','it','its','he','she','they',
+    'we','you','i','my','your','his','her','our','their','what','which','who',
+    'whom','how','when','where','why','all','each','every','both','few','more',
+    'most','other','some','such','only','own','same','so','too','very','just',
+    'about','after','before','between','into','through','during','above','below',
+    'over','under','again','further','then','once','here','there','up','down',
+    'out','off','new','says','said','also','first','last','long','get','back',
+    'could','make','like','still','since','two','three','many','way','may','part'
+]);
 
 let newsActive = false;
 let newsData = [];
 let newsRefreshTimer = null;
-let newsPanelsContainer = null;
-let newsConnectorsSvg = null;
+let _newsGetUserLocation = null;
 
-// Extract country/location from headline text
+// ── Helpers ──
+
 function detectCountry(title) {
     const lower = title.toLowerCase();
-    // Check longest keys first to match "south korea" before "korea", "united states" before "us", etc.
     const sorted = Object.keys(COUNTRY_CENTROIDS).sort((a, b) => b.length - a.length);
     for (const key of sorted) {
-        // Word boundary check — avoid matching "us" inside "focus", "russia" inside "prussian", etc.
         const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp('\\b' + escaped + '\\b', 'i');
-        if (regex.test(lower)) {
-            return key;
-        }
+        if (regex.test(lower)) return key;
     }
     return null;
 }
 
-// Extract source name from Google News title format: "Headline - Source Name"
 function extractSource(title) {
     const dash = title.lastIndexOf(' - ');
     if (dash > 0) return title.substring(dash + 3).trim();
     return '';
 }
 
-// Extract clean headline (without source suffix)
 function extractHeadline(title) {
     const dash = title.lastIndexOf(' - ');
     if (dash > 0) return title.substring(0, dash).trim();
@@ -137,8 +157,7 @@ function extractHeadline(title) {
 
 function getCountryCoords(country) {
     if (!country) return null;
-    const key = country.toLowerCase().trim();
-    return COUNTRY_CENTROIDS[key] || null;
+    return COUNTRY_CENTROIDS[country.toLowerCase().trim()] || null;
 }
 
 function timeAgo(dateStr) {
@@ -150,249 +169,327 @@ function timeAgo(dateStr) {
     return `${Math.floor(hours / 24)}d ago`;
 }
 
+// ── Smart deduplication ──
+
+function getSignificantWords(headline) {
+    return headline.toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .split(/\s+/)
+        .filter(w => w.length > 2 && !STOP_WORDS.has(w));
+}
+
+function headlinesOverlap(wordsA, wordsB) {
+    let shared = 0;
+    const setB = new Set(wordsB);
+    for (const w of wordsA) {
+        if (setB.has(w)) shared++;
+        if (shared >= 3) return true;
+    }
+    return false;
+}
+
+const COUNTRY_ALIASES = {};
+(function buildAliases() {
+    const byCoords = {};
+    for (const [key, val] of Object.entries(COUNTRY_CENTROIDS)) {
+        const ck = `${val.lat},${val.lng}`;
+        if (!byCoords[ck]) byCoords[ck] = [];
+        byCoords[ck].push(key);
+    }
+    for (const keys of Object.values(byCoords)) {
+        const canonical = keys.sort((a, b) => b.length - a.length)[0];
+        for (const k of keys) COUNTRY_ALIASES[k] = canonical;
+    }
+})();
+
+function canonicalCountry(country) {
+    if (!country) return null;
+    return COUNTRY_ALIASES[country.toLowerCase().trim()] || country.toLowerCase().trim();
+}
+
+// ── Multi-feed fetcher ──
+
+function buildFeedUrl(topic) {
+    return 'https://api.rss2json.com/v1/api.json?rss_url=' +
+        encodeURIComponent(`https://news.google.com/rss/headlines/section/topic/${topic}?hl=en-US&gl=US&ceid=US:en`);
+}
+
+async function fetchFeed(feedKey) {
+    const feed = NEWS_FEEDS[feedKey];
+    try {
+        const resp = await fetch(buildFeedUrl(feed.topic));
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        if (data.status !== 'ok' || !data.items) return [];
+
+        return data.items.map(item => {
+            const headline = extractHeadline(item.title);
+            const country = detectCountry(item.title);
+            return {
+                title: headline,
+                source: extractSource(item.title) || 'Google News',
+                country: country,
+                category: feedKey,
+                categoryLabel: feed.label,
+                categoryColor: feed.color,
+                link: item.link,
+                pubDate: item.pubDate
+            };
+        });
+    } catch (err) {
+        console.warn(`[NEWS] ${feedKey} feed failed:`, err.message);
+        return [];
+    }
+}
+
+function assignFallbackLocation(story) {
+    if (story.country && getCountryCoords(story.country)) return story;
+    const fallback = CATEGORY_FALLBACK_LOCATIONS[story.category];
+    return { ...story, country: fallback || 'united states' };
+}
+
+function canSelect(story, selected, usedCountries) {
+    const cc = canonicalCountry(story.country);
+    if (cc && usedCountries.has(cc)) return false;
+
+    const words = getSignificantWords(story.title);
+    return !selected.some(s => headlinesOverlap(words, getSignificantWords(s.title)));
+}
+
+function markSelected(story, selected, usedCountries) {
+    selected.push(story);
+    const cc = canonicalCountry(story.country);
+    if (cc) usedCountries.add(cc);
+}
+
 async function fetchNews() {
     try {
-        const response = await fetch(NEWS_FEED_URL);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
+        const results = await Promise.all(
+            Object.keys(NEWS_FEEDS).map(key => fetchFeed(key))
+        );
 
-        if (data.status !== 'ok' || !data.items || !data.items.length) {
-            throw new Error('No items in feed');
+        const allStories = results.flat();
+        if (!allStories.length) throw new Error('All feeds empty');
+
+        // Assign fallback locations so no story is dropped for missing geo
+        const located = allStories.map(assignFallbackLocation);
+
+        // Sort each category by recency (newest first)
+        const byCategory = {};
+        for (const story of located) {
+            if (!byCategory[story.category]) byCategory[story.category] = [];
+            byCategory[story.category].push(story);
+        }
+        for (const cat of Object.keys(byCategory)) {
+            byCategory[cat].sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
         }
 
-        // Parse and geo-tag stories
-        const geoStories = data.items
-            .map(item => {
-                const headline = extractHeadline(item.title);
-                const country = detectCountry(item.title);
-                if (!country) return null;
-                return {
-                    title: headline,
-                    source: extractSource(item.title) || 'Google News',
-                    country: country,
-                    link: item.link,
-                    pubDate: item.pubDate
-                };
-            })
-            .filter(Boolean)
-            // Deduplicate by country — one story per location
-            .filter((story, i, arr) => arr.findIndex(s => s.country === story.country) === i)
-            .slice(0, 4);
+        const selected = [];
+        const usedCountries = new Set();
 
-        if (geoStories.length >= 2) return geoStories;
-
-        // If world feed didn't yield enough geo-tagged stories, try top headlines
-        const fallbackUrl = 'https://api.rss2json.com/v1/api.json?rss_url=' +
-            encodeURIComponent('https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en');
-        const fbResp = await fetch(fallbackUrl);
-        const fbData = await fbResp.json();
-
-        if (fbData.status === 'ok' && fbData.items) {
-            const fbStories = fbData.items
-                .map(item => {
-                    const headline = extractHeadline(item.title);
-                    const country = detectCountry(item.title);
-                    if (!country) return null;
-                    return {
-                        title: headline,
-                        source: extractSource(item.title) || 'Google News',
-                        country: country,
-                        link: item.link,
-                        pubDate: item.pubDate
-                    };
-                })
-                .filter(Boolean)
-                .filter((story, i, arr) => arr.findIndex(s => s.country === story.country) === i);
-
-            // Merge, deduplicate, take 4
-            const merged = [...geoStories, ...fbStories]
-                .filter((s, i, arr) => arr.findIndex(x => x.country === s.country) === i)
-                .slice(0, 4);
-            if (merged.length >= 2) return merged;
+        // Pass 1: guarantee 1 story per category (most recent non-dupe)
+        for (const cat of Object.keys(NEWS_FEEDS)) {
+            const pool = byCategory[cat] || [];
+            for (const story of pool) {
+                if (canSelect(story, selected, usedCountries)) {
+                    markSelected(story, selected, usedCountries);
+                    break;
+                }
+            }
         }
 
-        throw new Error('Not enough geo-tagged stories');
+        // Pass 2: fill remaining slots up to 8, max 2 per category
+        const categoryCounts = {};
+        for (const s of selected) {
+            categoryCounts[s.category] = (categoryCounts[s.category] || 0) + 1;
+        }
+
+        for (const story of located.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate))) {
+            if (selected.length >= 5) break;
+            if ((categoryCounts[story.category] || 0) >= 2) continue;
+            if (selected.includes(story)) continue;
+            if (!canSelect(story, selected, usedCountries)) continue;
+
+            markSelected(story, selected, usedCountries);
+            categoryCounts[story.category] = (categoryCounts[story.category] || 0) + 1;
+        }
+
+        if (selected.length >= 2) return selected;
+        throw new Error('Not enough stories after selection');
     } catch (err) {
         console.warn('[NEWS] Fetch failed, using fallback:', err.message);
-        // Fallback — still better than hardcoded demo data
-        return [
-            { title: 'Unable to load live headlines', source: 'Offline', country: 'united states',
-              pubDate: new Date().toISOString(), link: '' }
-        ];
+        return [{
+            title: 'Unable to load live headlines',
+            source: 'Offline',
+            country: 'united states',
+            category: 'WORLD',
+            categoryLabel: 'WORLD',
+            categoryColor: '#ffb090',
+            pubDate: new Date().toISOString(),
+            link: ''
+        }];
     }
 }
 
-// Panel positions around the globe (relative to wrapper center)
-const PANEL_POSITIONS = [
-    { top: '5%', left: '-10%' },     // 10 o'clock
-    { top: '5%', right: '-10%' },    // 2 o'clock
-    { bottom: '10%', right: '-10%' }, // 5 o'clock
-    { bottom: '10%', left: '-10%' }  // 8 o'clock
-];
+// ── Globe-pinned HTML labels via htmlElementsData ──
 
-function createPanelElements() {
-    const wrapper = document.getElementById('globe-wrapper');
-    if (!wrapper) return;
-
-    if (newsPanelsContainer) newsPanelsContainer.remove();
-    if (newsConnectorsSvg) newsConnectorsSvg.remove();
-
-    newsConnectorsSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    newsConnectorsSvg.classList.add('news-connectors');
-    newsConnectorsSvg.setAttribute('viewBox', '0 0 550 550');
-    wrapper.appendChild(newsConnectorsSvg);
-
-    newsPanelsContainer = document.createElement('div');
-    newsPanelsContainer.className = 'news-panels-container';
-    wrapper.appendChild(newsPanelsContainer);
-}
-
-function renderNewsPanels(stories, globe) {
-    if (!newsPanelsContainer || !newsConnectorsSvg) return;
-
-    newsPanelsContainer.innerHTML = '';
-    newsConnectorsSvg.innerHTML = '';
-
-    const wrapperRect = document.getElementById('globe-wrapper');
-    if (!wrapperRect) return;
-    const wW = wrapperRect.offsetWidth;
-    const wH = wrapperRect.offsetHeight;
-    const cx = wW / 2;
-    const cy = wH / 2;
-
-    stories.forEach((story, i) => {
-        const coords = getCountryCoords(story.country);
-        if (!coords) return;
-
-        const pos = PANEL_POSITIONS[i % PANEL_POSITIONS.length];
-
-        const panel = document.createElement('div');
-        panel.className = 'news-panel';
-        if (story.link) {
-            panel.style.cursor = 'pointer';
-            panel.addEventListener('click', () => window.open(story.link, '_blank'));
-        }
-        panel.innerHTML = `
-            <div class="news-panel-headline">${story.title}</div>
-            <div class="news-panel-meta">
-                <span class="news-panel-source">${story.source}</span>
-                <span>${timeAgo(story.pubDate)}</span>
-            </div>
-        `;
-
-        Object.assign(panel.style, pos);
-        newsPanelsContainer.appendChild(panel);
-
-        setTimeout(() => panel.classList.add('visible'), 100 + i * 120);
-
-        setTimeout(() => {
-            const panelRect = panel.getBoundingClientRect();
-            const wrapperBounds = wrapperRect.getBoundingClientRect();
-
-            const px = panelRect.left + panelRect.width / 2 - wrapperBounds.left;
-            const py = panelRect.top + panelRect.height / 2 - wrapperBounds.top;
-
-            const angle = Math.atan2(py - cy, px - cx);
-            const globeR = Math.min(wW, wH) * 0.38;
-            const gx = cx + Math.cos(angle) * globeR;
-            const gy = cy + Math.sin(angle) * globeR;
-
-            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            line.setAttribute('x1', px.toFixed(1));
-            line.setAttribute('y1', py.toFixed(1));
-            line.setAttribute('x2', gx.toFixed(1));
-            line.setAttribute('y2', gy.toFixed(1));
-            line.classList.add('news-connector-line');
-            newsConnectorsSvg.appendChild(line);
-        }, 300 + i * 120);
-    });
-}
-
-function hideNewsPanels() {
-    if (newsPanelsContainer) {
-        const panels = newsPanelsContainer.querySelectorAll('.news-panel');
-        panels.forEach(p => {
-            p.classList.remove('visible');
-            p.classList.add('hiding');
+function createNewsLabelElement(story) {
+    const el = document.createElement('div');
+    el.className = 'news-label';
+    if (story.link) {
+        el.style.cursor = 'pointer';
+        el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            window.open(story.link, '_blank');
         });
-        setTimeout(() => {
-            if (newsPanelsContainer) newsPanelsContainer.innerHTML = '';
-            if (newsConnectorsSvg) newsConnectorsSvg.innerHTML = '';
-        }, 250);
+    }
+    el.innerHTML =
+        `<div class="news-label-tag" style="background:${story.categoryColor}20;color:${story.categoryColor}">${story.categoryLabel}</div>` +
+        `<div class="news-label-headline">${story.title}</div>` +
+        `<div class="news-label-meta"><span class="news-label-source">${story.source}</span><span>${timeAgo(story.pubDate)}</span></div>`;
+    return el;
+}
+
+// Push apart labels that are too close so they don't overlap
+function decollideLabelCoords(items, minDist) {
+    // Multiple passes to resolve chains of overlaps
+    for (let pass = 0; pass < 5; pass++) {
+        let moved = false;
+        for (let i = 0; i < items.length; i++) {
+            for (let j = i + 1; j < items.length; j++) {
+                const dLat = items[j]._lat - items[i]._lat;
+                const dLng = items[j]._lng - items[i]._lng;
+                const dist = Math.sqrt(dLat * dLat + dLng * dLng);
+                if (dist < minDist) {
+                    const overlap = (minDist - dist) / 2 + 0.5;
+                    const angle = dist > 0.01
+                        ? Math.atan2(dLat, dLng)
+                        : (Math.PI / 4) + (j * Math.PI / 3); // spread if exactly same spot
+                    items[i]._lat -= Math.sin(angle) * overlap;
+                    items[i]._lng -= Math.cos(angle) * overlap;
+                    items[j]._lat += Math.sin(angle) * overlap;
+                    items[j]._lng += Math.cos(angle) * overlap;
+                    moved = true;
+                }
+            }
+        }
+        if (!moved) break;
     }
 }
 
-function updateGlobeNewsLayer(globe, stories, userLocation) {
+function renderNewsOnGlobe(globe, stories) {
     if (!globe) return;
 
-    const userLat = userLocation?.lat || CONFIG.defaultLocation.lat;
-    const userLng = userLocation?.lon || userLocation?.lng || CONFIG.defaultLocation.lon;
+    // Attach coords to each story for the accessors
+    const labeled = stories.map(story => {
+        const coords = getCountryCoords(story.country);
+        if (!coords) return null;
+        return { ...story, _lat: coords.lat, _lng: coords.lng };
+    }).filter(Boolean);
+
+    // Spread apart any labels that would overlap (~18° min separation)
+    decollideLabelCoords(labeled, 18);
+
+    // Pin HTML labels to globe coordinates
+    globe
+        .htmlElementsData(labeled)
+        .htmlLat(d => d._lat)
+        .htmlLng(d => d._lng)
+        .htmlAltitude(0.1)
+        .htmlElement(d => {
+            // globe.gl caches elements per datum; create fresh each call
+            return createNewsLabelElement(d);
+        })
+        .htmlTransitionDuration(0);
+}
+
+function updateGlobeNewsPoints(globe, stories) {
+    if (!globe) return;
 
     const points = stories.map(story => {
         const coords = getCountryCoords(story.country);
         if (!coords) return null;
-        return { lat: coords.lat, lng: coords.lng, size: 0.6, color: '#ffb090' };
-    }).filter(Boolean);
-
-    const arcs = stories.map(story => {
-        const coords = getCountryCoords(story.country);
-        if (!coords) return null;
-        return {
-            startLat: userLat, startLng: userLng,
-            endLat: coords.lat, endLng: coords.lng,
-            color: ['rgba(255, 176, 144, 0.5)', 'rgba(255, 176, 144, 0.05)']
-        };
+        return { lat: coords.lat, lng: coords.lng, size: 0.8, color: story.categoryColor || '#ffb090' };
     }).filter(Boolean);
 
     globe
         .pointsData(points)
         .pointLat('lat').pointLng('lng')
         .pointRadius('size').pointColor('color')
-        .pointAltitude(0.01).pointsMerge(false)
+        .pointAltitude(0.01).pointsMerge(false);
+}
+
+function updateGlobeNewsArcs(globe, stories) {
+    if (!globe || !_newsGetUserLocation) return;
+
+    const userLoc = _newsGetUserLocation();
+    if (!userLoc) return;
+    const userLng = userLoc.lon || userLoc.lng;
+
+    const arcs = stories.map(story => {
+        const coords = getCountryCoords(story.country);
+        if (!coords) return null;
+        return {
+            startLat: userLoc.lat,
+            startLng: userLng,
+            endLat: coords.lat,
+            endLng: coords.lng,
+            color: story.categoryColor || '#ffb090'
+        };
+    }).filter(Boolean);
+
+    globe
         .arcsData(arcs)
         .arcStartLat('startLat').arcStartLng('startLng')
         .arcEndLat('endLat').arcEndLng('endLng')
-        .arcColor('color').arcStroke(0.5)
-        .arcDashLength(0.4).arcDashGap(0.2)
-        .arcDashAnimateTime(2000).arcAltitudeAutoScale(0.4);
+        .arcColor(d => [`${d.color}60`, `${d.color}30`])
+        .arcStroke(0.4)
+        .arcDashLength(0.4)
+        .arcDashGap(0.8)
+        .arcDashAnimateTime(4000)
+        .arcAltitudeAutoScale(0.3)
+        .arcsTransitionDuration(0);
 }
 
-function clearGlobeNewsLayer(globe) {
+function clearNewsFromGlobe(globe) {
     if (!globe) return;
-    globe.pointsData([]).arcsData([]);
+    globe.htmlElementsData([]);
+    globe.pointsData([]);
+    globe.arcsData([]);
 }
 
-async function toggleNews(globe, userLocation) {
+// ── Toggle + init ──
+
+async function toggleNews(globe) {
     newsActive = !newsActive;
 
     const chip = document.getElementById('chip-news');
     if (chip) chip.classList.toggle('active', newsActive);
 
     if (newsActive) {
-        createPanelElements();
         newsData = await fetchNews();
-        updateGlobeNewsLayer(globe, newsData, userLocation);
-        renderNewsPanels(newsData, globe);
+        renderNewsOnGlobe(globe, newsData);
+        updateGlobeNewsPoints(globe, newsData);
+        updateGlobeNewsArcs(globe, newsData);
 
         newsRefreshTimer = setInterval(async () => {
             newsData = await fetchNews();
-            updateGlobeNewsLayer(globe, newsData, userLocation);
-            renderNewsPanels(newsData, globe);
+            renderNewsOnGlobe(globe, newsData);
+            updateGlobeNewsPoints(globe, newsData);
+            updateGlobeNewsArcs(globe, newsData);
         }, CONFIG.newsRefreshInterval);
     } else {
         clearTimeout(newsRefreshTimer);
         newsRefreshTimer = null;
-        hideNewsPanels();
-        clearGlobeNewsLayer(globe);
+        clearNewsFromGlobe(globe);
     }
 }
 
 function initNewsLayer(globe, getUserLocation) {
+    _newsGetUserLocation = getUserLocation || null;
+
     const chip = document.getElementById('chip-news');
     if (!chip) return;
 
-    chip.addEventListener('click', () => {
-        const loc = getUserLocation();
-        toggleNews(globe, loc);
-    });
+    chip.addEventListener('click', () => toggleNews(globe));
 }

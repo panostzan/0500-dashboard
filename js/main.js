@@ -206,40 +206,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const mainGlobe = Globe()
             .backgroundColor('rgba(0,0,0,0)')
-            .showGlobe(false)
+            .showGlobe(true)
             .showAtmosphere(true)
             .atmosphereColor('#ffb090')
-            .atmosphereAltitude(0.25)
+            .atmosphereAltitude(0.12)
             .width(550)
             .height(550)
             (globeContainer);
 
         // Configure holographic look once WebGL is ready
         mainGlobe.onGlobeReady(() => {
-            // ── Background-matched occluder — blocks far side, invisible against bg ──
-            try {
-                const occluderGeom = new THREE.SphereGeometry(99.8, 64, 64);
-                // MeshBasicMaterial ignores scene lighting — always renders as exact color
-                const occluderMat = new THREE.MeshBasicMaterial({
-                    color: 0x0f0a12
-                });
-                const occluder = new THREE.Mesh(occluderGeom, occluderMat);
-                occluder.renderOrder = -1;
-                mainGlobe.scene().add(occluder);
-            } catch (e) {
-                console.log('[GLOBE] Occluder skipped:', e.message);
-            }
+            // ── Globe sphere as background-matched occluder ──
+            // Opaque + color-matched to app background so it's invisible
+            // but blocks all back-facing hex dots, borders, and grid lines
+            const mat = mainGlobe.globeMaterial();
+            mat.color.set('#110d18');
+            mat.emissive.set('#1e1430');
+            mat.emissiveIntensity = 0.35;
+            mat.transparent = false;
+            mat.opacity = 1.0;
+            mat.depthWrite = true;
 
             // ── Lighting — warm ambient glow ──
             const scene = mainGlobe.scene();
             scene.traverse(obj => {
                 if (obj.isDirectionalLight) {
-                    obj.intensity = 0.4;
+                    obj.intensity = 0.6;
                     obj.color.set('#ffcdaa');
                 }
                 if (obj.isAmbientLight) {
-                    obj.intensity = 2.0;
-                    obj.color.set('#1e1428');
+                    obj.intensity = 1.2;
+                    obj.color.set('#ffd8c0');
                 }
             });
 
@@ -251,24 +248,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                 for (let lng = -180; lng < 180; lng += 30) {
                     for (let lat = -90; lat < 90; lat += 2) {
                         const phi1 = (90 - lat) * Math.PI / 180;
-                        const theta1 = (lng + 180) * Math.PI / 180;
+                        const theta1 = (90 - lng) * Math.PI / 180;
                         const phi2 = (90 - (lat + 2)) * Math.PI / 180;
                         const r = globeRadius * 1.001;
                         gratPoints.push(
-                            r * Math.sin(phi1) * Math.cos(theta1), r * Math.cos(phi1), -r * Math.sin(phi1) * Math.sin(theta1),
-                            r * Math.sin(phi2) * Math.cos(theta1), r * Math.cos(phi2), -r * Math.sin(phi2) * Math.sin(theta1)
+                            r * Math.sin(phi1) * Math.cos(theta1), r * Math.cos(phi1), r * Math.sin(phi1) * Math.sin(theta1),
+                            r * Math.sin(phi2) * Math.cos(theta1), r * Math.cos(phi2), r * Math.sin(phi2) * Math.sin(theta1)
                         );
                     }
                 }
                 for (let lat = -60; lat <= 60; lat += 30) {
                     for (let lng = -180; lng < 180; lng += 2) {
                         const phi = (90 - lat) * Math.PI / 180;
-                        const theta1 = (lng + 180) * Math.PI / 180;
-                        const theta2 = (lng + 2 + 180) * Math.PI / 180;
+                        const theta1 = (90 - lng) * Math.PI / 180;
+                        const theta2 = (90 - (lng + 2)) * Math.PI / 180;
                         const r = globeRadius * 1.001;
                         gratPoints.push(
-                            r * Math.sin(phi) * Math.cos(theta1), r * Math.cos(phi), -r * Math.sin(phi) * Math.sin(theta1),
-                            r * Math.sin(phi) * Math.cos(theta2), r * Math.cos(phi), -r * Math.sin(phi) * Math.sin(theta2)
+                            r * Math.sin(phi) * Math.cos(theta1), r * Math.cos(phi), r * Math.sin(phi) * Math.sin(theta1),
+                            r * Math.sin(phi) * Math.cos(theta2), r * Math.cos(phi), r * Math.sin(phi) * Math.sin(theta2)
                         );
                     }
                 }
@@ -276,7 +273,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const gratGeom = new THREE.BufferGeometry();
                 gratGeom.setAttribute('position', new THREE.Float32BufferAttribute(gratPoints, 3));
                 const gratMat = new THREE.LineBasicMaterial({
-                    color: 0xffb090, transparent: true, opacity: 0.06, depthWrite: false
+                    color: 0x90b8ff, transparent: true, opacity: 0.10, depthWrite: false, depthTest: true
                 });
                 scene.add(new THREE.LineSegments(gratGeom, gratMat));
             } catch (e) {
@@ -285,13 +282,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // ── Fresnel edge glow ──
             try {
-                const fresnelGeom = new THREE.SphereGeometry(100.8, 64, 64);
+                const fresnelGeom = new THREE.SphereGeometry(100.5, 64, 64);
                 const fresnelMat = new THREE.ShaderMaterial({
                     transparent: true, depthWrite: false, side: THREE.FrontSide,
                     uniforms: {
                         glowColor: { value: new THREE.Color(0xffb090) },
-                        intensity: { value: 1.4 },
-                        power: { value: 3.0 }
+                        intensity: { value: 1.2 },
+                        power: { value: 3.5 }
                     },
                     vertexShader: `
                         varying vec3 vNormal;
@@ -312,7 +309,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         void main() {
                             float fresnel = 1.0 - dot(vNormal, vViewDir);
                             fresnel = pow(fresnel, power) * intensity;
-                            gl_FragColor = vec4(glowColor, fresnel * 0.45);
+                            gl_FragColor = vec4(glowColor, fresnel * 0.55);
                         }
                     `
                 });
@@ -321,13 +318,264 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.log('[GLOBE] Fresnel glow skipped:', e.message);
             }
 
+            // ── Secondary deep atmosphere (soft outer haze) ──
+            try {
+                const deepAtmoGeom = new THREE.SphereGeometry(103, 64, 64);
+                const deepAtmoMat = new THREE.ShaderMaterial({
+                    transparent: true, depthWrite: false, side: THREE.FrontSide,
+                    uniforms: {
+                        glowColor: { value: new THREE.Color(0xffb090) },
+                        intensity: { value: 0.8 },
+                        power: { value: 1.5 }
+                    },
+                    vertexShader: `
+                        varying vec3 vNormal;
+                        varying vec3 vViewDir;
+                        void main() {
+                            vNormal = normalize(normalMatrix * normal);
+                            vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+                            vViewDir = normalize(-mvPos.xyz);
+                            gl_Position = projectionMatrix * mvPos;
+                        }
+                    `,
+                    fragmentShader: `
+                        uniform vec3 glowColor;
+                        uniform float intensity;
+                        uniform float power;
+                        varying vec3 vNormal;
+                        varying vec3 vViewDir;
+                        void main() {
+                            float fresnel = 1.0 - dot(vNormal, vViewDir);
+                            fresnel = pow(fresnel, power) * intensity;
+                            gl_FragColor = vec4(glowColor, fresnel * 0.15);
+                        }
+                    `
+                });
+                scene.add(new THREE.Mesh(deepAtmoGeom, deepAtmoMat));
+            } catch (e) {
+                console.log('[GLOBE] Deep atmosphere skipped:', e.message);
+            }
+
+            // ── Ambient city glow points ──
+            try {
+                const ambientCities = [
+                    { lat: 35.7, lng: 139.7 },   // Tokyo
+                    { lat: 51.5, lng: -0.1 },    // London
+                    { lat: 48.9, lng: 2.35 },    // Paris
+                    { lat: -33.9, lng: 151.2 },  // Sydney
+                    { lat: 55.8, lng: 37.6 },    // Moscow
+                    { lat: 19.4, lng: -99.1 },   // Mexico City
+                    { lat: 1.3, lng: 103.8 },    // Singapore
+                    { lat: -23.5, lng: -46.6 },  // São Paulo
+                    { lat: 25.2, lng: 55.3 },    // Dubai
+                    { lat: 37.6, lng: 127.0 },   // Seoul
+                ];
+
+                const ambientGroup = new THREE.Group();
+                ambientCities.forEach(city => {
+                    const phi = (90 - city.lat) * Math.PI / 180;
+                    const theta = (90 - city.lng) * Math.PI / 180;
+                    const R = 101.2;
+                    const x = R * Math.sin(phi) * Math.cos(theta);
+                    const y = R * Math.cos(phi);
+                    const z = R * Math.sin(phi) * Math.sin(theta);
+
+                    // Bright core dot
+                    const dotGeom = new THREE.SphereGeometry(0.8, 12, 12);
+                    const dotMat = new THREE.MeshBasicMaterial({
+                        color: 0xffffff, transparent: true, opacity: 0.9, depthWrite: false
+                    });
+                    const dot = new THREE.Mesh(dotGeom, dotMat);
+                    dot.position.set(x, y, z);
+                    ambientGroup.add(dot);
+
+                    // Mid glow ring
+                    const midGeom = new THREE.SphereGeometry(1.8, 12, 12);
+                    const midMat = new THREE.MeshBasicMaterial({
+                        color: 0xffb090, transparent: true, opacity: 0.35, depthWrite: false
+                    });
+                    const mid = new THREE.Mesh(midGeom, midMat);
+                    mid.position.set(x, y, z);
+                    ambientGroup.add(mid);
+
+                    // Soft outer glow
+                    const glowGeom = new THREE.SphereGeometry(3.0, 12, 12);
+                    const glowMat = new THREE.MeshBasicMaterial({
+                        color: 0xffb090, transparent: true, opacity: 0.1, depthWrite: false
+                    });
+                    const glow = new THREE.Mesh(glowGeom, glowMat);
+                    glow.position.set(x, y, z);
+                    ambientGroup.add(glow);
+                });
+                scene.add(ambientGroup);
+            } catch (e) {
+                console.log('[GLOBE] Ambient points skipped:', e.message);
+            }
+
+            // ── Idle connection arcs ──
+            try {
+                function latLngToVec3(lat, lng, r) {
+                    const phi = (90 - lat) * Math.PI / 180;
+                    const theta = (90 - lng) * Math.PI / 180;
+                    return new THREE.Vector3(
+                        r * Math.sin(phi) * Math.cos(theta),
+                        r * Math.cos(phi),
+                        r * Math.sin(phi) * Math.sin(theta)
+                    );
+                }
+
+                const arcTargets = [
+                    { lat: 51.5, lng: -0.1 },    // London
+                    { lat: 35.7, lng: 139.7 },   // Tokyo
+                    { lat: -33.9, lng: 151.2 },  // Sydney
+                ];
+
+                const idleArcsGroup = new THREE.Group();
+                arcTargets.forEach(city => {
+                    const start = latLngToVec3(initialLocation.lat, initLng, 101);
+                    const end = latLngToVec3(city.lat, city.lng, 101);
+                    const mid = start.clone().add(end).multiplyScalar(0.5);
+                    const dist = start.distanceTo(end);
+                    mid.normalize().multiplyScalar(100 + dist * 0.4);
+
+                    const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
+                    const arcPts = curve.getPoints(80);
+
+                    // Outer glow line (wider, softer)
+                    const glowGeom = new THREE.BufferGeometry().setFromPoints(arcPts);
+                    const glowMat = new THREE.LineBasicMaterial({
+                        color: 0x4da6ff, transparent: true, opacity: 0.12,
+                        depthWrite: false, linewidth: 2
+                    });
+                    idleArcsGroup.add(new THREE.Line(glowGeom, glowMat));
+
+                    // Core arc line (bright blue)
+                    const arcGeom = new THREE.BufferGeometry().setFromPoints(arcPts);
+                    const arcMat = new THREE.LineBasicMaterial({
+                        color: 0x80ccff, transparent: true, opacity: 0.35, depthWrite: false
+                    });
+                    idleArcsGroup.add(new THREE.Line(arcGeom, arcMat));
+                });
+                scene.add(idleArcsGroup);
+                window._idleArcsGroup = idleArcsGroup;
+            } catch (e) {
+                console.log('[GLOBE] Idle arcs skipped:', e.message);
+            }
+
+            // ── Orbital HUD rings ──
+            try {
+                // Primary ring — warm dashed orbit
+                const ringPoints1 = [];
+                for (let i = 0; i <= 128; i++) {
+                    const angle = (i / 128) * Math.PI * 2;
+                    ringPoints1.push(new THREE.Vector3(115 * Math.cos(angle), 0, 115 * Math.sin(angle)));
+                }
+                const ringGeom1 = new THREE.BufferGeometry().setFromPoints(ringPoints1);
+                const ringMat1 = new THREE.LineDashedMaterial({
+                    color: 0xffb090, transparent: true, opacity: 0.12,
+                    dashSize: 4, gapSize: 8, depthWrite: false
+                });
+                const hudRing1 = new THREE.Line(ringGeom1, ringMat1);
+                hudRing1.computeLineDistances();
+                hudRing1.rotation.x = Math.PI * 0.52;
+                hudRing1.rotation.y = Math.PI * 0.1;
+                scene.add(hudRing1);
+
+                // Secondary ring — cool accent, wider orbit
+                const ringPoints2 = [];
+                for (let i = 0; i <= 128; i++) {
+                    const angle = (i / 128) * Math.PI * 2;
+                    ringPoints2.push(new THREE.Vector3(122 * Math.cos(angle), 0, 122 * Math.sin(angle)));
+                }
+                const ringGeom2 = new THREE.BufferGeometry().setFromPoints(ringPoints2);
+                const ringMat2 = new THREE.LineDashedMaterial({
+                    color: 0x90b8ff, transparent: true, opacity: 0.06,
+                    dashSize: 3, gapSize: 12, depthWrite: false
+                });
+                const hudRing2 = new THREE.Line(ringGeom2, ringMat2);
+                hudRing2.computeLineDistances();
+                hudRing2.rotation.x = Math.PI * 0.42;
+                hudRing2.rotation.z = Math.PI * 0.25;
+                scene.add(hudRing2);
+
+                // Slow counter-rotation for rings
+                (function animateRings() {
+                    requestAnimationFrame(animateRings);
+                    hudRing1.rotation.z += 0.0003;
+                    hudRing2.rotation.z -= 0.0002;
+                })();
+            } catch (e) {
+                console.log('[GLOBE] HUD rings skipped:', e.message);
+            }
+
+            // ── Orbiting arc segments (detached satellite trails) ──
+            try {
+                const orbitArcs = [];
+
+                // Arc 1: horizontal orbit (rotates around Y axis)
+                const arc1Pts = [];
+                const arc1R = 140;
+                for (let i = 0; i <= 64; i++) {
+                    const a = (i / 64) * Math.PI * 2 * 0.18;
+                    arc1Pts.push(new THREE.Vector3(arc1R * Math.cos(a), 0, arc1R * Math.sin(a)));
+                }
+                const arc1 = new THREE.Line(
+                    new THREE.BufferGeometry().setFromPoints(arc1Pts),
+                    new THREE.LineBasicMaterial({ color: 0xffb090, transparent: true, opacity: 0.5, depthWrite: false })
+                );
+                arc1.rotation.x = Math.PI * 0.5;
+                scene.add(arc1);
+                orbitArcs.push({ mesh: arc1, axis: 'y', speed: 0.004 });
+
+                // Arc 2: vertical orbit (rotates around X axis)
+                const arc2Pts = [];
+                const arc2R = 148;
+                for (let i = 0; i <= 64; i++) {
+                    const a = (i / 64) * Math.PI * 2 * 0.14;
+                    arc2Pts.push(new THREE.Vector3(arc2R * Math.cos(a), 0, arc2R * Math.sin(a)));
+                }
+                const arc2 = new THREE.Line(
+                    new THREE.BufferGeometry().setFromPoints(arc2Pts),
+                    new THREE.LineBasicMaterial({ color: 0x90b8ff, transparent: true, opacity: 0.4, depthWrite: false })
+                );
+                arc2.rotation.z = Math.PI * 0.5;
+                scene.add(arc2);
+                orbitArcs.push({ mesh: arc2, axis: 'y', speed: -0.003 });
+
+                // Arc 3: diagonal orbit
+                const arc3Pts = [];
+                const arc3R = 135;
+                for (let i = 0; i <= 64; i++) {
+                    const a = (i / 64) * Math.PI * 2 * 0.16;
+                    arc3Pts.push(new THREE.Vector3(arc3R * Math.cos(a), 0, arc3R * Math.sin(a)));
+                }
+                const arc3 = new THREE.Line(
+                    new THREE.BufferGeometry().setFromPoints(arc3Pts),
+                    new THREE.LineBasicMaterial({ color: 0xffb090, transparent: true, opacity: 0.35, depthWrite: false })
+                );
+                arc3.rotation.x = Math.PI * 0.35;
+                arc3.rotation.z = Math.PI * 0.25;
+                scene.add(arc3);
+                orbitArcs.push({ mesh: arc3, axis: 'y', speed: 0.0035 });
+
+                (function animateOrbitArcs() {
+                    requestAnimationFrame(animateOrbitArcs);
+                    for (const oa of orbitArcs) {
+                        oa.mesh.rotation.y += oa.speed;
+                    }
+                })();
+            } catch (e) {
+                console.log('[GLOBE] Orbiting arcs skipped:', e.message);
+            }
+
             mainGlobe.pointOfView({ lat: initialLocation.lat, lng: initLng, altitude: 2.2 });
             globeReady = true;
             tryReveal();
         });
 
         // ── Load hex bins + country borders ──
-        fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+        // Use countries-50m for better coverage (more countries, finer boundaries)
+        fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json')
             .then(r => r.json())
             .then(worldData => {
                 if (!window.topojson) return;
@@ -338,38 +586,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     .hexPolygonResolution(3)
                     .hexPolygonMargin(0.35)
                     .hexPolygonUseDots(true)
-                    .hexPolygonColor(() => 'rgba(255, 176, 144, 0.55)')
+                    .hexPolygonColor(() => 'rgba(255, 160, 120, 0.8)')
                     .hexPolygonAltitude(0.005);
-
-                try {
-                    const borders = window.topojson.mesh(worldData, worldData.objects.countries, (a, b) => a !== b);
-                    const R = 100.5;
-                    const pts = [];
-
-                    borders.coordinates.forEach(line => {
-                        for (let i = 0; i < line.length - 1; i++) {
-                            const [lng1, lat1] = line[i];
-                            const [lng2, lat2] = line[i + 1];
-                            const phi1 = (90 - lat1) * Math.PI / 180;
-                            const th1 = (lng1 + 180) * Math.PI / 180;
-                            const phi2 = (90 - lat2) * Math.PI / 180;
-                            const th2 = (lng2 + 180) * Math.PI / 180;
-                            pts.push(
-                                R * Math.sin(phi1) * Math.cos(th1), R * Math.cos(phi1), -R * Math.sin(phi1) * Math.sin(th1),
-                                R * Math.sin(phi2) * Math.cos(th2), R * Math.cos(phi2), -R * Math.sin(phi2) * Math.sin(th2)
-                            );
-                        }
-                    });
-
-                    const geom = new THREE.BufferGeometry();
-                    geom.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
-                    const borderMat = new THREE.LineBasicMaterial({
-                        color: 0xffb090, transparent: true, opacity: 0.15, depthWrite: false
-                    });
-                    mainGlobe.scene().add(new THREE.LineSegments(geom, borderMat));
-                } catch (e) {
-                    console.log('[GLOBE] Borders skipped:', e.message);
-                }
 
                 dataReady = true;
                 tryReveal();
@@ -415,6 +633,80 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         timerGlobe.loadLandData();
 
+        // ── Location label (Three.js sprite) ──
+        var locationLabelSprite = null;
+
+        function setGlobeLocationLabel(lat, lng, name) {
+            // Remove old sprite
+            if (locationLabelSprite) {
+                mainGlobe.scene().remove(locationLabelSprite);
+                locationLabelSprite = null;
+            }
+
+            // Draw text to canvas, then make a sprite
+            var canvas = document.createElement('canvas');
+            var ctx = canvas.getContext('2d');
+            canvas.width = 256;
+            canvas.height = 40;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = '500 18px Inter, sans-serif';
+            ctx.fillStyle = 'rgba(255, 176, 144, 0.6)';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(name.toUpperCase(), 0, 20);
+
+            var texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            var mat = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                depthWrite: false,
+                depthTest: false
+            });
+            var sprite = new THREE.Sprite(mat);
+
+            // Position on globe surface offset to the right of the dot
+            var R = 102;
+            var phi = (90 - lat) * Math.PI / 180;
+            var theta = (90 - lng) * Math.PI / 180;
+            sprite.position.set(
+                R * Math.sin(phi) * Math.cos(theta),
+                R * Math.cos(phi),
+                R * Math.sin(phi) * Math.sin(theta)
+            );
+            sprite.scale.set(14, 2.2, 1);
+
+            mainGlobe.scene().add(sprite);
+            locationLabelSprite = sprite;
+        }
+
+        async function resolveAndLabelLocation(lat, lng) {
+            try {
+                var res = await fetch(
+                    'https://nominatim.openstreetmap.org/reverse?lat=' + lat + '&lon=' + lng + '&format=json&zoom=10'
+                );
+                var data = await res.json();
+                var addr = data.address || {};
+                var city = addr.city || addr.town || addr.village || addr.hamlet || '';
+                var state = addr.state || '';
+                var label = '';
+                if (city && state) label = city + ', ' + state;
+                else if (city) label = city;
+                else if (state) label = state;
+
+                if (label) {
+                    if (window.userLocation) {
+                        window.userLocation.name = label;
+                        localStorage.setItem('0500_user_location', JSON.stringify(window.userLocation));
+                    }
+                    setGlobeLocationLabel(lat, lng, label);
+                }
+            } catch (e) {
+                console.warn('[GLOBE] Reverse geocode failed:', e.message);
+            }
+        }
+
         // Update globe location when weather fetches actual location
         const checkLocation = setInterval(() => {
             if (window.userLocation) {
@@ -429,6 +721,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     propagationSpeed: 1.5,
                     repeatPeriod: 1200
                 }]);
+
+                // Add city label — resolve name if needed
+                var locName = window.userLocation.name || '';
+                if (locName && locName !== 'Current Location') {
+                    setGlobeLocationLabel(window.userLocation.lat, lng, locName);
+                } else {
+                    resolveAndLabelLocation(window.userLocation.lat, lng);
+                }
 
                 timerGlobe.setHighlightLocation(window.userLocation);
                 clearInterval(checkLocation);
