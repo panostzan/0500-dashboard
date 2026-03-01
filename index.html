@@ -38,7 +38,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&family=Inter:wght@200;300;400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/styles.css?v=33">
+    <link rel="stylesheet" href="css/styles.css?v=34">
 
     <!-- Apply theme before first paint to avoid flash -->
     <script>
@@ -81,6 +81,10 @@
         <div class="globe-section">
             <div class="globe-wrapper" id="globe-wrapper">
                 <div id="globe-container"></div>
+            </div>
+            <div id="daily-fact">
+                <span id="daily-fact-title"></span>
+                <span id="daily-fact-text"></span>
             </div>
         </div>
 
@@ -150,6 +154,10 @@
         <button class="chip chip-rest" id="chip-rest">
             <span class="chip-label">REST</span>
             <span class="chip-value" id="chip-rest-countdown">0:00:00</span>
+        </button>
+
+        <button class="chip chip-expand" id="chip-expand">
+            <span class="chip-label">EXPAND</span>
         </button>
 
         <div class="chips-divider"></div>
@@ -225,7 +233,8 @@
 <script src="js/theme.js?v=1"></script>
 <script src="js/news.js?v=5"></script>
 <script src="js/worldclock.js?v=4"></script>
-<script src="js/main.js?v=46"></script>
+<script src="js/facts.js?v=1"></script>
+<script src="js/main.js?v=51"></script>
 
 </body>
 </html>

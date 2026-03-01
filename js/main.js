@@ -173,6 +173,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             initBedtimeNotifications();
         });
         deferInit(() => initWeeklyReview());
+        deferInit(() => initDailyFact());
 
         // Initialize HUD elements (gracefully skips globe HUD if canvas absent)
         initHUD();
@@ -425,148 +426,83 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
 
                 const arcTargets = [
-                    { lat: 51.5, lng: -0.1 },    // London
                     { lat: 35.7, lng: 139.7 },   // Tokyo
+                    { lat: 51.5, lng: -0.1 },    // London
+                    { lat: 48.9, lng: 2.35 },    // Paris
                     { lat: -33.9, lng: 151.2 },  // Sydney
+                    { lat: 55.8, lng: 37.6 },    // Moscow
+                    { lat: 19.4, lng: -99.1 },   // Mexico City
+                    { lat: 1.3, lng: 103.8 },    // Singapore
+                    { lat: -23.5, lng: -46.6 },  // Sao Paulo
+                    { lat: 25.2, lng: 55.3 },    // Dubai
+                    { lat: 37.6, lng: 127.0 },   // Seoul
                 ];
 
-                const idleArcsGroup = new THREE.Group();
-                arcTargets.forEach(city => {
-                    const start = latLngToVec3(initialLocation.lat, initLng, 101);
-                    const end = latLngToVec3(city.lat, city.lng, 101);
+                // Named refs for intercity connections
+                const cities = {
+                    tokyo:    { lat: 35.7, lng: 139.7 },
+                    london:   { lat: 51.5, lng: -0.1 },
+                    paris:    { lat: 48.9, lng: 2.35 },
+                    sydney:   { lat: -33.9, lng: 151.2 },
+                    moscow:   { lat: 55.8, lng: 37.6 },
+                    mexico:   { lat: 19.4, lng: -99.1 },
+                    singapore:{ lat: 1.3, lng: 103.8 },
+                    saoPaulo: { lat: -23.5, lng: -46.6 },
+                    dubai:    { lat: 25.2, lng: 55.3 },
+                    seoul:    { lat: 37.6, lng: 127.0 },
+                };
+
+                // Intercity network routes (natural global web)
+                const intercityRoutes = [
+                    ['london', 'paris'],
+                    ['london', 'moscow'],
+                    ['london', 'dubai'],
+                    ['paris', 'dubai'],
+                    ['moscow', 'dubai'],
+                    ['dubai', 'singapore'],
+                    ['singapore', 'tokyo'],
+                    ['singapore', 'sydney'],
+                    ['tokyo', 'seoul'],
+                    ['tokyo', 'sydney'],
+                    ['mexico', 'saoPaulo'],
+                    ['seoul', 'dubai'],
+                ];
+
+                function makeArc(from, to, color, opacity) {
+                    const start = latLngToVec3(from.lat, from.lng, 101);
+                    const end = latLngToVec3(to.lat, to.lng, 101);
                     const mid = start.clone().add(end).multiplyScalar(0.5);
                     const dist = start.distanceTo(end);
-                    mid.normalize().multiplyScalar(100 + dist * 0.4);
-
+                    mid.normalize().multiplyScalar(100 + dist * 0.3);
                     const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
-                    const arcPts = curve.getPoints(80);
-
-                    // Outer glow line (wider, softer)
-                    const glowGeom = new THREE.BufferGeometry().setFromPoints(arcPts);
-                    const glowMat = new THREE.LineBasicMaterial({
-                        color: 0x4da6ff, transparent: true, opacity: 0.12,
-                        depthWrite: false, linewidth: 2
+                    const arcPts = curve.getPoints(64);
+                    const geom = new THREE.BufferGeometry().setFromPoints(arcPts);
+                    const mat = new THREE.LineBasicMaterial({
+                        color: color, transparent: true, opacity: opacity, depthWrite: false
                     });
-                    idleArcsGroup.add(new THREE.Line(glowGeom, glowMat));
+                    return new THREE.Line(geom, mat);
+                }
 
-                    // Core arc line (bright blue)
-                    const arcGeom = new THREE.BufferGeometry().setFromPoints(arcPts);
-                    const arcMat = new THREE.LineBasicMaterial({
-                        color: 0x80ccff, transparent: true, opacity: 0.35, depthWrite: false
-                    });
-                    idleArcsGroup.add(new THREE.Line(arcGeom, arcMat));
+                const idleArcsGroup = new THREE.Group();
+
+                // User → each city (bright blue)
+                const userLoc = { lat: initialLocation.lat, lng: initLng };
+                arcTargets.forEach(city => {
+                    idleArcsGroup.add(makeArc(userLoc, city, 0x80ccff, 0.35));
                 });
+
+                // City ↔ city (slightly dimmer)
+                intercityRoutes.forEach(([a, b]) => {
+                    idleArcsGroup.add(makeArc(cities[a], cities[b], 0x90b8ff, 0.22));
+                });
+
                 scene.add(idleArcsGroup);
                 window._idleArcsGroup = idleArcsGroup;
             } catch (e) {
                 console.log('[GLOBE] Idle arcs skipped:', e.message);
             }
 
-            // ── Orbital HUD rings ──
-            try {
-                // Primary ring — warm dashed orbit
-                const ringPoints1 = [];
-                for (let i = 0; i <= 128; i++) {
-                    const angle = (i / 128) * Math.PI * 2;
-                    ringPoints1.push(new THREE.Vector3(115 * Math.cos(angle), 0, 115 * Math.sin(angle)));
-                }
-                const ringGeom1 = new THREE.BufferGeometry().setFromPoints(ringPoints1);
-                const ringMat1 = new THREE.LineDashedMaterial({
-                    color: 0xffb090, transparent: true, opacity: 0.12,
-                    dashSize: 4, gapSize: 8, depthWrite: false
-                });
-                const hudRing1 = new THREE.Line(ringGeom1, ringMat1);
-                hudRing1.computeLineDistances();
-                hudRing1.rotation.x = Math.PI * 0.52;
-                hudRing1.rotation.y = Math.PI * 0.1;
-                scene.add(hudRing1);
 
-                // Secondary ring — cool accent, wider orbit
-                const ringPoints2 = [];
-                for (let i = 0; i <= 128; i++) {
-                    const angle = (i / 128) * Math.PI * 2;
-                    ringPoints2.push(new THREE.Vector3(122 * Math.cos(angle), 0, 122 * Math.sin(angle)));
-                }
-                const ringGeom2 = new THREE.BufferGeometry().setFromPoints(ringPoints2);
-                const ringMat2 = new THREE.LineDashedMaterial({
-                    color: 0x90b8ff, transparent: true, opacity: 0.06,
-                    dashSize: 3, gapSize: 12, depthWrite: false
-                });
-                const hudRing2 = new THREE.Line(ringGeom2, ringMat2);
-                hudRing2.computeLineDistances();
-                hudRing2.rotation.x = Math.PI * 0.42;
-                hudRing2.rotation.z = Math.PI * 0.25;
-                scene.add(hudRing2);
-
-                // Slow counter-rotation for rings
-                (function animateRings() {
-                    requestAnimationFrame(animateRings);
-                    hudRing1.rotation.z += 0.0003;
-                    hudRing2.rotation.z -= 0.0002;
-                })();
-            } catch (e) {
-                console.log('[GLOBE] HUD rings skipped:', e.message);
-            }
-
-            // ── Orbiting arc segments (detached satellite trails) ──
-            try {
-                const orbitArcs = [];
-
-                // Arc 1: horizontal orbit (rotates around Y axis)
-                const arc1Pts = [];
-                const arc1R = 140;
-                for (let i = 0; i <= 64; i++) {
-                    const a = (i / 64) * Math.PI * 2 * 0.18;
-                    arc1Pts.push(new THREE.Vector3(arc1R * Math.cos(a), 0, arc1R * Math.sin(a)));
-                }
-                const arc1 = new THREE.Line(
-                    new THREE.BufferGeometry().setFromPoints(arc1Pts),
-                    new THREE.LineBasicMaterial({ color: 0xffb090, transparent: true, opacity: 0.5, depthWrite: false })
-                );
-                arc1.rotation.x = Math.PI * 0.5;
-                scene.add(arc1);
-                orbitArcs.push({ mesh: arc1, axis: 'y', speed: 0.004 });
-
-                // Arc 2: vertical orbit (rotates around X axis)
-                const arc2Pts = [];
-                const arc2R = 148;
-                for (let i = 0; i <= 64; i++) {
-                    const a = (i / 64) * Math.PI * 2 * 0.14;
-                    arc2Pts.push(new THREE.Vector3(arc2R * Math.cos(a), 0, arc2R * Math.sin(a)));
-                }
-                const arc2 = new THREE.Line(
-                    new THREE.BufferGeometry().setFromPoints(arc2Pts),
-                    new THREE.LineBasicMaterial({ color: 0x90b8ff, transparent: true, opacity: 0.4, depthWrite: false })
-                );
-                arc2.rotation.z = Math.PI * 0.5;
-                scene.add(arc2);
-                orbitArcs.push({ mesh: arc2, axis: 'y', speed: -0.003 });
-
-                // Arc 3: diagonal orbit
-                const arc3Pts = [];
-                const arc3R = 135;
-                for (let i = 0; i <= 64; i++) {
-                    const a = (i / 64) * Math.PI * 2 * 0.16;
-                    arc3Pts.push(new THREE.Vector3(arc3R * Math.cos(a), 0, arc3R * Math.sin(a)));
-                }
-                const arc3 = new THREE.Line(
-                    new THREE.BufferGeometry().setFromPoints(arc3Pts),
-                    new THREE.LineBasicMaterial({ color: 0xffb090, transparent: true, opacity: 0.35, depthWrite: false })
-                );
-                arc3.rotation.x = Math.PI * 0.35;
-                arc3.rotation.z = Math.PI * 0.25;
-                scene.add(arc3);
-                orbitArcs.push({ mesh: arc3, axis: 'y', speed: 0.0035 });
-
-                (function animateOrbitArcs() {
-                    requestAnimationFrame(animateOrbitArcs);
-                    for (const oa of orbitArcs) {
-                        oa.mesh.rotation.y += oa.speed;
-                    }
-                })();
-            } catch (e) {
-                console.log('[GLOBE] Orbiting arcs skipped:', e.message);
-            }
 
             mainGlobe.pointOfView({ lat: initialLocation.lat, lng: initLng, altitude: 2.2 });
             globeReady = true;
@@ -755,9 +691,34 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.error('[CLOCK] Layer init failed:', clockErr);
         }
 
+        // ── Globe expand/collapse toggle ──
+        let globeExpanded = false;
+
+        function resizeGlobe() {
+            mainGlobe.width(550).height(550);
+        }
+
+        const expandChip = document.getElementById('chip-expand');
+        if (expandChip) {
+            expandChip.addEventListener('click', () => {
+                globeExpanded = !globeExpanded;
+                const dashboard = document.getElementById('dashboard');
+                dashboard.classList.toggle('globe-expanded', globeExpanded);
+                expandChip.classList.toggle('active', globeExpanded);
+                expandChip.querySelector('.chip-label').textContent = globeExpanded ? 'COLLAPSE' : 'EXPAND';
+            });
+
+            // Escape to exit
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && globeExpanded) {
+                    expandChip.click();
+                }
+            });
+        }
+
         // Handle window resize
         window.addEventListener('resize', () => {
-            mainGlobe.width(550).height(550);
+            resizeGlobe();
             timerGlobe.resize();
         });
     } catch (error) {
