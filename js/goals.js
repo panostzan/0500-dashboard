@@ -110,6 +110,11 @@ function attachGoalListeners(item, sectionKey, group) {
 
         DataService.updateGoal(goalId, { checked: isChecked });
         updateHeaderMeta(group);
+
+        // Fire globe burst on daily goal check
+        if (isChecked && sectionKey === 'daily' && window._fireBurstPulses) {
+            window._fireBurstPulses();
+        }
     }
 
     checkbox.addEventListener('click', (e) => {
