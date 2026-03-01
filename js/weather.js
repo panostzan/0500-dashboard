@@ -66,30 +66,41 @@ async function getUserLocation() {
 window.userLocation = null;
 
 const WEATHER_CODES = {
-    0: { label: 'CLEAR', icon: '○' },
-    1: { label: 'MOSTLY CLEAR', icon: '○' },
-    2: { label: 'PARTLY CLOUDY', icon: '◐' },
-    3: { label: 'OVERCAST', icon: '●' },
-    45: { label: 'FOG', icon: '≡' },
-    48: { label: 'FOG', icon: '≡' },
-    51: { label: 'DRIZZLE', icon: '.' },
-    53: { label: 'DRIZZLE', icon: '..' },
-    55: { label: 'DRIZZLE', icon: '...' },
-    61: { label: 'RAIN', icon: '∴' },
-    63: { label: 'RAIN', icon: '∴∴' },
-    65: { label: 'HEAVY RAIN', icon: '∴∴∴' },
-    71: { label: 'SNOW', icon: '✦' },
-    73: { label: 'SNOW', icon: '✦✦' },
-    75: { label: 'HEAVY SNOW', icon: '✦✦✦' },
-    77: { label: 'SNOW GRAINS', icon: '✦' },
-    80: { label: 'SHOWERS', icon: '∴' },
-    81: { label: 'SHOWERS', icon: '∴∴' },
-    82: { label: 'HEAVY SHOWERS', icon: '∴∴∴' },
-    85: { label: 'SNOW SHOWERS', icon: '✦' },
-    86: { label: 'SNOW SHOWERS', icon: '✦✦' },
-    95: { label: 'STORM', icon: '⚡' },
-    96: { label: 'HAIL STORM', icon: '⚡' },
-    99: { label: 'HAIL STORM', icon: '⚡' }
+    0: { label: 'CLEAR', icon: 'sun' },
+    1: { label: 'MOSTLY CLEAR', icon: 'sun' },
+    2: { label: 'PARTLY CLOUDY', icon: 'cloud-sun' },
+    3: { label: 'OVERCAST', icon: 'cloud' },
+    45: { label: 'FOG', icon: 'fog' },
+    48: { label: 'FOG', icon: 'fog' },
+    51: { label: 'DRIZZLE', icon: 'drizzle' },
+    53: { label: 'DRIZZLE', icon: 'drizzle' },
+    55: { label: 'DRIZZLE', icon: 'drizzle' },
+    61: { label: 'RAIN', icon: 'rain' },
+    63: { label: 'RAIN', icon: 'rain' },
+    65: { label: 'HEAVY RAIN', icon: 'rain' },
+    71: { label: 'SNOW', icon: 'snow' },
+    73: { label: 'SNOW', icon: 'snow' },
+    75: { label: 'HEAVY SNOW', icon: 'snow' },
+    77: { label: 'SNOW GRAINS', icon: 'snow' },
+    80: { label: 'SHOWERS', icon: 'rain' },
+    81: { label: 'SHOWERS', icon: 'rain' },
+    82: { label: 'HEAVY SHOWERS', icon: 'rain' },
+    85: { label: 'SNOW SHOWERS', icon: 'snow' },
+    86: { label: 'SNOW SHOWERS', icon: 'snow' },
+    95: { label: 'STORM', icon: 'storm' },
+    96: { label: 'HAIL STORM', icon: 'storm' },
+    99: { label: 'HAIL STORM', icon: 'storm' }
+};
+
+const WEATHER_SVGS = {
+    sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/></svg>',
+    'cloud-sun': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 2v2m-6.36.64l1.42 1.42M2 12h2"/><circle cx="12" cy="8" r="3"/><path d="M8 16a4 4 0 1 1 7.3-2.3A3 3 0 1 1 18 17H8z"/></svg>',
+    cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 18a4 4 0 1 1 7.3-2.3A3 3 0 1 1 18 19H8z"/></svg>',
+    fog: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 12h16M4 16h12M6 8h14"/></svg>',
+    drizzle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14a4 4 0 1 1 7.3-2.3A3 3 0 1 1 18 15H8z"/><path d="M10 18v1m4-2v1"/></svg>',
+    rain: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14a4 4 0 1 1 7.3-2.3A3 3 0 1 1 18 15H8z"/><path d="M8 19v2m4-3v2m4-3v2"/></svg>',
+    snow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14a4 4 0 1 1 7.3-2.3A3 3 0 1 1 18 15H8z"/><path d="M9 19l.5 1m5-.5l.5 1m-3.5-2v1.5"/></svg>',
+    storm: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 12a4 4 0 1 1 7.3-2.3A3 3 0 1 1 18 13H8z"/><path d="M13 15l-2 4h4l-2 4"/></svg>'
 };
 
 async function fetchWeather() {
@@ -98,9 +109,6 @@ async function fetchWeather() {
     const { lat, lon } = location;
 
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&daily=sunrise,sunset&timezone=auto`;
-
-    // Show syncing status
-    updateWeatherStatus('syncing');
 
     try {
         const response = await fetch(url);
@@ -134,17 +142,21 @@ function renderWeather(data) {
 
     if (!data) {
         container.innerHTML = `<span class="weather-error">--</span>`;
-        updateWeatherStatus('offline');
         return;
     }
 
-    // Create structure with placeholder for animation
+    const iconKey = data.weather.icon || 'sun';
+    const svg = WEATHER_SVGS[iconKey] || WEATHER_SVGS.sun;
+
     container.innerHTML = `
-        <div class="weather-temp" id="weather-temp-value">--°</div>
-        <div class="weather-condition">${data.weather.icon} ${data.weather.label}</div>
-        <div class="weather-sun">
-            <span class="sun-item"><span class="sun-label">RISE</span> ${data.sunrise}</span>
-            <span class="sun-item"><span class="sun-label">SET</span> ${data.sunset}</span>
+        <div class="weather-icon weather-icon-${iconKey}">${svg}</div>
+        <div class="weather-data">
+            <div class="weather-temp" id="weather-temp-value">--°</div>
+            <div class="weather-condition">${data.weather.label}</div>
+            <div class="weather-sun">
+                <span class="sun-item"><span class="sun-label">SUNRISE</span>${data.sunrise}</span>
+                <span class="sun-item"><span class="sun-label">SUNSET</span>${data.sunset}</span>
+            </div>
         </div>
     `;
 
@@ -155,19 +167,8 @@ function renderWeather(data) {
     } else if (tempElement) {
         tempElement.textContent = `${data.temp}°`;
     }
-
-    // Update status indicator
-    updateWeatherStatus('active');
 }
 
-// Weather status indicator helper
-function updateWeatherStatus(status) {
-    const indicator = document.getElementById('weather-status-indicator');
-    if (indicator) {
-        indicator.classList.remove('status-active', 'status-syncing', 'status-offline');
-        indicator.classList.add(`status-${status}`);
-    }
-}
 
 let _weatherInterval = null;
 

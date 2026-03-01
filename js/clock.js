@@ -25,6 +25,14 @@ function updateClock() {
     document.getElementById('clock').textContent = `${hours}:${minutes}`;
     document.getElementById('clock-period').textContent = period;
 
+    // Update date
+    const dateEl = document.getElementById('clock-date');
+    if (dateEl) {
+        dateEl.textContent = now.toLocaleDateString('en-US', {
+            weekday: 'long', month: 'long', day: 'numeric'
+        }).toUpperCase();
+    }
+
     // Update progress bar
     const progress = getDayProgress() * 100;
     document.getElementById('clock-progress').style.setProperty('--progress', `${progress}%`);

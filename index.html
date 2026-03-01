@@ -38,7 +38,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&family=Inter:wght@200;300;400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/styles.css?v=34">
+    <link rel="stylesheet" href="css/styles.css?v=39">
 
     <!-- Apply theme before first paint to avoid flash -->
     <script>
@@ -55,10 +55,7 @@
 
 <div class="dashboard" id="dashboard">
     <div class="top-bar">
-        <div class="weather-status-wrapper">
-            <div class="status-indicator status-syncing" id="weather-status-indicator"></div>
-            <div id="weather-display" class="weather-display"></div>
-        </div>
+        <div id="weather-display" class="weather-display"></div>
         <div class="clock-container">
             <div class="clock-hud-line left"></div>
             <div class="clock-wrapper">
@@ -66,6 +63,7 @@
                     <span class="clock" id="clock">5:00</span>
                     <span class="clock-period" id="clock-period">AM</span>
                 </div>
+                <div class="clock-date" id="clock-date"></div>
                 <div class="clock-progress" id="clock-progress"></div>
             </div>
             <div class="clock-hud-line right"></div>
@@ -81,10 +79,6 @@
         <div class="globe-section">
             <div class="globe-wrapper" id="globe-wrapper">
                 <div id="globe-container"></div>
-            </div>
-            <div id="daily-fact">
-                <span id="daily-fact-title"></span>
-                <span id="daily-fact-text"></span>
             </div>
         </div>
 
@@ -128,17 +122,48 @@
 
     <!-- Compact chips row -->
     <div class="bottom-chips" id="bottom-chips">
+        <!-- Globe layers -->
         <button class="chip chip-news" id="chip-news">
             <span class="chip-label">NEWS</span>
         </button>
-
         <button class="chip chip-clock" id="chip-clock">
             <span class="chip-label">CLOCK</span>
         </button>
 
-        <button class="chip chip-notes" id="chip-notes">
-            <span class="chip-label">NOTES</span>
-            <span class="chip-value" id="chip-notes-count"></span>
+        <div class="chips-divider"></div>
+
+        <!-- Tools -->
+        <div class="chip-anchor">
+            <button class="chip chip-fact" id="chip-fact">
+                <span class="chip-label">FACT</span>
+            </button>
+            <div class="fact-card" id="fact-card">
+                <div class="fact-card-header">
+                    <div class="fact-card-title" id="daily-fact-title"></div>
+                    <button class="fact-card-shuffle" id="fact-shuffle" title="Another fact">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 3h5v5"/><path d="M4 20L21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></svg>
+                    </button>
+                </div>
+                <div class="fact-card-text" id="daily-fact-text"></div>
+            </div>
+        </div>
+
+        <div class="chip-anchor">
+            <button class="chip chip-notes" id="chip-notes">
+                <span class="chip-label">NOTES</span>
+                <span class="chip-value" id="chip-notes-count"></span>
+            </button>
+            <div class="notes-card" id="notes-card">
+                <div class="notes-card-header">
+                    <span class="notes-card-title">NOTES</span>
+                </div>
+                <textarea class="notes-card-input" id="notes-input" placeholder="quick thoughts..." spellcheck="false" autocomplete="off" data-form-type="other" aria-label="Notes"></textarea>
+            </div>
+        </div>
+
+        <button class="chip chip-rest" id="chip-rest">
+            <span class="chip-label">REST</span>
+            <span class="chip-value" id="chip-rest-countdown">0:00:00</span>
         </button>
 
         <!-- Data sync indicator -->
@@ -147,36 +172,9 @@
             <span>SYNCING</span>
         </div>
 
-        <button class="chip chip-review" id="chip-review">
-            <span class="chip-label">REVIEW</span>
-        </button>
-
-        <button class="chip chip-rest" id="chip-rest">
-            <span class="chip-label">REST</span>
-            <span class="chip-value" id="chip-rest-countdown">0:00:00</span>
-        </button>
-
-        <button class="chip chip-expand" id="chip-expand">
-            <span class="chip-label">EXPAND</span>
-        </button>
-
         <div class="chips-divider"></div>
         <div class="timer-bar" id="timer-bar">
             <!-- Timer presets populated by JS -->
-        </div>
-    </div>
-</div>
-
-<!-- Notes Modal -->
-<div class="modal-overlay" id="notes-modal">
-    <div class="modal-backdrop"></div>
-    <div class="modal-content modal-notes">
-        <div class="modal-header">
-            <span class="modal-title">NOTES</span>
-            <button class="modal-close" id="notes-modal-close" aria-label="Close">&times;</button>
-        </div>
-        <div class="modal-body">
-            <textarea class="notes-input" id="notes-input" placeholder="quick thoughts..." spellcheck="false" autocomplete="off" data-form-type="other" aria-label="Notes (tap to edit)" readonly></textarea>
         </div>
     </div>
 </div>
@@ -215,7 +213,7 @@
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
 
 <!-- Scripts -->
-<script src="js/config.js?v=5"></script>
+<script src="js/config.js?v=6"></script>
 <script src="js/supabase.js?v=5"></script>
 <script src="js/data.js?v=10"></script>
 <script src="js/auth.js?v=4"></script>
@@ -226,15 +224,15 @@
 <script src="js/timer.js?v=4"></script>
 <script src="js/globe.js?v=11"></script>
 <script src="js/hud.js?v=5"></script>
-<script src="js/weather.js?v=6"></script>
+<script src="js/weather.js?v=8"></script>
 <script src="js/notes.js?v=5"></script>
 <script src="js/sleep.js?v=19"></script>
 <script src="js/weekly-review.js?v=2"></script>
 <script src="js/theme.js?v=1"></script>
 <script src="js/news.js?v=5"></script>
-<script src="js/worldclock.js?v=4"></script>
+<script src="js/worldclock.js?v=5"></script>
 <script src="js/facts.js?v=1"></script>
-<script src="js/main.js?v=51"></script>
+<script src="js/main.js?v=63"></script>
 
 </body>
 </html>

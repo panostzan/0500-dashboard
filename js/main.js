@@ -178,6 +178,119 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Initialize HUD elements (gracefully skips globe HUD if canvas absent)
         initHUD();
 
+        // ── CINEMATIC BOOT SEQUENCE ──
+        // Everything hidden from first paint via CSS (.dashboard:not(.booted)).
+        // This async sequence reveals each section with typing + fade effects.
+        (async function cinematicBoot() {
+            var wait = function(ms) { return new Promise(function(r) { setTimeout(r, ms); }); };
+            var dashboard = document.getElementById('dashboard');
+
+            // Type text into element char by char
+            function typeText(el, speed) {
+                speed = speed || 35;
+                return new Promise(function(resolve) {
+                    var text = el.textContent;
+                    el.textContent = '';
+                    var i = 0;
+                    var timer = setInterval(function() {
+                        el.textContent = text.substring(0, i + 1);
+                        i++;
+                        if (i >= text.length) { clearInterval(timer); resolve(); }
+                    }, speed);
+                });
+            }
+
+            // Fade element in with optional upward drift
+            function fadeIn(el, duration, drift) {
+                duration = duration || 600;
+                drift = drift || 0;
+                if (drift) el.style.transform = 'translateY(' + drift + 'px)';
+                el.style.opacity = '0';
+                void el.offsetWidth;
+                el.style.transition = 'opacity ' + duration + 'ms ease-out, transform ' + duration + 'ms ease-out';
+                el.style.opacity = '1';
+                if (drift) el.style.transform = 'translateY(0)';
+            }
+
+            // Safety fallback
+            var bootTimer = setTimeout(function() { dashboard.classList.add('booted'); }, 10000);
+
+            // Let all component JS finish initializing
+            await wait(300);
+
+            // ─── Phase 1: Clock ───
+            var topBar = document.querySelector('.top-bar');
+            var clockEl = document.getElementById('clock');
+            var periodEl = document.getElementById('clock-period');
+
+            topBar.style.opacity = '1';
+            topBar.style.pointerEvents = 'auto';
+            clockEl.style.opacity = '1';
+            periodEl.style.opacity = '0';
+
+            await typeText(clockEl, 55);
+            await wait(100);
+            periodEl.style.transition = 'opacity 0.4s ease-out';
+            periodEl.style.opacity = '1';
+
+            var weatherEl = document.getElementById('weather-display');
+            if (weatherEl && weatherEl.textContent.trim()) {
+                fadeIn(weatherEl, 500);
+            }
+
+            // ─── Phase 2: Goals cascade (clean fade-ups, no typing) ───
+            await wait(300);
+            var goalsSection = document.getElementById('goals-section');
+            goalsSection.style.opacity = '1';
+            goalsSection.style.pointerEvents = 'auto';
+
+            var goalGroups = goalsSection.querySelectorAll('.goal-group');
+            for (var g = 0; g < goalGroups.length; g++) {
+                goalGroups[g].style.opacity = '0';
+                goalGroups[g].style.transform = 'translateY(6px)';
+            }
+
+            for (var g = 0; g < goalGroups.length; g++) {
+                var group = goalGroups[g];
+                void group.offsetWidth;
+                group.style.transition = 'opacity 0.45s ease-out, transform 0.45s ease-out';
+                group.style.opacity = '1';
+                group.style.transform = 'translateY(0)';
+                await wait(140);
+            }
+
+            // ─── Phase 3: Schedule + chips (overlap for tighter flow) ───
+            await wait(200);
+            var scheduleSection = document.querySelector('.schedule-section');
+            scheduleSection.style.pointerEvents = 'auto';
+            fadeIn(scheduleSection, 700, 8);
+
+            var schedHeaderSpan = scheduleSection.querySelector('.schedule-header span');
+            if (schedHeaderSpan) typeText(schedHeaderSpan, 45);
+
+            // ─── Phase 4: Bottom chips ripple (start while schedule fades) ───
+            await wait(350);
+            var chipsBar = document.getElementById('bottom-chips');
+            chipsBar.style.opacity = '1';
+            chipsBar.style.pointerEvents = 'auto';
+
+            var chipChildren = chipsBar.children;
+            for (var i = 0; i < chipChildren.length; i++) {
+                (function(child, delay) {
+                    child.style.opacity = '0';
+                    setTimeout(function() {
+                        child.style.transition = 'opacity 0.3s ease-out';
+                        child.style.opacity = '1';
+                    }, delay);
+                })(chipChildren[i], i * 70);
+            }
+
+            // Boot complete
+            await wait(800);
+            dashboard.classList.add('booted');
+            clearTimeout(bootTimer);
+        })();
+
         // Get initial location (may be from localStorage or default)
         const savedLocation = localStorage.getItem('0500_user_location');
         const initialLocation = savedLocation
@@ -191,19 +304,70 @@ document.addEventListener('DOMContentLoaded', async () => {
         const globeContainer = document.getElementById('globe-container');
         const initLng = initialLocation.lon || initialLocation.lng;
 
-        // Start hidden — reveal only after globe + data are both ready
+        // Start hidden — cinematic reveal on a fixed timer
         globeContainer.style.opacity = '0';
-        globeContainer.style.transition = 'opacity 2s ease';
 
-        let globeReady = false;
-        let dataReady = false;
-        function tryReveal() {
-            if (globeReady && dataReady) {
-                requestAnimationFrame(() => {
-                    globeContainer.style.opacity = '1';
-                });
+        // Collect refs for cinematic reveal animation
+        const _revealCityMeshes = [];  // array of [dot, mid, glow] per city
+        const _revealArcLines = [];    // all arc Line objects
+
+        // Cinematic reveal — fires on a fixed 3.5s timer after page load.
+        // By then globe + hex data + material swap are all complete.
+        setTimeout(() => {
+            // Easing functions
+            function easeInOut(t) {
+                return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
             }
-        }
+            function easeOutCubic(t) {
+                return 1 - Math.pow(1 - t, 3);
+            }
+
+            // Phase 1: Globe fades in
+            globeContainer.style.transition = 'opacity 2.5s ease-in';
+            globeContainer.style.opacity = '1';
+
+            // Phase 2 + 3: Single animation loop for cities + arcs
+            const t0 = performance.now();
+            const CITY_START    = 1200;
+            const CITY_STAGGER  = 220;
+            const CITY_DURATION = 800;
+            const ARC_START     = 1800;
+            const ARC_STAGGER   = 130;
+            const ARC_DURATION  = 1400;
+            const ARC_POINTS    = 65;
+            const cityTargets   = [0.9, 0.35, 0.1];
+
+            function tick() {
+                const elapsed = performance.now() - t0;
+                let animating = false;
+
+                // City dots — smooth sequential fade-in
+                _revealCityMeshes.forEach((meshes, i) => {
+                    const start = CITY_START + i * CITY_STAGGER;
+                    if (elapsed < start) { animating = true; return; }
+                    const p = Math.min((elapsed - start) / CITY_DURATION, 1);
+                    if (p < 1) animating = true;
+                    const e = easeInOut(p);
+                    meshes[0].material.opacity = e * cityTargets[0];
+                    meshes[1].material.opacity = e * cityTargets[1];
+                    meshes[2].material.opacity = e * cityTargets[2];
+                });
+
+                // Arcs — trace from start to end
+                _revealArcLines.forEach((line, i) => {
+                    const start = ARC_START + i * ARC_STAGGER;
+                    if (elapsed < start) { animating = true; return; }
+                    const p = Math.min((elapsed - start) / ARC_DURATION, 1);
+                    if (p < 1) animating = true;
+                    const e = easeOutCubic(p);
+                    line.geometry.setDrawRange(0, Math.floor(e * ARC_POINTS));
+                });
+
+                if (animating) requestAnimationFrame(tick);
+            }
+
+            requestAnimationFrame(tick);
+        }, 3500);
 
         const mainGlobe = Globe()
             .backgroundColor('rgba(0,0,0,0)')
@@ -221,8 +385,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Opaque + color-matched to app background so it's invisible
             // but blocks all back-facing hex dots, borders, and grid lines
             const mat = mainGlobe.globeMaterial();
-            mat.color.set('#110d18');
-            mat.emissive.set('#1e1430');
+            mat.color.set('#0a0c12');
+            mat.emissive.set('#0e1a22');
             mat.emissiveIntensity = 0.35;
             mat.transparent = false;
             mat.opacity = 1.0;
@@ -232,7 +396,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const scene = mainGlobe.scene();
             scene.traverse(obj => {
                 if (obj.isDirectionalLight) {
-                    obj.intensity = 0.6;
+                    obj.intensity = 0.25;
                     obj.color.set('#ffcdaa');
                 }
                 if (obj.isAmbientLight) {
@@ -246,7 +410,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const globeRadius = 100;
                 const gratPoints = [];
 
-                for (let lng = -180; lng < 180; lng += 30) {
+                // Meridians (longitude) every 15°
+                for (let lng = -180; lng < 180; lng += 15) {
                     for (let lat = -90; lat < 90; lat += 2) {
                         const phi1 = (90 - lat) * Math.PI / 180;
                         const theta1 = (90 - lng) * Math.PI / 180;
@@ -258,7 +423,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         );
                     }
                 }
-                for (let lat = -60; lat <= 60; lat += 30) {
+                // Parallels (latitude) every 15°
+                for (let lat = -75; lat <= 75; lat += 15) {
                     for (let lng = -180; lng < 180; lng += 2) {
                         const phi = (90 - lat) * Math.PI / 180;
                         const theta1 = (90 - lng) * Math.PI / 180;
@@ -274,7 +440,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const gratGeom = new THREE.BufferGeometry();
                 gratGeom.setAttribute('position', new THREE.Float32BufferAttribute(gratPoints, 3));
                 const gratMat = new THREE.LineBasicMaterial({
-                    color: 0x90b8ff, transparent: true, opacity: 0.10, depthWrite: false, depthTest: true
+                    color: 0x90b8ff, transparent: true, opacity: 0.04, depthWrite: false, depthTest: true
                 });
                 scene.add(new THREE.LineSegments(gratGeom, gratMat));
             } catch (e) {
@@ -381,10 +547,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const y = R * Math.cos(phi);
                     const z = R * Math.sin(phi) * Math.sin(theta);
 
-                    // Bright core dot
+                    // Bright core dot (starts hidden for cinematic reveal)
                     const dotGeom = new THREE.SphereGeometry(0.8, 12, 12);
                     const dotMat = new THREE.MeshBasicMaterial({
-                        color: 0xffffff, transparent: true, opacity: 0.9, depthWrite: false
+                        color: 0xffffff, transparent: true, opacity: 0, depthWrite: false
                     });
                     const dot = new THREE.Mesh(dotGeom, dotMat);
                     dot.position.set(x, y, z);
@@ -393,7 +559,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     // Mid glow ring
                     const midGeom = new THREE.SphereGeometry(1.8, 12, 12);
                     const midMat = new THREE.MeshBasicMaterial({
-                        color: 0xffb090, transparent: true, opacity: 0.35, depthWrite: false
+                        color: 0xffb090, transparent: true, opacity: 0, depthWrite: false
                     });
                     const mid = new THREE.Mesh(midGeom, midMat);
                     mid.position.set(x, y, z);
@@ -402,11 +568,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     // Soft outer glow
                     const glowGeom = new THREE.SphereGeometry(3.0, 12, 12);
                     const glowMat = new THREE.MeshBasicMaterial({
-                        color: 0xffb090, transparent: true, opacity: 0.1, depthWrite: false
+                        color: 0xffb090, transparent: true, opacity: 0, depthWrite: false
                     });
                     const glow = new THREE.Mesh(glowGeom, glowMat);
                     glow.position.set(x, y, z);
                     ambientGroup.add(glow);
+
+                    // Collect for cinematic reveal
+                    _revealCityMeshes.push([dot, mid, glow]);
                 });
                 scene.add(ambientGroup);
             } catch (e) {
@@ -477,23 +646,31 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
                     const arcPts = curve.getPoints(64);
                     const geom = new THREE.BufferGeometry().setFromPoints(arcPts);
+                    geom.setDrawRange(0, 0); // hidden for cinematic reveal
                     const mat = new THREE.LineBasicMaterial({
                         color: color, transparent: true, opacity: opacity, depthWrite: false
                     });
-                    return new THREE.Line(geom, mat);
+                    const line = new THREE.Line(geom, mat);
+                    _revealArcLines.push(line);
+                    return line;
                 }
 
                 const idleArcsGroup = new THREE.Group();
 
-                // User → each city (bright blue)
+                // User → each city (warm amber→rose, hero arcs)
                 const userLoc = { lat: initialLocation.lat, lng: initLng };
-                arcTargets.forEach(city => {
-                    idleArcsGroup.add(makeArc(userLoc, city, 0x80ccff, 0.35));
+                arcTargets.forEach((city, i) => {
+                    const t = i / arcTargets.length;
+                    const cr = 255;
+                    const cg = Math.round(185 - t * 55);
+                    const cb = Math.round(100 + t * 55);
+                    const color = new THREE.Color(`rgb(${cr}, ${cg}, ${cb})`);
+                    idleArcsGroup.add(makeArc(userLoc, city, color, 0.45));
                 });
 
-                // City ↔ city (slightly dimmer)
+                // City ↔ city (slightly dimmer warm)
                 intercityRoutes.forEach(([a, b]) => {
-                    idleArcsGroup.add(makeArc(cities[a], cities[b], 0x90b8ff, 0.22));
+                    idleArcsGroup.add(makeArc(cities[a], cities[b], 0xffaa88, 0.25));
                 });
 
                 scene.add(idleArcsGroup);
@@ -505,8 +682,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
             mainGlobe.pointOfView({ lat: initialLocation.lat, lng: initLng, altitude: 2.2 });
-            globeReady = true;
-            tryReveal();
         });
 
         // ── Load hex bins + country borders ──
@@ -522,16 +697,79 @@ document.addEventListener('DOMContentLoaded', async () => {
                     .hexPolygonResolution(3)
                     .hexPolygonMargin(0.35)
                     .hexPolygonUseDots(true)
-                    .hexPolygonColor(() => 'rgba(255, 160, 120, 0.8)')
+                    .hexPolygonColor(() => 'rgba(200, 180, 160, 0.3)')
                     .hexPolygonAltitude(0.005);
 
-                dataReady = true;
-                tryReveal();
+                // Ghost gradient shader: warm amber near user → cool purple far away
+                // Replaces lit MeshLambertMaterial so scene lighting doesn't override
+                setTimeout(() => {
+                    const uPhi = (90 - initialLocation.lat) * Math.PI / 180;
+                    const uTheta = (90 - initLng) * Math.PI / 180;
+                    const uR = 100.5;
+                    const userPos = new THREE.Vector3(
+                        uR * Math.sin(uPhi) * Math.cos(uTheta),
+                        uR * Math.cos(uPhi),
+                        uR * Math.sin(uPhi) * Math.sin(uTheta)
+                    );
+
+                    const gradientHexMat = new THREE.ShaderMaterial({
+                        transparent: true,
+                        depthWrite: false,
+                        side: THREE.DoubleSide,
+                        uniforms: {
+                            userPos: { value: userPos },
+                            color1: { value: new THREE.Color(0xffcc77) },  // warm gold
+                            color2: { value: new THREE.Color(0xffaa70) },  // soft amber
+                            color3: { value: new THREE.Color(0xff9572) },  // peach
+                            color4: { value: new THREE.Color(0xf08070) },  // soft coral
+                            opacity: { value: 0.40 },
+                            maxDist: { value: 180.0 }
+                        },
+                        vertexShader: `
+                            uniform vec3 userPos;
+                            varying float vDist;
+                            void main() {
+                                vec4 worldPos = modelMatrix * vec4(position, 1.0);
+                                vDist = distance(worldPos.xyz, userPos);
+                                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                            }
+                        `,
+                        fragmentShader: `
+                            uniform vec3 color1;
+                            uniform vec3 color2;
+                            uniform vec3 color3;
+                            uniform vec3 color4;
+                            uniform float opacity;
+                            uniform float maxDist;
+                            varying float vDist;
+                            void main() {
+                                float t = clamp(vDist / maxDist, 0.0, 1.0);
+                                vec3 color;
+                                if (t < 0.33) {
+                                    color = mix(color1, color2, t / 0.33);
+                                } else if (t < 0.66) {
+                                    color = mix(color2, color3, (t - 0.33) / 0.33);
+                                } else {
+                                    color = mix(color3, color4, (t - 0.66) / 0.34);
+                                }
+                                gl_FragColor = vec4(color, opacity);
+                            }
+                        `
+                    });
+
+                    mainGlobe.scene().traverse(obj => {
+                        if (obj.isMesh && obj.material && !obj.__hexFixed) {
+                            const mat = obj.material;
+                            if (mat.type === 'MeshLambertMaterial' && mat.transparent) {
+                                obj.material = gradientHexMat.clone();
+                                obj.__hexFixed = true;
+                            }
+                        }
+                    });
+                }, 1500);
             })
             .catch(err => {
                 console.warn('[GLOBE] Hex/borders failed:', err);
-                dataReady = true;
-                tryReveal();
             });
 
         // Auto-rotation
@@ -698,23 +936,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             mainGlobe.width(550).height(550);
         }
 
-        const expandChip = document.getElementById('chip-expand');
-        if (expandChip) {
-            expandChip.addEventListener('click', () => {
-                globeExpanded = !globeExpanded;
-                const dashboard = document.getElementById('dashboard');
-                dashboard.classList.toggle('globe-expanded', globeExpanded);
-                expandChip.classList.toggle('active', globeExpanded);
-                expandChip.querySelector('.chip-label').textContent = globeExpanded ? 'COLLAPSE' : 'EXPAND';
-            });
-
-            // Escape to exit
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && globeExpanded) {
-                    expandChip.click();
-                }
-            });
+        function toggleGlobeExpand() {
+            globeExpanded = !globeExpanded;
+            const dashboard = document.getElementById('dashboard');
+            dashboard.classList.toggle('globe-expanded', globeExpanded);
         }
+
+        // Double-click globe to expand/collapse
+        globeContainer.addEventListener('dblclick', toggleGlobeExpand);
+
+        // Escape to exit
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && globeExpanded) {
+                toggleGlobeExpand();
+            }
+        });
 
         // Handle window resize
         window.addEventListener('resize', () => {

@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// NOTES — Modal with cloud sync
+// NOTES — Floating card with cloud sync
 // ═══════════════════════════════════════════════════════════════════════════════
 
 let notesCache = null;
@@ -14,7 +14,6 @@ async function loadNotesContent() {
 
 async function saveNotesContent(content) {
     notesCache = content;
-    // Debounce saves to avoid too many API calls
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(async () => {
         await DataService.saveNotes(content);
@@ -33,8 +32,6 @@ async function flushNotesSave() {
 async function getNotesPreview() {
     const notes = await loadNotesContent();
     if (!notes.trim()) return '';
-
-    // Count lines or show character count
     const lines = notes.split('\n').filter(l => l.trim()).length;
     if (lines > 0) {
         return `${lines} line${lines !== 1 ? 's' : ''}`;
@@ -49,55 +46,54 @@ async function updateNotesChip() {
     }
 }
 
-async function openNotesModal() {
-    const modal = document.getElementById('notes-modal');
+function openNotesCard() {
+    const card = document.getElementById('notes-card');
+    const chip = document.getElementById('chip-notes');
     const input = document.getElementById('notes-input');
-
-    modal.classList.add('active');
-    document.body.style.overflow = 'hidden';
-
-    // Load content
-    input.value = await loadNotesContent();
-
-    // Focus input after animation
-    setTimeout(() => input.focus(), 300);
+    card.classList.add('open');
+    chip.classList.add('active');
+    setTimeout(() => input.focus(), 100);
 }
 
-function closeNotesModal() {
-    const modal = document.getElementById('notes-modal');
-    modal.classList.remove('active');
-    document.body.style.overflow = '';
+function closeNotesCard() {
+    const card = document.getElementById('notes-card');
+    const chip = document.getElementById('chip-notes');
+    card.classList.remove('open');
+    chip.classList.remove('active');
     updateNotesChip();
 }
 
 async function initNotes() {
     const chip = document.getElementById('chip-notes');
-    const modal = document.getElementById('notes-modal');
-    const backdrop = modal.querySelector('.modal-backdrop');
-    const closeBtn = document.getElementById('notes-modal-close');
+    const card = document.getElementById('notes-card');
     const input = document.getElementById('notes-input');
 
     // Load saved content
     input.value = await loadNotesContent();
     await updateNotesChip();
 
-    // Open modal on chip click
-    chip.addEventListener('click', openNotesModal);
-
-    // Close modal
-    closeBtn.addEventListener('click', closeNotesModal);
-    backdrop.addEventListener('click', closeNotesModal);
-
-    // Close on Escape key
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && modal.classList.contains('active')) {
-            closeNotesModal();
+    // Toggle card on chip click
+    chip.addEventListener('click', async () => {
+        if (card.classList.contains('open')) {
+            closeNotesCard();
+        } else {
+            input.value = await loadNotesContent();
+            openNotesCard();
         }
     });
 
-    // Remove readonly on focus (prevents iOS autofill popup)
-    input.addEventListener('focus', () => {
-        input.removeAttribute('readonly');
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+        if (card.classList.contains('open') && !chip.contains(e.target) && !card.contains(e.target)) {
+            closeNotesCard();
+        }
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && card.classList.contains('open')) {
+            closeNotesCard();
+        }
     });
 
     // Auto-save on input

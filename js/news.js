@@ -130,6 +130,24 @@ let newsData = [];
 let newsRefreshTimer = null;
 let _newsGetUserLocation = null;
 
+// ── Shared htmlElementsData registry ──
+// Both news and clock layers push items here; a single function merges and renders
+window._globeHtmlRegistry = { news: [], clock: [] };
+window._globeHtmlGlobe = null;
+
+function _syncGlobeHtmlLayer() {
+    const globe = window._globeHtmlGlobe;
+    if (!globe) return;
+    const all = [].concat(window._globeHtmlRegistry.news, window._globeHtmlRegistry.clock);
+    globe
+        .htmlElementsData(all)
+        .htmlLat(d => d._lat)
+        .htmlLng(d => d._lng)
+        .htmlAltitude(d => d._alt || 0.1)
+        .htmlElement(d => d._createEl(d))
+        .htmlTransitionDuration(0);
+}
+
 // ── Helpers ──
 
 function detectCountry(title) {
@@ -379,28 +397,20 @@ function decollideLabelCoords(items, minDist) {
 
 function renderNewsOnGlobe(globe, stories) {
     if (!globe) return;
+    window._globeHtmlGlobe = globe;
 
     // Attach coords to each story for the accessors
     const labeled = stories.map(story => {
         const coords = getCountryCoords(story.country);
         if (!coords) return null;
-        return { ...story, _lat: coords.lat, _lng: coords.lng };
+        return { ...story, _lat: coords.lat, _lng: coords.lng, _alt: 0.1, _createEl: createNewsLabelElement };
     }).filter(Boolean);
 
     // Spread apart any labels that would overlap (~18° min separation)
     decollideLabelCoords(labeled, 18);
 
-    // Pin HTML labels to globe coordinates
-    globe
-        .htmlElementsData(labeled)
-        .htmlLat(d => d._lat)
-        .htmlLng(d => d._lng)
-        .htmlAltitude(0.1)
-        .htmlElement(d => {
-            // globe.gl caches elements per datum; create fresh each call
-            return createNewsLabelElement(d);
-        })
-        .htmlTransitionDuration(0);
+    window._globeHtmlRegistry.news = labeled;
+    _syncGlobeHtmlLayer();
 }
 
 function updateGlobeNewsPoints(globe, stories) {
@@ -453,7 +463,8 @@ function updateGlobeNewsArcs(globe, stories) {
 
 function clearNewsFromGlobe(globe) {
     if (!globe) return;
-    globe.htmlElementsData([]);
+    window._globeHtmlRegistry.news = [];
+    _syncGlobeHtmlLayer();
     globe.pointsData([]);
     globe.arcsData([]);
 }
