@@ -4,6 +4,8 @@
 
 const BOOKS_STORAGE_KEY = '0500_books';
 let booksCache = null;
+let booksSortField = 'date';
+let booksSortDir = 'desc';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DASHBOARD MODE — called from index.html via deferInit
@@ -56,17 +58,51 @@ function updateBookCount() {
     }
 }
 
+function sortBooks(arr, field, dir) {
+    const mul = dir === 'asc' ? 1 : -1;
+    return [...arr].sort((a, b) => {
+        let va = a[field] || '';
+        let vb = b[field] || '';
+        // Empties always sink to bottom regardless of direction
+        if (!va && !vb) return 0;
+        if (!va) return 1;
+        if (!vb) return -1;
+        if (field === 'rating') return mul * (va - vb);
+        if (field === 'date') return mul * (new Date(va) - new Date(vb));
+        // text fields
+        return mul * va.localeCompare(vb, undefined, { sensitivity: 'base' });
+    });
+}
+
+function updateSortIndicators() {
+    document.querySelectorAll('.books-table th[data-sort]').forEach(th => {
+        const arrow = th.querySelector('.sort-arrow');
+        if (th.dataset.sort === booksSortField) {
+            th.classList.add('sorted');
+            if (arrow) arrow.textContent = booksSortDir === 'asc' ? ' \u25B2' : ' \u25BC';
+        } else {
+            th.classList.remove('sorted');
+            if (arrow) arrow.textContent = '';
+        }
+    });
+}
+
+function handleSort(field) {
+    if (booksSortField === field) {
+        booksSortDir = booksSortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+        booksSortField = field;
+        booksSortDir = field === 'title' || field === 'author' ? 'asc' : 'desc';
+    }
+    renderBooksPage();
+}
+
 function renderBooksPage() {
     const tbody = document.getElementById('books-tbody');
     if (!tbody || !booksCache) return;
 
-    // Sort by date descending (most recent first), undated at bottom
-    const sorted = [...booksCache].sort((a, b) => {
-        if (!a.date && !b.date) return 0;
-        if (!a.date) return 1;
-        if (!b.date) return -1;
-        return new Date(b.date) - new Date(a.date);
-    });
+    const sorted = sortBooks(booksCache, booksSortField, booksSortDir);
+    updateSortIndicators();
 
     tbody.innerHTML = sorted.map((book, sortIdx) => {
         // Find the actual index in booksCache for edits
@@ -198,4 +234,9 @@ async function initBooksPage() {
     if (addBtn) {
         addBtn.addEventListener('click', handleAddBook);
     }
+
+    // Sortable column headers
+    document.querySelectorAll('.books-table th[data-sort]').forEach(th => {
+        th.addEventListener('click', () => handleSort(th.dataset.sort));
+    });
 }

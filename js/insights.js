@@ -1,11 +1,9 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// INSIGHTS - Ambient Proactive Intelligence Cards
+// INSIGHTS - Command bar + proactive intelligence
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const INSIGHTS_SHOWN_KEY = '0500_insights_shown';
-const INSIGHTS_MAX_PER_SESSION = 2;
 const INSIGHTS_DEDUP_HOURS = 24;
-// No auto-dismiss — embedded cards persist until user closes them
 
 // ─── Dedup Storage ───
 
@@ -177,7 +175,6 @@ function insightGoalsMilestone(goals) {
         const t = new Date(ts).getTime();
         if (now - t < 72 * 60 * 60 * 1000 && t > recentTime) {
             recentTime = t;
-            // Find goal text
             for (const cat of ['midTerm', 'oneYear']) {
                 const g = (goals[cat] || []).find(g => String(g.id) === String(id));
                 if (g) { recentGoal = { text: g.text, cat }; break; }
@@ -197,7 +194,7 @@ function insightGoalsMilestone(goals) {
 
 function insightGoalsUnfinished(goals) {
     const hour = new Date().getHours();
-    if (hour < 12) return null; // Only in afternoon
+    if (hour < 12) return null;
 
     const daily = goals.daily || [];
     const unchecked = daily.filter(g => !g.checked).length;
@@ -260,7 +257,7 @@ function insightScheduleEmpty(schedule) {
 
 function insightSleepNoLog() {
     const log = loadSleepLog();
-    if (log.length === 0) return null; // Never logged — don't nag
+    if (log.length === 0) return null;
 
     const sorted = [...log].sort((a, b) => new Date(b.date) - new Date(a.date));
     const latest = new Date(sorted[0].date);
@@ -276,10 +273,9 @@ function insightSleepNoLog() {
     };
 }
 
-// ─── Main Engine ───
+// ─── Engine ───
 
 async function generateInsights() {
-    // Load all data upfront
     const sleepLog = await DataService.loadSleepLog();
     const goals = await DataService.loadGoals();
     const goalHistory = DataService.loadDailyGoalHistory();
@@ -294,7 +290,6 @@ async function generateInsights() {
         sleepSettingsCache = settings;
     }
 
-    // Run all generators
     const candidates = [
         insightSleepDebt(sleepLog, settings),
         insightSleepStreak(),
@@ -310,59 +305,136 @@ async function generateInsights() {
         insightSleepNoLog()
     ].filter(Boolean);
 
-    // Filter out recently shown
-    const fresh = candidates.filter(c => !wasShownRecently(c.id));
+    // Sort by priority descending, no dedup filtering for on-demand
+    candidates.sort((a, b) => b.priority - a.priority);
+    return candidates;
+}
 
-    // Sort by priority descending
-    fresh.sort((a, b) => b.priority - a.priority);
+// ─── Query Parsing ───
 
-    // Pick top N
-    return fresh.slice(0, INSIGHTS_MAX_PER_SESSION);
+function parseQuery(raw) {
+    const q = raw.toLowerCase().trim();
+    if (!q) return { filter: null, limit: 3 };
+
+    // Sleep-specific queries
+    if (/sleep\s*debt|deficit|recovery/.test(q))
+        return { filter: ids => ids.filter(i => i.id === 'sleep-debt'), limit: 1 };
+    if (/streak/.test(q))
+        return { filter: ids => ids.filter(i => i.id.includes('streak')), limit: 2 };
+    if (/consisten|bedtime|routine/.test(q))
+        return { filter: ids => ids.filter(i => i.id === 'sleep-consistency'), limit: 1 };
+    if (/trend|week|average/.test(q))
+        return { filter: ids => ids.filter(i => i.id === 'sleep-trend'), limit: 1 };
+    if (/best.*night|last.*night/.test(q))
+        return { filter: ids => ids.filter(i => i.id === 'sleep-best-night'), limit: 1 };
+
+    // Category queries
+    if (/sleep|rest|tired|energy/.test(q))
+        return { filter: ids => ids.filter(i => i.category === 'SLEEP'), limit: 3 };
+    if (/goal|habit|task|progress|completion/.test(q))
+        return { filter: ids => ids.filter(i => i.category === 'GOALS'), limit: 3 };
+    if (/schedule|plan|calendar|today/.test(q))
+        return { filter: ids => ids.filter(i => i.category === 'SCHEDULE'), limit: 2 };
+    if (/correlat|cross|connect|relation/.test(q))
+        return { filter: ids => ids.filter(i => i.category === 'CROSS'), limit: 2 };
+
+    // Summary queries — show everything
+    if (/how.*doing|status|summary|overview|everything|all|insight|brief/.test(q))
+        return { filter: null, limit: 4 };
+
+    // Fallback — show all
+    return { filter: null, limit: 3 };
 }
 
 // ─── Rendering ───
 
-function renderInsightCards(insights) {
-    const container = document.getElementById('ambient-insights');
-    if (!container) return;
+function renderIntelBody(insights, emptyMsg) {
+    const body = document.getElementById('intel-body');
+    if (!body) return;
 
-    container.innerHTML = '';
-    if (insights.length === 0) return;
+    body.innerHTML = '';
+
+    if (insights.length === 0) {
+        body.innerHTML = `<div class="intel-empty">${emptyMsg || 'No insights right now. Keep logging data.'}</div>`;
+        return;
+    }
 
     insights.forEach((insight, i) => {
-        const card = document.createElement('div');
-        card.className = 'ambient-card';
-        card.style.animationDelay = `${i * 300}ms`;
-        card.innerHTML = `
-            <div class="ambient-category">${insight.category}</div>
-            <div class="ambient-text">${insight.text}</div>
-            <button class="ambient-close" aria-label="Dismiss">&times;</button>
+        const item = document.createElement('div');
+        item.className = 'intel-item';
+        item.style.animationDelay = `${i * 100}ms`;
+        item.innerHTML = `
+            <div class="intel-item-category">${insight.category}</div>
+            <div class="intel-item-text">${insight.text}</div>
         `;
-
-        card.querySelector('.ambient-close').addEventListener('click', () => {
-            dismissCard(card, container);
-        });
-
-        container.appendChild(card);
+        body.appendChild(item);
         markInsightShown(insight.id);
     });
 }
 
-function dismissCard(card, container) {
-    if (card.classList.contains('ambient-dismissing')) return;
-    card.classList.add('ambient-dismissing');
-    card.addEventListener('animationend', () => {
-        card.remove();
-    });
+async function triggerInsights(query) {
+    const body = document.getElementById('intel-body');
+    if (!body) return;
+
+    body.innerHTML = '<div class="intel-empty">thinking...</div>';
+
+    try {
+        const all = await generateInsights();
+        const parsed = parseQuery(query || '');
+
+        let results = parsed.filter ? parsed.filter(all) : all;
+        results = results.slice(0, parsed.limit);
+
+        let emptyMsg = 'No insights right now. Keep logging data.';
+        if (query) {
+            const q = query.toLowerCase();
+            if (/sleep/.test(q)) emptyMsg = 'No sleep insights yet. Log a few nights first.';
+            else if (/goal/.test(q)) emptyMsg = 'No goal insights yet. Complete a few daily goals first.';
+            else if (/schedule/.test(q)) emptyMsg = 'Schedule looks fine. Nothing to flag.';
+        }
+
+        renderIntelBody(results, emptyMsg);
+    } catch (e) {
+        console.warn('[Insights] Failed:', e);
+        body.innerHTML = '';
+    }
 }
 
 // ─── Init ───
 
-async function initInsights() {
-    try {
-        const insights = await generateInsights();
-        renderInsightCards(insights);
-    } catch (e) {
-        console.warn('[Insights] Failed to generate:', e);
+function initInsights() {
+    const chip = document.getElementById('chip-intel');
+    const card = document.getElementById('intel-card');
+    const input = document.getElementById('intel-input');
+    const refreshBtn = document.getElementById('intel-refresh');
+    if (!chip || !card) return;
+
+    // Toggle card
+    chip.addEventListener('click', () => {
+        const isOpen = card.classList.toggle('open');
+        chip.classList.toggle('active', isOpen);
+
+        // Load insights on first open
+        if (isOpen && !document.getElementById('intel-body').children.length) {
+            triggerInsights('');
+        }
+    });
+
+    // Refresh button
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            triggerInsights(input ? input.value : '');
+        });
+    }
+
+    // Input — filter on Enter
+    if (input) {
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                triggerInsights(input.value);
+            }
+        });
     }
 }

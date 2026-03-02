@@ -192,6 +192,8 @@ html, body {
     height: 100%;
     z-index: -2;
     background: var(--bg-gradient);
+    box-shadow: inset 0 0 0 9999px var(--ambience-tint, transparent);
+    transition: box-shadow 60s linear;
 }
 
 .background::before,
@@ -200,9 +202,10 @@ html, body {
     position: fixed;
     border-radius: 50%;
     filter: blur(80px);
-    opacity: 0.5;
+    opacity: calc(0.5 * var(--ambience-orb-mul, 1));
     pointer-events: none;
     animation: float-orb 12s ease-in-out infinite;
+    transition: opacity 60s linear;
 }
 
 .background::before {
@@ -1063,10 +1066,59 @@ html, body {
     to { opacity: 0; transform: translateX(20px); max-height: 0; padding-top: 0; padding-bottom: 0; }
 }
 
+/* Globe overlay controls */
+.globe-controls {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 5;
+    opacity: 0.4;
+    transition: opacity 0.3s ease;
+}
+
+.globe-controls:hover {
+    opacity: 1;
+}
+
+.globe-controls-right {
+    bottom: 100px;
+    right: 40px;
+}
+
+
+.globe-ctrl {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 10, 18, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.globe-ctrl:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.globe-ctrl.active {
+    color: var(--accent);
+    border-color: rgba(255, 176, 144, 0.4);
+    box-shadow: 0 0 10px var(--accent-glow);
+    opacity: 1;
+}
+
 /* Globe section */
 .globe-section {
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     position: relative;
@@ -1338,18 +1390,7 @@ html, body {
     opacity: 0.7;
 }
 
-/* NEWS chip active state */
-.chip-news.active {
-    border-color: var(--accent);
-    box-shadow: 0 0 12px var(--accent-glow);
-    color: var(--accent);
-}
-
-/* CLOCK chip active state */
-.chip-clock.active {
-    border-color: var(--accent);
-    box-shadow: 0 0 12px var(--accent-glow);
-    color: var(--accent);
+/* NEWS + CLOCK active states now handled by .globe-ctrl.active */
 }
 
 
@@ -1833,11 +1874,76 @@ html, body {
     opacity: 1;
 }
 
-/* Timer presets (inline in bottom chips) */
+/* Focus card + timer presets */
+.chip-focus.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow);
+    color: var(--accent);
+}
+
+.focus-card {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%) translateY(6px);
+    padding: 16px 20px;
+    background: var(--card-bg);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(255, 176, 144, 0.06);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 30;
+    white-space: nowrap;
+}
+
+.focus-card.open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+}
+
+.focus-card-header {
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 176, 144, 0.1);
+}
+
+.focus-card-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+}
+
 .timer-bar {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 8px;
+}
+
+.timer-preset {
+    padding: 8px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.timer-preset:hover {
+    color: var(--accent);
+    border-color: rgba(255, 176, 144, 0.3);
+    background: rgba(255, 176, 144, 0.06);
 }
 
 .chips-divider {
@@ -1845,30 +1951,6 @@ html, body {
     height: 16px;
     background: rgba(255, 176, 144, 0.15);
     flex-shrink: 0;
-}
-
-.timer-preset {
-    padding: 6px 12px;
-    border: 1px solid var(--card-border);
-    border-radius: 30px;
-    background: transparent;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 0.5rem;
-    font-weight: 500;
-    letter-spacing: 0.05em;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.timer-preset:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-}
-
-.timer-preset span {
-    font-weight: 700;
-    margin-right: 4px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
@@ -3987,98 +4069,144 @@ html, body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   AMBIENT INSIGHT CARDS
-   Embedded intelligence section — centered below globe
+   INTEL CHIP + CARD — Proactive intelligence pop-up
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-.ambient-insights {
+.chip-intel.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow);
+    color: var(--accent);
+}
+
+.intel-card {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    right: -40px;
+    width: 320px;
+    padding: 16px 18px;
+    background: var(--card-bg);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(255, 176, 144, 0.06);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(6px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 30;
+}
+
+.intel-card.open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.intel-card-header {
     display: flex;
-    gap: 10px;
-    justify-content: center;
-    width: 100%;
-    max-width: 520px;
-    padding: 0 12px;
-    margin-top: -8px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 176, 144, 0.1);
 }
 
-.ambient-insights:empty {
-    display: none;
-}
-
-.ambient-card {
-    position: relative;
-    flex: 1 1 0;
-    max-width: 250px;
-    padding: 12px 14px;
-    padding-right: 28px;
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 10px;
-    animation: ambientFadeIn 600ms ease-out both;
-}
-
-.ambient-category {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.55rem;
+.intel-card-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.65rem;
     font-weight: 500;
-    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 4px;
+    letter-spacing: 0.15em;
+    color: var(--accent);
 }
 
-.ambient-text {
+.intel-card-refresh {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: color 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.intel-card-refresh:hover {
+    color: var(--accent);
+}
+
+.intel-card-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 7px 10px;
     font-family: 'Inter', sans-serif;
     font-size: 0.75rem;
     font-weight: 300;
-    line-height: 1.4;
-    color: rgba(255, 255, 255, 0.7);
-}
-
-.ambient-close {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.2);
-    font-size: 0.85rem;
-    cursor: pointer;
-    border-radius: 50%;
-    transition: color 0.2s, background 0.2s;
-    line-height: 1;
-}
-
-.ambient-close:hover {
     color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.08);
+    outline: none;
+    margin-bottom: 10px;
+    transition: border-color 0.2s;
 }
 
-@keyframes ambientFadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(8px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.intel-card-input::placeholder {
+    color: var(--text-muted);
 }
 
-.ambient-dismissing {
-    animation: ambientFadeOut 400ms ease-out forwards;
+.intel-card-input:focus {
+    border-color: rgba(255, 176, 144, 0.25);
 }
 
-@keyframes ambientFadeOut {
-    from { opacity: 1; }
-    to { opacity: 0; }
+.intel-card-body:empty {
+    display: none;
+}
+
+.intel-item {
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    animation: intelFadeIn 300ms ease-out both;
+}
+
+.intel-item:last-child {
+    margin-bottom: 0;
+}
+
+.intel-item-category {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.5rem;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 3px;
+}
+
+.intel-item-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 300;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.intel-empty {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 300;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 12px 0 4px;
+}
+
+@keyframes intelFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════

@@ -38,7 +38,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&family=Inter:wght@200;300;400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/styles.css?v=41">
+    <link rel="stylesheet" href="css/styles.css?v=46">
 
     <!-- Apply theme before first paint to avoid flash -->
     <script>
@@ -79,6 +79,14 @@
         <div class="globe-section">
             <div class="globe-wrapper" id="globe-wrapper">
                 <div id="globe-container"></div>
+                <div class="globe-controls globe-controls-right">
+                    <button class="globe-ctrl chip-news" id="chip-news" title="News layer">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9c0-1.1.9-2 2-2h2"/><line x1="10" y1="6" x2="18" y2="6"/><line x1="10" y1="10" x2="18" y2="10"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+                    </button>
+                    <button class="globe-ctrl chip-clock" id="chip-clock" title="World clock">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -120,21 +128,8 @@
 
     </div>
 
-    <!-- Ambient insight cards -->
-    <div class="ambient-insights" id="ambient-insights"></div>
-
     <!-- Compact chips row -->
     <div class="bottom-chips" id="bottom-chips">
-        <!-- Globe layers -->
-        <button class="chip chip-news" id="chip-news">
-            <span class="chip-label">NEWS</span>
-        </button>
-        <button class="chip chip-clock" id="chip-clock">
-            <span class="chip-label">CLOCK</span>
-        </button>
-
-        <div class="chips-divider"></div>
-
         <!-- Tools -->
         <div class="chip-anchor">
             <button class="chip chip-fact" id="chip-fact">
@@ -168,6 +163,36 @@
             <span class="chip-label">BOOKS</span>
         </button>
 
+        <div class="chip-anchor">
+            <button class="chip chip-intel" id="chip-intel">
+                <span class="chip-label">INTEL</span>
+            </button>
+            <div class="intel-card" id="intel-card">
+                <div class="intel-card-header">
+                    <span class="intel-card-title">INTELLIGENCE</span>
+                    <button class="intel-card-refresh" id="intel-refresh" title="Refresh insights">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                    </button>
+                </div>
+                <input type="text" class="intel-card-input" id="intel-input" placeholder="sleep, goals, how am I doing..." spellcheck="false" autocomplete="off">
+                <div class="intel-card-body" id="intel-body"></div>
+            </div>
+        </div>
+
+        <div class="chip-anchor">
+            <button class="chip chip-focus" id="chip-focus">
+                <span class="chip-label">FOCUS</span>
+            </button>
+            <div class="focus-card" id="focus-card">
+                <div class="focus-card-header">
+                    <span class="focus-card-title">FOCUS TIMER</span>
+                </div>
+                <div class="timer-bar" id="timer-bar">
+                    <!-- Timer presets populated by JS -->
+                </div>
+            </div>
+        </div>
+
         <button class="chip chip-rest" id="chip-rest">
             <span class="chip-label">REST</span>
             <span class="chip-value" id="chip-rest-countdown">0:00:00</span>
@@ -177,11 +202,6 @@
         <div class="sync-indicator" id="sync-indicator">
             <div class="status-indicator status-syncing"></div>
             <span>SYNCING</span>
-        </div>
-
-        <div class="chips-divider"></div>
-        <div class="timer-bar" id="timer-bar">
-            <!-- Timer presets populated by JS -->
         </div>
     </div>
 </div>
@@ -235,12 +255,12 @@
 <script src="js/notes.js?v=5"></script>
 <script src="js/sleep.js?v=19"></script>
 <script src="js/weekly-review.js?v=2"></script>
-<script src="js/theme.js?v=1"></script>
+<script src="js/theme.js?v=3"></script>
 <script src="js/news.js?v=5"></script>
 <script src="js/worldclock.js?v=5"></script>
 <script src="js/facts.js?v=1"></script>
 <script src="js/books.js?v=2"></script>
-<script src="js/insights.js?v=1"></script>
+<script src="js/insights.js?v=2"></script>
 <script src="js/main.js?v=79"></script>
 
 </body>
