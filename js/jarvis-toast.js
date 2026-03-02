@@ -7,6 +7,8 @@ const TOAST_SHOWN_KEY = '0500_toast_shown';
 const TOAST_AUTO_DISMISS_MS = 8000;
 const TOAST_CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 min
 const TOAST_FIRST_CHECK_MS = 60 * 1000; // 60s after init
+const TOAST_COOLDOWN_MS = 30 * 60 * 1000; // 30 min between toasts
+const TOAST_DAILY_CAP = 3;
 
 // ─── Dedup ───
 
@@ -26,6 +28,27 @@ function wasToastShownToday(id) {
     if (!shown[id]) return false;
     const shownDate = new Date(shown[id]).toDateString();
     return shownDate === new Date().toDateString();
+}
+
+function getTodayToastCount() {
+    const shown = getToastShown();
+    const today = new Date().toDateString();
+    return Object.values(shown).filter(ts => new Date(ts).toDateString() === today).length;
+}
+
+function getLastToastTime() {
+    const shown = getToastShown();
+    const times = Object.values(shown).map(ts => new Date(ts).getTime()).filter(t => !isNaN(t));
+    return times.length > 0 ? Math.max(...times) : 0;
+}
+
+function isThrottled() {
+    // Daily cap
+    if (getTodayToastCount() >= TOAST_DAILY_CAP) return true;
+    // Cooldown
+    const lastTime = getLastToastTime();
+    if (lastTime && (Date.now() - lastTime) < TOAST_COOLDOWN_MS) return true;
+    return false;
 }
 
 // ─── Nudge Generators ───
@@ -251,6 +274,9 @@ function checkJarvisNudges() {
     // Skip if timer overlay is active
     const overlay = document.getElementById('timer-overlay');
     if (overlay && overlay.classList.contains('active')) return;
+
+    // Throttle: max 3/day, 30 min cooldown between toasts
+    if (isThrottled()) return;
 
     const generators = [
         nudgeEveningBedtime,

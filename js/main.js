@@ -181,6 +181,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         deferInit(() => initStrava());
         deferInit(() => initJarvisToast());
 
+        // MORE chip overflow toggle
+        const moreChip = document.getElementById('chip-more');
+        const chipsOverflow = document.getElementById('chips-overflow');
+        if (moreChip && chipsOverflow) {
+            moreChip.addEventListener('click', () => {
+                const isOpen = chipsOverflow.classList.toggle('open');
+                moreChip.classList.toggle('active', isOpen);
+            });
+        }
+
         // Initialize HUD elements (gracefully skips globe HUD if canvas absent)
         initHUD();
 
@@ -340,7 +350,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             const ARC_START     = 1800;
             const ARC_STAGGER   = 130;
             const ARC_DURATION  = 1400;
-            const ARC_POINTS    = 65;
             const cityTargets   = [0.9, 0.35, 0.1];
 
             function tick() {
@@ -359,14 +368,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                     meshes[2].material.opacity = e * cityTargets[2];
                 });
 
-                // Arcs — trace from start to end
+                // Arcs — trace from start to end (use actual point count per arc)
                 _revealArcLines.forEach((line, i) => {
                     const start = ARC_START + i * ARC_STAGGER;
                     if (elapsed < start) { animating = true; return; }
                     const p = Math.min((elapsed - start) / ARC_DURATION, 1);
                     if (p < 1) animating = true;
                     const e = easeOutCubic(p);
-                    line.geometry.setDrawRange(0, Math.floor(e * ARC_POINTS));
+                    const ptCount = line.geometry.getAttribute('position').count;
+                    line.geometry.setDrawRange(0, Math.floor(e * ptCount));
                 });
 
                 if (animating) requestAnimationFrame(tick);
@@ -611,6 +621,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     { lat: -23.5, lng: -46.6 },  // Sao Paulo
                     { lat: 25.2, lng: 55.3 },    // Dubai
                     { lat: 37.6, lng: 127.0 },   // Seoul
+                    { lat: -33.93, lng: 18.42 }, // Cape Town
+                    { lat: 35.34, lng: 25.13 },  // Heraklion
                 ];
 
                 // Named refs for intercity connections
@@ -625,6 +637,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     saoPaulo: { lat: -23.5, lng: -46.6 },
                     dubai:    { lat: 25.2, lng: 55.3 },
                     seoul:    { lat: 37.6, lng: 127.0 },
+                    capeTown: { lat: -33.93, lng: 18.42 },
+                    heraklion:{ lat: 35.34, lng: 25.13 },
                 };
 
                 // Intercity network routes (natural global web)
@@ -641,6 +655,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ['tokyo', 'sydney'],
                     ['mexico', 'saoPaulo'],
                     ['seoul', 'dubai'],
+                    ['capeTown', 'dubai'],
+                    ['heraklion', 'paris'],
                 ];
 
                 const _arcPulses = [];
@@ -649,11 +665,32 @@ document.addEventListener('DOMContentLoaded', async () => {
                 function makeArc(from, to, color, opacity) {
                     const start = latLngToVec3(from.lat, from.lng, 101);
                     const end = latLngToVec3(to.lat, to.lng, 101);
-                    const mid = start.clone().add(end).multiplyScalar(0.5);
                     const dist = start.distanceTo(end);
-                    mid.normalize().multiplyScalar(100 + dist * 0.3);
-                    const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
-                    const arcPts = curve.getPoints(64);
+
+                    // Great-circle midpoint: average + push outward
+                    // For near-antipodal points, start+end ≈ 0 so we need a fallback
+                    const mid = start.clone().add(end).multiplyScalar(0.5);
+                    if (mid.length() < 1) {
+                        // Near-antipodal: pick a perpendicular direction
+                        const up = new THREE.Vector3(0, 1, 0);
+                        mid.crossVectors(start, up);
+                        if (mid.length() < 0.1) mid.crossVectors(start, new THREE.Vector3(1, 0, 0));
+                    }
+                    const arcHeight = 100 + dist * 0.3;
+                    mid.normalize().multiplyScalar(arcHeight);
+
+                    // Long arcs: use CubicBezier with two control points to stay above surface
+                    let curve;
+                    const numPts = dist > 120 ? 128 : 64;
+                    if (dist > 120) {
+                        const ctrl1 = start.clone().add(mid).multiplyScalar(0.5).normalize().multiplyScalar(arcHeight * 0.85);
+                        const ctrl2 = end.clone().add(mid).multiplyScalar(0.5).normalize().multiplyScalar(arcHeight * 0.85);
+                        curve = new THREE.CubicBezierCurve3(start, ctrl1, ctrl2, end);
+                    } else {
+                        curve = new THREE.QuadraticBezierCurve3(start, mid, end);
+                    }
+
+                    const arcPts = curve.getPoints(numPts);
                     const geom = new THREE.BufferGeometry().setFromPoints(arcPts);
                     geom.setDrawRange(0, 0); // hidden for cinematic reveal
                     const mat = new THREE.LineBasicMaterial({
@@ -692,7 +729,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 // User → each city — only 5 of 10 get pulses
                 const userLoc = { lat: initialLocation.lat, lng: initLng };
-                const userPulseIdx = [0, 2, 5, 7, 9]; // Tokyo, Paris, Mexico, SaoPaulo, Seoul
+                const userPulseIdx = [0, 2, 5, 7, 9, 10, 11]; // Tokyo, Paris, Mexico, SaoPaulo, Seoul, CapeTown, Heraklion
                 arcTargets.forEach((city, i) => {
                     const t = i / arcTargets.length;
                     const cr = 255;

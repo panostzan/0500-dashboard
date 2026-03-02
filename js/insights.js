@@ -1057,6 +1057,7 @@ const CATEGORY_COLORS = {
     NETWORK: 'var(--warm-purple, #c87090)',
     BOOKS: 'var(--hud-orange, #ff9070)',
     MEMORY: 'var(--accent, #ffb090)',
+    JARVIS: 'var(--hud-gold, #ffc878)',
 };
 
 // ─── Follow-up Suggestions ───
@@ -1215,15 +1216,37 @@ async function triggerInsights(query) {
         let results = parsed.filter ? parsed.filter(all) : all;
         results = results.slice(0, parsed.limit);
 
-        let emptyMsg = 'Nothing interesting to say right now. Check back later.';
-        if (query) {
+        // If user asked something specific and both tiers came up empty — fallback with personality
+        if (query && query.trim() && results.length === 0) {
             const q = query.toLowerCase();
+            let emptyMsg;
             if (/sleep/.test(q)) emptyMsg = 'Not enough sleep data to work with. Log a few nights and I\'ll have something.';
             else if (/goal/.test(q)) emptyMsg = 'Need a few more days of goal data before I can spot patterns.';
             else if (/schedule/.test(q)) emptyMsg = 'Schedule looks fine. Nothing to call out.';
             else if (/people|contact|network/.test(q)) emptyMsg = 'No contacts to analyze yet. Add some people first.';
             else if (/book|read/.test(q)) emptyMsg = 'Nothing on the books front yet. Mark some as read and I\'ll talk.';
+            else {
+                const dunnoMsgs = [
+                    "Not sure what to do with that one.",
+                    "That's outside my vocabulary — for now.",
+                    "I don't have an answer for that yet.",
+                    "Hmm. Can't compute that one.",
+                    "I'm good with sleep, goals, books, people, and schedules. Try one of those.",
+                ];
+                emptyMsg = dunnoMsgs[Math.floor(Math.random() * dunnoMsgs.length)];
+            }
+            body.innerHTML = '';
+            const emptyEl = document.createElement('div');
+            emptyEl.className = 'intel-empty';
+            emptyEl.textContent = emptyMsg;
+            body.appendChild(emptyEl);
+            // Show suggestion chips even on failure
+            const suggestions = ['how am I doing', 'sleep score', 'what can I do'];
+            renderFollowUps(body, suggestions);
+            return;
         }
+
+        let emptyMsg = 'Nothing interesting to say right now. Check back later.';
 
         renderIntelBody(results, emptyMsg);
     } catch (e) {
