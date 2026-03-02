@@ -308,6 +308,9 @@ function showNewDayBanner() {
 
     banner.style.display = '';
 
+    // Show yesterday's missed goals summary
+    if (typeof populateMissedGoals === 'function') populateMissedGoals();
+
     // Only attach listeners once to prevent duplicate handlers
     if (!newDayBannerListenersAttached) {
         newDayBannerListenersAttached = true;

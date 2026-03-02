@@ -413,12 +413,19 @@ async function snapshotDailyGoals() {
     const completed = daily.filter(g => g.checked).length;
     const total = daily.length;
 
+    // Build detailed per-goal breakdown
+    const goals = daily.map(g => ({
+        text: g.text,
+        done: !!g.checked
+    }));
+
     const history = DataService.loadDailyGoalHistory();
     const existing = history.findIndex(h => h.date === today);
+    const entry = { date: today, completed, total, goals };
     if (existing >= 0) {
-        history[existing] = { date: today, completed, total };
+        history[existing] = entry;
     } else {
-        history.push({ date: today, completed, total });
+        history.push(entry);
     }
     if (history.length > 90) history.splice(0, history.length - 90);
     DataService.saveDailyGoalHistory(history);
@@ -431,8 +438,50 @@ async function snapshotDailyGoals() {
     await renderGoals();
 }
 
+// Build missed-goals summary for the new-day banner
+function populateMissedGoals() {
+    const container = document.getElementById('new-day-missed');
+    if (!container || !goalsCache || !goalsCache.daily) return;
+
+    const daily = goalsCache.daily;
+    const missed = daily.filter(g => !g.checked);
+    const done = daily.filter(g => g.checked);
+
+    if (daily.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+
+    // If everything was completed, show a nice message
+    if (missed.length === 0) {
+        container.innerHTML = `<div class="missed-summary all-done">All ${done.length} goals completed yesterday</div>`;
+        return;
+    }
+
+    const missedHtml = missed.map(g =>
+        `<div class="missed-goal-item"><span class="missed-x">&times;</span><span class="missed-text">${escGoalText(g.text)}</span></div>`
+    ).join('');
+
+    const doneHtml = done.map(g =>
+        `<div class="missed-goal-item done"><span class="missed-check">&#10003;</span><span class="missed-text">${escGoalText(g.text)}</span></div>`
+    ).join('');
+
+    container.innerHTML = `
+        <div class="missed-summary">${done.length}/${daily.length} completed yesterday</div>
+        <div class="missed-goals-list">${doneHtml}${missedHtml}</div>
+    `;
+}
+
+function escGoalText(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 async function initGoals() {
     await renderGoals();
+
+    // Populate missed goals in new-day banner if it's visible
+    populateMissedGoals();
 
     window.addEventListener('userChanged', async () => {
         goalsCache = null;

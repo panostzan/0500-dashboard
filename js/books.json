@@ -4,20 +4,15 @@
     "author": "James Clear",
     "date": "January 17, 2025",
     "rating": 7,
+    "status": "read",
     "notes": "Decent but boring"
-  },
-  {
-    "title": "How Soccer Explains the World",
-    "author": "Franklin Foer",
-    "date": "September 27, 2024",
-    "rating": 5,
-    "notes": ""
   },
   {
     "title": "Quantum Physics Made Me Do It",
     "author": "Jeremie Harris",
     "date": "December 18, 2024",
     "rating": 8,
+    "status": "read",
     "notes": ""
   },
   {
@@ -25,6 +20,7 @@
     "author": "Rohinton Mistry",
     "date": "November 21, 2024",
     "rating": 4,
+    "status": "read",
     "notes": ""
   },
   {
@@ -32,13 +28,15 @@
     "author": "Ian Banks",
     "date": "February 18, 2025",
     "rating": 8,
-    "notes": "Such a good ending was the best part"
+    "status": "read",
+    "notes": "Such a good ending was the best plot twist I've ever read one of the darkest books for sure"
   },
   {
     "title": "Power of Now",
     "author": "Eckhart Tolle",
     "date": "January 30, 2025",
     "rating": 6,
+    "status": "read",
     "notes": "Mid too spiritual"
   },
   {
@@ -46,13 +44,15 @@
     "author": "David Goggins",
     "date": "January 4, 2025",
     "rating": 9,
-    "notes": "Amazing read front to back inspiring"
+    "status": "read",
+    "notes": "Amazing read front to back in like 3 days awesome book"
   },
   {
     "title": "Hustle Harder Hustle Smarter",
-    "author": "Curtis Jackson",
-    "date": "",
-    "rating": 5,
+    "author": "50 Cent",
+    "date": "June 4, 2025",
+    "rating": 7.5,
+    "status": "read",
     "notes": ""
   },
   {
@@ -60,6 +60,7 @@
     "author": "James Nestor",
     "date": "February 22, 2025",
     "rating": 10,
+    "status": "read",
     "notes": ""
   },
   {
@@ -67,6 +68,7 @@
     "author": "Yole Green",
     "date": "June 9, 2025",
     "rating": 8,
+    "status": "read",
     "notes": ""
   },
   {
@@ -74,13 +76,23 @@
     "author": "Paul Coelho",
     "date": "February 26, 2025",
     "rating": 10,
+    "status": "read",
     "notes": "Will read again and give to my kids"
+  },
+  {
+    "title": "How Soccer Explains the World",
+    "author": "Franklin Foer",
+    "date": "September 27, 2024",
+    "rating": 5,
+    "status": "read",
+    "notes": ""
   },
   {
     "title": "How to Win Friends and Influence People",
     "author": "Dale Carnegie",
     "date": "",
     "rating": 4,
+    "status": "read",
     "notes": ""
   },
   {
@@ -88,6 +100,7 @@
     "author": "Marcus Aurelius",
     "date": "",
     "rating": 10,
+    "status": "read",
     "notes": ""
   },
   {
@@ -95,6 +108,7 @@
     "author": "Yann Martel",
     "date": "",
     "rating": 10,
+    "status": "read",
     "notes": ""
   },
   {
@@ -102,6 +116,7 @@
     "author": "Neil Gaiman",
     "date": "",
     "rating": 6,
+    "status": "read",
     "notes": ""
   },
   {
@@ -109,6 +124,207 @@
     "author": "Malcolm Gladwell",
     "date": "",
     "rating": 3,
+    "status": "read",
+    "notes": ""
+  },
+  {
+    "title": "Guns Germs and Steel",
+    "author": "Jared Diamond",
+    "date": "",
+    "rating": 7,
+    "status": "read",
+    "notes": ""
+  },
+  {
+    "title": "Black Rain",
+    "author": "Masuji Ibuse",
+    "date": "",
+    "rating": 10,
+    "status": "read",
+    "notes": ""
+  },
+  {
+    "title": "Hyperion",
+    "author": "Dan Simmons",
+    "date": "August 13, 2025",
+    "rating": 9,
+    "status": "read",
+    "notes": "Read in Africa in Dream fever. insane book super cool. one of the best worlds"
+  },
+  {
+    "title": "Letters to a Young Athlete",
+    "author": "Chris Bosh",
+    "date": "",
+    "rating": 8,
+    "status": "read",
+    "notes": ""
+  },
+  {
+    "title": "Relentless",
+    "author": "Tim Grover",
+    "date": "",
+    "rating": 8,
+    "status": "read",
+    "notes": ""
+  },
+  {
+    "title": "Birds Without Wings",
+    "author": "Louis de Bernieres",
+    "date": "April 25, 2023",
+    "rating": 10,
+    "status": "read",
+    "notes": "Nice book"
+  },
+  {
+    "title": "The Order of Time",
+    "author": "Carlo Rovelli",
+    "date": "",
+    "rating": 9,
+    "status": "read",
+    "notes": ""
+  },
+  {
+    "title": "Breath",
+    "author": "James Nestor",
+    "date": "November 24, 2025",
+    "rating": 7,
+    "status": "read",
+    "notes": "Cool book but repetitive"
+  },
+  {
+    "title": "Forever and a Day",
+    "author": "Anthony Horowitz",
+    "date": "November 26, 2025",
+    "rating": 8,
+    "status": "read",
+    "notes": "Quick read nice for a james bond book. super good plane book"
+  },
+  {
+    "title": "The Foundation",
+    "author": "Isaac Asimov",
+    "date": "December 3, 2025",
+    "rating": 9,
+    "status": "read",
+    "notes": "Super Cool Sci Fi the concept of psychohistory is such a cool one"
+  },
+  {
+    "title": "Brave New World",
+    "author": "Aldous Huxley",
+    "date": "March 1, 2026",
+    "rating": 9,
+    "status": "read",
+    "notes": "Very applicable to todays world. control by drugs sex and no creativity"
+  },
+  {
+    "title": "Gargoyle",
+    "author": "Andrew Davidson",
+    "date": "January 30, 2026",
+    "rating": 9,
+    "status": "read",
+    "notes": "Very well written and fun read. lots of morphine"
+  },
+  {
+    "title": "Wolf of the Plains",
+    "author": "Conn Iggulden",
+    "date": "",
+    "rating": "",
+    "status": "want to read",
+    "notes": ""
+  },
+  {
+    "title": "Grit",
+    "author": "Angela Duckworth",
+    "date": "",
+    "rating": "",
+    "status": "want to read",
+    "notes": ""
+  },
+  {
+    "title": "The Dispossessed",
+    "author": "Ursula K. Le Guin",
+    "date": "",
+    "rating": "",
+    "status": "want to read",
+    "notes": ""
+  },
+  {
+    "title": "The Count of Monte Cristo",
+    "author": "Alexandre Dumas",
+    "date": "",
+    "rating": "",
+    "status": "want to read",
+    "notes": ""
+  },
+  {
+    "title": "The Odyssey",
+    "author": "Homer",
+    "date": "",
+    "rating": "",
+    "status": "want to read",
+    "notes": ""
+  },
+  {
+    "title": "The Left Hand of Darkness",
+    "author": "Ursula K. Le Guin",
+    "date": "",
+    "rating": "",
+    "status": "want to read",
+    "notes": ""
+  },
+  {
+    "title": "1984",
+    "author": "George Orwell",
+    "date": "",
+    "rating": "",
+    "status": "want to read",
+    "notes": ""
+  },
+  {
+    "title": "Daemon",
+    "author": "Daniel Suarez",
+    "date": "",
+    "rating": "",
+    "status": "reading",
+    "notes": ""
+  },
+  {
+    "title": "The Hidden Life of Trees",
+    "author": "Peter Wohlleben",
+    "date": "",
+    "rating": "",
+    "status": "",
+    "notes": ""
+  },
+  {
+    "title": "Red Rising",
+    "author": "Pierce Brown",
+    "date": "",
+    "rating": "",
+    "status": "",
+    "notes": ""
+  },
+  {
+    "title": "Origin",
+    "author": "Dan Brown",
+    "date": "",
+    "rating": "",
+    "status": "",
+    "notes": ""
+  },
+  {
+    "title": "Inferno",
+    "author": "Dan Brown",
+    "date": "",
+    "rating": "",
+    "status": "",
+    "notes": ""
+  },
+  {
+    "title": "A Little Life",
+    "author": "Hanya Yanagihara",
+    "date": "",
+    "rating": "",
+    "status": "",
     "notes": ""
   }
 ]

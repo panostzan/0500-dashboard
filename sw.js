@@ -2,7 +2,7 @@
 // SERVICE WORKER - Offline Support for 0500 PWA
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = '0500-v29';
+const CACHE_NAME = '0500-v30';
 
 // Files to cache for offline use
 const STATIC_ASSETS = [
@@ -29,7 +29,10 @@ const STATIC_ASSETS = [
     '/js/weekly-review.js',
     '/js/books.js',
     '/js/books.json',
+    '/js/analytics.js',
     '/js/main.js',
+    '/analytics.html',
+    '/css/analytics.css',
     '/manifest.json'
 ];
 

@@ -175,6 +175,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         deferInit(() => initWeeklyReview());
         deferInit(() => initDailyFact());
         deferInit(() => initBooks());
+        deferInit(() => initAnalyticsChip());
         deferInit(() => initInsights());
 
         // Initialize HUD elements (gracefully skips globe HUD if canvas absent)
@@ -1181,6 +1182,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (loading) loading.style.display = 'none';
     }
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ANALYTICS CHIP
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function initAnalyticsChip() {
+    const chip = document.getElementById('chip-analytics');
+    if (!chip) return;
+    chip.classList.add('visible');
+    chip.addEventListener('click', () => {
+        window.location.href = 'analytics.html';
+    });
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // BEDTIME NOTIFICATIONS

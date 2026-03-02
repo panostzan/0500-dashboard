@@ -3,6 +3,8 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const BOOKS_STORAGE_KEY = '0500_books';
+const BOOKS_VERSION_KEY = '0500_books_version';
+const BOOKS_SEED_VERSION = 2;  // bump to re-seed from JSON
 let booksCache = null;
 let booksSortField = 'date';
 let booksSortDir = 'desc';
@@ -27,8 +29,10 @@ function initBooks() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function loadBooks() {
+    const storedVersion = parseInt(localStorage.getItem(BOOKS_VERSION_KEY) || '0', 10);
     const stored = localStorage.getItem(BOOKS_STORAGE_KEY);
-    if (stored) {
+
+    if (stored && storedVersion >= BOOKS_SEED_VERSION) {
         try {
             booksCache = JSON.parse(stored);
             return;
@@ -36,11 +40,12 @@ async function loadBooks() {
             console.warn('[BOOKS] Bad localStorage data, re-seeding');
         }
     }
-    // First visit — seed from JSON
+    // First visit or version bump — seed from JSON
     try {
         const res = await fetch('js/books.json');
         booksCache = await res.json();
         saveBooks();
+        localStorage.setItem(BOOKS_VERSION_KEY, String(BOOKS_SEED_VERSION));
     } catch (e) {
         console.warn('[BOOKS] Failed to load seed data:', e.message);
         booksCache = [];
@@ -54,7 +59,8 @@ function saveBooks() {
 function updateBookCount() {
     const el = document.getElementById('books-count');
     if (el && booksCache) {
-        el.textContent = `${booksCache.length} book${booksCache.length !== 1 ? 's' : ''}`;
+        const read = booksCache.filter(b => (b.status || '').toLowerCase() === 'read').length;
+        el.textContent = `${read} read / ${booksCache.length} total`;
     }
 }
 
@@ -108,6 +114,8 @@ function renderBooksPage() {
         // Find the actual index in booksCache for edits
         const realIdx = booksCache.indexOf(book);
         const barWidth = (Math.min(Math.max(book.rating || 0, 0), 10) / 10) * 100;
+        const status = (book.status || '').toLowerCase();
+        const statusLabel = status === 'want to read' ? 'WANT' : status === 'reading' ? 'READING' : status === 'read' ? 'READ' : '—';
         return `<tr data-idx="${realIdx}">
             <td class="books-col-title">
                 <input type="text" class="books-input-title" value="${esc(book.title)}" data-field="title" data-idx="${realIdx}">
@@ -124,8 +132,12 @@ function renderBooksPage() {
                     <div class="books-rating-bar"><div class="books-rating-fill" style="width:${barWidth}%"></div></div>
                 </div>
             </td>
+            <td class="books-col-status">
+                <span class="books-status-badge" data-status="${esc(status)}" data-idx="${realIdx}">${statusLabel}</span>
+            </td>
             <td class="books-col-notes">
                 <input type="text" class="books-input-notes" value="${esc(book.notes)}" data-field="notes" data-idx="${realIdx}" placeholder="—">
+                <div class="books-notes-popout${book.notes ? ' has-text' : ''}">${esc(book.notes)}</div>
             </td>
             <td class="books-col-delete">
                 <button class="books-delete-btn" data-idx="${realIdx}" title="Remove">&times;</button>
@@ -193,12 +205,29 @@ function handleDelete(e) {
     }
 }
 
+const STATUS_CYCLE = ['', 'want to read', 'reading', 'read'];
+
+function handleStatusClick(e) {
+    const badge = e.target.closest('.books-status-badge');
+    if (!badge) return;
+
+    const idx = parseInt(badge.dataset.idx, 10);
+    if (isNaN(idx) || !booksCache[idx]) return;
+
+    const current = (booksCache[idx].status || '').toLowerCase();
+    const nextIdx = (STATUS_CYCLE.indexOf(current) + 1) % STATUS_CYCLE.length;
+    booksCache[idx].status = STATUS_CYCLE[nextIdx];
+    saveBooks();
+    renderBooksPage();
+}
+
 function handleAddBook() {
     booksCache.push({
         title: '',
         author: '',
         date: '',
-        rating: 5,
+        rating: '',
+        status: 'want to read',
         notes: ''
     });
     saveBooks();
@@ -226,8 +255,11 @@ async function initBooksPage() {
         tbody.addEventListener('focusout', handleFieldBlur);
         // Live rating bar update on input
         tbody.addEventListener('input', handleRatingInput);
-        // Delegated click handler for delete buttons
-        tbody.addEventListener('click', handleDelete);
+        // Delegated click handler for delete buttons and status badges
+        tbody.addEventListener('click', (e) => {
+            handleDelete(e);
+            handleStatusClick(e);
+        });
     }
 
     const addBtn = document.getElementById('books-add-row');

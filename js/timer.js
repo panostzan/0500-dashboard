@@ -28,6 +28,12 @@ function startTimer(minutes) {
     timerEndTime = Date.now() + timerRemaining * 1000;
     timerPausedAt = null;
 
+    // Close the focus card when starting
+    const focusCard = document.getElementById('focus-card');
+    const focusChip = document.getElementById('chip-focus');
+    if (focusCard) focusCard.classList.remove('open');
+    if (focusChip) focusChip.classList.remove('active');
+
     document.getElementById('dashboard').classList.add('hidden');
     document.getElementById('timer-overlay').classList.add('active');
     document.getElementById('timer-pause').textContent = 'PAUSE';
@@ -77,6 +83,16 @@ function endTimer() {
 
 function initTimer() {
     renderTimerPresets();
+
+    // FOCUS chip toggle
+    const focusChip = document.getElementById('chip-focus');
+    const focusCard = document.getElementById('focus-card');
+    if (focusChip && focusCard) {
+        focusChip.addEventListener('click', () => {
+            const isOpen = focusCard.classList.toggle('open');
+            focusChip.classList.toggle('active', isOpen);
+        });
+    }
 
     document.getElementById('timer-pause').addEventListener('click', () => {
         timerPaused = !timerPaused;

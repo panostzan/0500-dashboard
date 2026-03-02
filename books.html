@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self';">
+    <title>Books - 0500</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Orbitron:wght@400;500&family=Inter:wght@200;300;400;500&display=swap" rel="stylesheet">
+
+    <!-- Shared Theme -->
+    <link rel="stylesheet" href="css/sleep-theme.css">
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1a1018">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-180.png">
+
+    <!-- Apply theme before first paint to avoid flash -->
+    <script>
+        (function() {
+            var t = localStorage.getItem('0500_theme');
+            if (t && t !== 'aurora') document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            background-color: var(--bg-base);
+        }
+
+        body {
+            font-family: 'Outfit', -apple-system, sans-serif;
+            background-color: var(--bg-base);
+            background-image: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
+
+        /* Full-width frame */
+        .phone-frame {
+            max-width: 1100px;
+            margin: 0 auto;
+            min-height: 100vh;
+            min-height: 100dvh;
+            position: relative;
+            padding: 30px 40px 40px;
+        }
+
+        /* Back button */
+        .desktop-back-btn {
+            display: inline-block;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 12px 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            transition: all 0.2s;
+        }
+        .desktop-back-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        /* Floating orbs */
+        .phone-frame::before,
+        .phone-frame::after {
+            content: '';
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.6;
+            animation: float 10s ease-in-out infinite;
+            pointer-events: none;
+        }
+        .phone-frame::before {
+            width: 180px;
+            height: 180px;
+            background: var(--orb-1);
+            top: 5%;
+            left: -5%;
+        }
+        .phone-frame::after {
+            width: 140px;
+            height: 140px;
+            background: var(--orb-2);
+            bottom: 25%;
+            right: -5%;
+            animation-delay: -5s;
+        }
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(15px, -20px) scale(1.05); }
+            66% { transform: translate(-10px, 10px) scale(0.95); }
+        }
+
+        .view {
+            padding: 20px;
+            padding-top: env(safe-area-inset-top, 20px);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Glass Card */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 20px 24px;
+            margin-bottom: 16px;
+        }
+
+        /* Header card */
+        .books-header-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .books-page-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--accent);
+        }
+
+        .books-page-count {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        /* Table card */
+        .books-table-card {
+            padding: 20px 16px;
+            overflow-x: auto;
+        }
+
+        .books-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+        }
+
+        .books-table thead th {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            text-align: left;
+            padding: 8px 12px 12px;
+            border-bottom: 1px solid rgba(255, 176, 144, 0.1);
+            white-space: nowrap;
+        }
+
+        .books-table thead th[data-sort] {
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s;
+        }
+        .books-table thead th[data-sort]:hover {
+            color: var(--text-secondary);
+        }
+        .books-table thead th.sorted {
+            color: var(--accent);
+        }
+        .sort-arrow {
+            font-size: 0.5rem;
+            margin-left: 4px;
+            opacity: 0.8;
+        }
+
+        .books-table tbody tr {
+            transition: background 0.15s ease;
+        }
+
+        .books-table tbody tr:hover {
+            background: rgba(255, 176, 144, 0.04);
+        }
+
+        .books-table tbody tr:hover .books-delete-btn {
+            opacity: 1;
+        }
+
+        .books-table tbody td {
+            padding: 8px 12px;
+            color: rgba(255, 255, 255, 0.85);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            vertical-align: middle;
+        }
+
+        /* Editable inputs */
+        .books-table input[type="text"],
+        .books-table input[type="number"] {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid transparent;
+            color: rgba(255, 255, 255, 0.85);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            padding: 6px 4px;
+            width: 100%;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .books-table input[type="text"]:focus,
+        .books-table input[type="number"]:focus {
+            border-bottom-color: var(--accent);
+        }
+
+        .books-table input.books-input-title {
+            font-weight: 500;
+        }
+
+        .books-table input.books-input-author {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .books-table input.books-input-date {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+        }
+
+        .books-table input.books-input-notes {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+
+        /* Rating cell */
+        .books-rating-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            min-width: 110px;
+        }
+
+        .books-rating-cell input[type="number"] {
+            width: 36px;
+            text-align: right;
+            font-weight: 500;
+            font-size: 0.95rem;
+            color: var(--accent);
+            -moz-appearance: textfield;
+        }
+        .books-rating-cell input[type="number"]::-webkit-inner-spin-button,
+        .books-rating-cell input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .books-rating-bar {
+            width: 60px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 2px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .books-rating-fill {
+            height: 100%;
+            background: linear-gradient(90deg, rgba(180, 120, 255, 0.7), rgba(200, 150, 255, 0.9));
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        /* Delete button */
+        .books-col-delete {
+            width: 30px;
+            text-align: center;
+        }
+
+        .books-delete-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 100, 100, 0.7);
+            font-size: 1rem;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .books-delete-btn:hover {
+            color: rgba(255, 100, 100, 1);
+            background: rgba(255, 100, 100, 0.1);
+        }
+
+        /* Fade-out animation for row deletion */
+        .books-row-removing {
+            opacity: 0;
+            transform: translateX(-10px);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        /* Add book button */
+        .books-add-btn {
+            display: block;
+            width: 100%;
+            margin-top: 16px;
+            padding: 14px;
+            background: transparent;
+            border: 1px dashed rgba(255, 176, 144, 0.2);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .books-add-btn:hover {
+            border-color: rgba(255, 176, 144, 0.4);
+            color: var(--text-secondary);
+            background: rgba(255, 176, 144, 0.04);
+        }
+
+        /* Status badge */
+        .books-status-badge {
+            display: inline-block;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.55rem;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+            transition: opacity 0.2s;
+        }
+        .books-status-badge:hover {
+            opacity: 0.8;
+        }
+        .books-status-badge[data-status="read"] {
+            background: rgba(102, 238, 136, 0.12);
+            color: rgba(102, 238, 136, 0.8);
+        }
+        .books-status-badge[data-status="reading"] {
+            background: rgba(255, 176, 144, 0.12);
+            color: rgba(255, 176, 144, 0.8);
+        }
+        .books-status-badge[data-status="want to read"] {
+            background: rgba(140, 160, 255, 0.12);
+            color: rgba(140, 160, 255, 0.8);
+        }
+        .books-status-badge[data-status=""] {
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Notes popout */
+        .books-col-notes {
+            position: relative;
+        }
+        .books-notes-popout {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            min-width: 260px;
+            max-width: 360px;
+            background: rgba(20, 14, 28, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 176, 144, 0.15);
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.88rem;
+            line-height: 1.5;
+            color: rgba(255, 255, 255, 0.75);
+            font-style: italic;
+            z-index: 100;
+            pointer-events: none;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            animation: popout-in 0.15s ease-out;
+        }
+        .books-notes-popout::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 24px;
+            border: 6px solid transparent;
+            border-top-color: rgba(255, 176, 144, 0.15);
+        }
+        .books-col-notes:hover .books-notes-popout.has-text {
+            display: block;
+        }
+        @keyframes popout-in {
+            from { opacity: 0; transform: translateY(4px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Column widths */
+        .books-col-title { min-width: 220px; }
+        .books-col-author { min-width: 160px; }
+        .books-col-date { min-width: 140px; }
+        .books-col-status { min-width: 90px; }
+        .books-col-notes { min-width: 180px; }
+    </style>
+</head>
+<body>
+
+<div class="phone-frame">
+    <div class="view">
+        <a class="desktop-back-btn" href="index.html">&larr; Back to Dashboard</a>
+
+        <div class="glass-card books-header-card">
+            <span class="books-page-title">BOOKS</span>
+            <span class="books-page-count" id="books-count"></span>
+        </div>
+
+        <div class="glass-card books-table-card">
+            <table class="books-table">
+                <thead>
+                    <tr>
+                        <th data-sort="title">TITLE<span class="sort-arrow"></span></th>
+                        <th data-sort="author">AUTHOR<span class="sort-arrow"></span></th>
+                        <th data-sort="date">DATE<span class="sort-arrow"></span></th>
+                        <th data-sort="rating">RATING<span class="sort-arrow"></span></th>
+                        <th data-sort="status">STATUS<span class="sort-arrow"></span></th>
+                        <th>NOTES</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="books-tbody"></tbody>
+            </table>
+            <button class="books-add-btn" id="books-add-row">+ add book</button>
+        </div>
+    </div>
+</div>
+
+<script src="js/books.js?v=4"></script>
+<script src="js/theme.js?v=1"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        initBooksPage();
+        initTheme();
+    });
+</script>
+
+</body>
+</html>
