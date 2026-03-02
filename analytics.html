@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co;">
+    <title>Life Analytics - 0500</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Orbitron:wght@400;500&family=Inter:wght@200;300;400;500&display=swap" rel="stylesheet">
+
+    <!-- Shared Theme -->
+    <link rel="stylesheet" href="css/sleep-theme.css">
+    <link rel="stylesheet" href="css/analytics.css?v=5">
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1a1018">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-180.png">
+
+    <!-- Apply theme before first paint to avoid flash -->
+    <script>
+        (function() {
+            var t = localStorage.getItem('0500_theme');
+            if (t && t !== 'aurora') document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
+</head>
+<body>
+
+<div class="phone-frame">
+    <div class="view">
+        <a class="desktop-back-btn" href="index.html">&larr; Back to Dashboard</a>
+
+        <div class="analytics-header glass-card">
+            <span class="analytics-page-title">LIFE ANALYTICS</span>
+            <div class="range-selector" id="range-selector">
+                <button class="range-btn" data-range="30">30D</button>
+                <button class="range-btn active" data-range="60">60D</button>
+                <button class="range-btn" data-range="90">90D</button>
+                <button class="range-btn" data-range="0">ALL</button>
+            </div>
+        </div>
+
+        <!-- Sticky mini-nav -->
+        <div class="section-nav" id="section-nav">
+            <a class="nav-dot" href="#panel-momentum" title="Momentum"></a>
+            <a class="nav-dot" href="#panel-sleep-trend" title="Sleep"></a>
+            <a class="nav-dot" href="#panel-goal-heatmap" title="Goals"></a>
+            <a class="nav-dot" href="#panel-sleep-score" title="Score"></a>
+            <a class="nav-dot" href="#panel-bedtime" title="Bedtime"></a>
+            <a class="nav-dot" href="#panel-records" title="Records"></a>
+            <a class="nav-dot" href="#panel-trends" title="Trends"></a>
+            <a class="nav-dot" href="#panel-correlation" title="Correlation"></a>
+            <a class="nav-dot" href="#panel-streaks" title="Streaks"></a>
+        </div>
+
+        <!-- Stats row -->
+        <div class="stats-row" id="stats-row"></div>
+
+        <!-- Weekly Comparison (full-width, outside grid) -->
+        <div class="glass-card weekly-panel" id="panel-weekly">
+            <div class="panel-header">
+                <span class="panel-title">THIS WEEK vs LAST WEEK</span>
+            </div>
+            <div class="panel-body" id="chart-weekly"></div>
+        </div>
+
+        <!-- Momentum Tracker (full-width, outside grid) -->
+        <div class="glass-card momentum-panel" id="panel-momentum">
+            <div class="panel-header">
+                <span class="panel-title">MOMENTUM</span>
+                <span class="panel-subtitle">Rolling 7-day</span>
+            </div>
+            <div class="panel-body" id="chart-momentum"></div>
+        </div>
+
+        <!-- 2-column grid -->
+        <div class="analytics-grid">
+            <div class="glass-card analytics-panel" id="panel-sleep-trend">
+                <div class="panel-header">
+                    <span class="panel-title">SLEEP DURATION</span>
+                    <span class="panel-subtitle" id="sleep-trend-subtitle"></span>
+                </div>
+                <div class="panel-body chart-container" id="chart-sleep-trend"></div>
+            </div>
+
+            <div class="glass-card analytics-panel" id="panel-goal-heatmap">
+                <div class="panel-header">
+                    <span class="panel-title">GOAL COMPLETION</span>
+                    <span class="panel-subtitle" id="goal-heatmap-subtitle"></span>
+                </div>
+                <div class="panel-body" id="chart-goal-heatmap"></div>
+            </div>
+
+            <div class="glass-card analytics-panel" id="panel-sleep-score">
+                <div class="panel-header">
+                    <span class="panel-title">SLEEP SCORE</span>
+                </div>
+                <div class="panel-body" id="chart-sleep-score"></div>
+            </div>
+
+            <div class="glass-card analytics-panel" id="panel-bedtime">
+                <div class="panel-header">
+                    <span class="panel-title">BEDTIME CONSISTENCY</span>
+                    <span class="panel-subtitle" id="bedtime-subtitle"></span>
+                </div>
+                <div class="panel-body chart-container" id="chart-bedtime"></div>
+            </div>
+
+            <div class="glass-card analytics-panel" id="panel-records">
+                <div class="panel-header">
+                    <span class="panel-title">PERSONAL RECORDS</span>
+                    <span class="panel-subtitle">All-time</span>
+                </div>
+                <div class="panel-body" id="chart-records"></div>
+            </div>
+
+            <div class="glass-card analytics-panel" id="panel-trends">
+                <div class="panel-header">
+                    <span class="panel-title">TREND INTELLIGENCE</span>
+                </div>
+                <div class="panel-body" id="chart-trends"></div>
+            </div>
+
+            <div class="glass-card analytics-panel" id="panel-correlation">
+                <div class="panel-header">
+                    <span class="panel-title">SLEEP vs GOALS</span>
+                    <span class="panel-subtitle" id="correlation-subtitle"></span>
+                </div>
+                <div class="panel-body chart-container" id="chart-correlation"></div>
+            </div>
+
+            <div class="glass-card analytics-panel" id="panel-streaks">
+                <div class="panel-header">
+                    <span class="panel-title">STREAKS &amp; MILESTONES</span>
+                </div>
+                <div class="panel-body" id="chart-streaks"></div>
+            </div>
+
+            <div class="glass-card analytics-panel analytics-full-width" id="panel-books" style="display:none;">
+                <div class="panel-header">
+                    <span class="panel-title">BOOKS</span>
+                    <span class="panel-subtitle" id="books-subtitle"></span>
+                </div>
+                <div class="panel-body" id="chart-books"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tooltip -->
+<div class="analytics-tooltip" id="analytics-tooltip"></div>
+
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Scripts -->
+<script src="js/config.js?v=6"></script>
+<script src="js/supabase.js?v=5"></script>
+<script src="js/data.js?v=10"></script>
+<script src="js/auth.js?v=4"></script>
+<script src="js/sleep.js?v=19"></script>
+<script src="js/theme.js?v=3"></script>
+<script src="js/analytics.js?v=5"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        initTheme();
+        await initSupabase();
+        await initAnalyticsPage();
+    });
+</script>
+
+</body>
+</html>

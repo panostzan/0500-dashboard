@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-title" content="0500">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="format-detection" content="telephone=no">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.open-meteo.com https://*.supabase.co https://cdn.jsdelivr.net https://unpkg.com https://api.rss2json.com https://nominatim.openstreetmap.org; worker-src 'self' blob:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.open-meteo.com https://*.supabase.co https://cdn.jsdelivr.net https://unpkg.com https://api.rss2json.com https://nominatim.openstreetmap.org https://www.strava.com; worker-src 'self' blob:;">
 
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
@@ -38,7 +38,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&family=Inter:wght@200;300;400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/styles.css?v=49">
+    <link rel="stylesheet" href="css/styles.css?v=52">
 
     <!-- Apply theme before first paint to avoid flash -->
     <script>
@@ -148,6 +148,40 @@
         </div>
 
         <div class="chip-anchor">
+            <button class="chip chip-fitness" id="chip-fitness">
+                <span class="chip-label">FITNESS</span>
+                <span class="chip-value" id="chip-fitness-value"></span>
+            </button>
+            <div class="strava-card" id="strava-card">
+                <div class="strava-card-header">
+                    <span class="strava-card-title">FITNESS DIAGNOSTIC</span>
+                    <div class="strava-card-actions">
+                        <button class="strava-card-btn" id="strava-refresh" title="Refresh data">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                        </button>
+                        <button class="strava-card-btn" id="strava-disconnect" title="Disconnect Strava">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <!-- Setup view -->
+                <div id="strava-setup">
+                    <div class="strava-setup-hint">Connect your Strava account to see fitness diagnostics.</div>
+                    <input type="text" class="strava-input" id="strava-client-id" placeholder="Client ID" spellcheck="false" autocomplete="off">
+                    <input type="text" class="strava-input" id="strava-client-secret" placeholder="Client Secret" spellcheck="false" autocomplete="off">
+                    <input type="text" class="strava-input" id="strava-refresh-token" placeholder="Refresh Token" spellcheck="false" autocomplete="off">
+                    <div class="strava-setup-error" id="strava-setup-error"></div>
+                    <button class="strava-connect-btn" id="strava-connect">CONNECT</button>
+                    <div class="strava-setup-help">Get these from <a href="https://www.strava.com/settings/api" target="_blank" rel="noopener">strava.com/settings/api</a></div>
+                </div>
+                <!-- Data view -->
+                <div id="strava-data" style="display:none">
+                    <div id="strava-body"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chip-anchor">
             <button class="chip chip-notes" id="chip-notes">
                 <span class="chip-label">NOTES</span>
                 <span class="chip-value" id="chip-notes-count"></span>
@@ -168,22 +202,22 @@
             <span class="chip-label">PEOPLE</span>
         </button>
 
-        <button class="chip chip-analytics" id="chip-analytics">
+        <a class="chip chip-analytics visible" id="chip-analytics" href="analytics.html">
             <span class="chip-label">ANALYTICS</span>
-        </button>
+        </a>
 
         <div class="chip-anchor">
             <button class="chip chip-intel" id="chip-intel">
-                <span class="chip-label">INTEL</span>
+                <span class="chip-label">JARVIS</span>
             </button>
             <div class="intel-card" id="intel-card">
                 <div class="intel-card-header">
-                    <span class="intel-card-title">INTELLIGENCE</span>
-                    <button class="intel-card-refresh" id="intel-refresh" title="Refresh insights">
+                    <span class="intel-card-title" id="intel-greeting">JARVIS</span>
+                    <button class="intel-card-refresh" id="intel-refresh" title="Refresh">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
                     </button>
                 </div>
-                <input type="text" class="intel-card-input" id="intel-input" placeholder="sleep, goals, how am I doing..." spellcheck="false" autocomplete="off">
+                <input type="text" class="intel-card-input" id="intel-input" placeholder="ask me anything..." spellcheck="false" autocomplete="off">
                 <div class="intel-card-body" id="intel-body"></div>
             </div>
         </div>
@@ -229,6 +263,8 @@
     </div>
 </div>
 
+<div class="jarvis-toast-container" id="jarvis-toast-container"></div>
+
 <div class="timer-overlay" id="timer-overlay">
     <canvas class="timer-globe" id="timer-globe-canvas"></canvas>
     <div class="timer-display" id="timer-display">25:00</div>
@@ -270,8 +306,10 @@
 <script src="js/facts.js?v=1"></script>
 <script src="js/books.js?v=3"></script>
 <script src="js/people.js?v=1"></script>
-<script src="js/insights.js?v=2"></script>
-<script src="js/main.js?v=81"></script>
+<script src="js/insights.js?v=4"></script>
+<script src="js/jarvis-toast.js?v=1"></script>
+<script src="js/strava.js?v=3"></script>
+<script src="js/main.js?v=83"></script>
 
 </body>
 </html>

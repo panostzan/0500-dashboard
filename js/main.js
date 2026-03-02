@@ -178,6 +178,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         deferInit(() => initPeople());
         deferInit(() => initAnalyticsChip());
         deferInit(() => initInsights());
+        deferInit(() => initStrava());
+        deferInit(() => initJarvisToast());
 
         // Initialize HUD elements (gracefully skips globe HUD if canvas absent)
         initHUD();
@@ -1189,12 +1191,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function initAnalyticsChip() {
-    const chip = document.getElementById('chip-analytics');
-    if (!chip) return;
-    chip.classList.add('visible');
-    chip.addEventListener('click', () => {
-        window.location.href = 'analytics.html';
-    });
+    // Navigation handled natively via <a href="analytics.html">
+    // .visible class baked into HTML so chip works even if JS init fails
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
