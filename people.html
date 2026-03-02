@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self';">
+    <title>People - 0500</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Orbitron:wght@400;500&family=Inter:wght@200;300;400;500&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="css/sleep-theme.css">
+
+    <meta name="theme-color" content="#1a1018">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-180.png">
+
+    <script>
+        (function() {
+            var t = localStorage.getItem('0500_theme');
+            if (t && t !== 'aurora') document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { background-color: var(--bg-base); }
+
+        body {
+            font-family: 'Outfit', -apple-system, sans-serif;
+            background-color: var(--bg-base);
+            background-image: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
+
+        /* Full-width frame */
+        .phone-frame {
+            max-width: 1100px;
+            margin: 0 auto;
+            min-height: 100vh;
+            min-height: 100dvh;
+            position: relative;
+            padding: 30px 40px 40px;
+        }
+
+        /* Back button */
+        .desktop-back-btn {
+            display: inline-block;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 12px 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            transition: all 0.2s;
+        }
+        .desktop-back-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        /* Floating orbs */
+        .phone-frame::before,
+        .phone-frame::after {
+            content: '';
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.6;
+            animation: float 10s ease-in-out infinite;
+            pointer-events: none;
+        }
+        .phone-frame::before {
+            width: 180px;
+            height: 180px;
+            background: var(--orb-1);
+            top: 5%;
+            left: -5%;
+        }
+        .phone-frame::after {
+            width: 140px;
+            height: 140px;
+            background: var(--orb-2);
+            bottom: 25%;
+            right: -5%;
+            animation-delay: -5s;
+        }
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(15px, -20px) scale(1.05); }
+            66% { transform: translate(-10px, 10px) scale(0.95); }
+        }
+
+        .view {
+            padding: 20px;
+            padding-top: env(safe-area-inset-top, 20px);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Glass Card */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 20px 24px;
+            margin-bottom: 16px;
+        }
+
+        /* ─── Header ─── */
+        .people-header-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .people-page-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+        .people-search {
+            flex: 1;
+            max-width: 260px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 9px 14px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 300;
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .people-search::placeholder {
+            color: rgba(255, 255, 255, 0.25);
+            font-weight: 300;
+        }
+        .people-search:focus {
+            border-color: rgba(255, 176, 144, 0.25);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .people-page-count {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 300;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        /* ─── Table ─── */
+        .people-table-card {
+            padding: 20px 16px;
+            overflow-x: auto;
+        }
+        .people-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .people-table thead th {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            text-align: left;
+            padding: 8px 12px 12px;
+            border-bottom: 1px solid rgba(255, 176, 144, 0.1);
+            white-space: nowrap;
+        }
+        .people-table thead th[data-sort] {
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s;
+        }
+        .people-table thead th[data-sort]:hover { color: var(--text-secondary); }
+        .people-table thead th.sorted { color: var(--accent); }
+        .sort-arrow {
+            font-size: 0.5rem;
+            margin-left: 4px;
+            opacity: 0.8;
+        }
+
+        .people-table tbody tr {
+            transition: background 0.15s ease;
+        }
+        .people-table tbody tr:hover {
+            background: rgba(255, 176, 144, 0.04);
+        }
+        .people-table tbody tr:hover .people-delete-btn { opacity: 1; }
+
+        .people-table tbody td {
+            padding: 8px 12px;
+            color: rgba(255, 255, 255, 0.85);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            vertical-align: middle;
+        }
+
+        /* ─── Inputs — Outfit for all, consistent weight hierarchy ─── */
+        .people-input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid transparent;
+            color: rgba(255, 255, 255, 0.85);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 400;
+            padding: 6px 4px;
+            width: 100%;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .people-input:focus { border-bottom-color: var(--accent); }
+        .people-input::placeholder { color: rgba(255, 255, 255, 0.18); font-weight: 300; }
+
+        .people-input-name {
+            font-weight: 500;
+        }
+        .people-input-occ {
+            color: rgba(255, 255, 255, 0.55);
+            font-weight: 300;
+        }
+        .people-input-met {
+            color: rgba(255, 255, 255, 0.45);
+            font-weight: 300;
+            font-size: 0.9rem;
+        }
+        .people-input-notes {
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: 300;
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+        .people-input-tags {
+            font-size: 0.85rem;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.3);
+            width: 100%;
+        }
+
+        /* ─── Last contact cell ─── */
+        .people-lastcontact-cell {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .people-input-date {
+            background: transparent;
+            border: none;
+            color: transparent;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            outline: none;
+        }
+        .people-input-date::-webkit-calendar-picker-indicator {
+            opacity: 0.25;
+            cursor: pointer;
+            filter: invert(1);
+        }
+        .people-input-date:hover::-webkit-calendar-picker-indicator { opacity: 0.5; }
+
+        /* Freshness label */
+        .people-freshness {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 400;
+            white-space: nowrap;
+            letter-spacing: 0.01em;
+        }
+        .people-freshness.fresh { color: rgba(102, 238, 136, 0.75); }
+        .people-freshness.warm  { color: rgba(255, 210, 120, 0.65); }
+        .people-freshness.fading { color: rgba(255, 160, 110, 0.55); }
+        .people-freshness.stale { color: rgba(255, 110, 100, 0.45); }
+
+        /* ─── Tags ─── */
+        .people-tags-cell {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            align-items: center;
+        }
+        .people-tag {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 500;
+            letter-spacing: 0.03em;
+            text-transform: lowercase;
+            padding: 2px 8px;
+            border-radius: 20px;
+            background: rgba(255, 176, 144, 0.08);
+            color: rgba(255, 176, 144, 0.6);
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        /* ─── Notes popout ─── */
+        .people-col-notes { position: relative; }
+        .people-notes-popout {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            min-width: 260px;
+            max-width: 360px;
+            background: rgba(20, 14, 28, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 176, 144, 0.15);
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.88rem;
+            font-weight: 300;
+            line-height: 1.55;
+            color: rgba(255, 255, 255, 0.75);
+            font-style: italic;
+            z-index: 100;
+            pointer-events: none;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            animation: popout-in 0.15s ease-out;
+        }
+        .people-notes-popout::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 24px;
+            border: 6px solid transparent;
+            border-top-color: rgba(255, 176, 144, 0.15);
+        }
+        .people-col-notes:hover .people-notes-popout.has-text { display: block; }
+        @keyframes popout-in {
+            from { opacity: 0; transform: translateY(4px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ─── Delete ─── */
+        .people-col-delete { width: 30px; text-align: center; }
+        .people-delete-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 100, 100, 0.7);
+            font-size: 1rem;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .people-delete-btn:hover {
+            color: rgba(255, 100, 100, 1);
+            background: rgba(255, 100, 100, 0.1);
+        }
+
+        .people-row-removing {
+            opacity: 0;
+            transform: translateX(-10px);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        /* ─── Add button ─── */
+        .people-add-btn {
+            display: block;
+            width: 100%;
+            margin-top: 16px;
+            padding: 14px;
+            background: transparent;
+            border: 1px dashed rgba(255, 176, 144, 0.15);
+            border-radius: 10px;
+            color: var(--text-muted);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .people-add-btn:hover {
+            border-color: rgba(255, 176, 144, 0.35);
+            color: var(--text-secondary);
+            background: rgba(255, 176, 144, 0.04);
+        }
+
+        /* ─── Column widths ─── */
+        .people-col-name { min-width: 180px; }
+        .people-col-occupation { min-width: 160px; }
+        .people-col-met { min-width: 130px; }
+        .people-col-lastcontact { min-width: 100px; }
+        .people-col-tags { min-width: 130px; }
+        .people-col-notes { min-width: 200px; }
+    </style>
+</head>
+<body>
+
+<div class="phone-frame">
+    <div class="view">
+        <a class="desktop-back-btn" href="index.html">&larr; Back to Dashboard</a>
+
+        <div class="glass-card people-header-card">
+            <span class="people-page-title">PEOPLE</span>
+            <input type="text" class="people-search" id="people-search" placeholder="Search name, tags, notes..." spellcheck="false" autocomplete="off">
+            <span class="people-page-count" id="people-count"></span>
+        </div>
+
+        <div class="glass-card people-table-card">
+            <table class="people-table">
+                <thead>
+                    <tr>
+                        <th data-sort="name">NAME<span class="sort-arrow"></span></th>
+                        <th data-sort="occupation">OCCUPATION<span class="sort-arrow"></span></th>
+                        <th>MET WHERE</th>
+                        <th data-sort="lastContact">LAST CONTACT<span class="sort-arrow"></span></th>
+                        <th data-sort="tags">TAGS<span class="sort-arrow"></span></th>
+                        <th>NOTES</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="people-tbody"></tbody>
+            </table>
+            <button class="people-add-btn" id="people-add-row">+ add person</button>
+        </div>
+    </div>
+</div>
+
+<script src="js/people.js?v=1"></script>
+<script src="js/theme.js?v=1"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        initPeoplePage();
+        initTheme();
+    });
+</script>
+
+</body>
+</html>

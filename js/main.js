@@ -175,6 +175,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         deferInit(() => initWeeklyReview());
         deferInit(() => initDailyFact());
         deferInit(() => initBooks());
+        deferInit(() => initPeople());
         deferInit(() => initAnalyticsChip());
         deferInit(() => initInsights());
 
