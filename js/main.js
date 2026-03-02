@@ -174,6 +174,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         deferInit(() => initWeeklyReview());
         deferInit(() => initDailyFact());
+        deferInit(() => initBooks());
+        deferInit(() => initInsights());
 
         // Initialize HUD elements (gracefully skips globe HUD if canvas absent)
         initHUD();
@@ -637,8 +639,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ['seoul', 'dubai'],
                 ];
 
-                const TAIL_COUNT = 3;
-                const TAIL_SPACING = 0.03;
                 const _arcPulses = [];
                 const _allCurves = []; // all curves for goal-burst
 
@@ -662,48 +662,33 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
 
                 function addPulse(curve, group) {
-                    // Head dot
                     const dot = new THREE.Mesh(
-                        new THREE.SphereGeometry(0.5, 8, 8),
-                        new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthWrite: false })
+                        new THREE.SphereGeometry(0.35, 6, 6),
+                        new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false })
                     );
                     const glow = new THREE.Mesh(
-                        new THREE.SphereGeometry(1.6, 8, 8),
-                        new THREE.MeshBasicMaterial({ color: 0xffb090, transparent: true, opacity: 0.2, depthWrite: false })
+                        new THREE.SphereGeometry(1.0, 6, 6),
+                        new THREE.MeshBasicMaterial({ color: 0xffb090, transparent: true, opacity: 0, depthWrite: false })
                     );
                     group.add(dot);
                     group.add(glow);
 
-                    // Comet tail — smaller trailing dots that fade out
-                    const tail = [];
-                    for (let t = 0; t < TAIL_COUNT; t++) {
-                        const size = 0.35 - t * 0.08;
-                        const td = new THREE.Mesh(
-                            new THREE.SphereGeometry(size, 6, 6),
-                            new THREE.MeshBasicMaterial({ color: 0xffb090, transparent: true, opacity: 0, depthWrite: false })
-                        );
-                        group.add(td);
-                        tail.push(td);
-                    }
-
-                    // Random direction
-                    const dir = Math.random() > 0.5 ? 1 : -1;
-
-                    // Staggered spawns: random pause duration
                     _arcPulses.push({
-                        curve, dot, glow, tail, dir,
-                        progress: Math.random(),
+                        curve, dot, glow,
+                        dir: Math.random() > 0.5 ? 1 : -1,
+                        progress: 0,
                         speed: 0.06 + Math.random() * 0.03,
-                        paused: false,
-                        pauseTimer: 0,
-                        pauseDuration: 2 + Math.random() * 4, // 2-6s pause between trips
+                        paused: true,
+                        pauseTimer: Math.random() * 8, // stagger initial spawns
+                        pauseDuration: 4 + Math.random() * 6, // 4-10s pause between trips
                     });
                 }
 
                 const idleArcsGroup = new THREE.Group();
 
-                // User → each city (warm amber→rose, hero arcs)
+                // User → each city — only 5 of 10 get pulses
                 const userLoc = { lat: initialLocation.lat, lng: initLng };
+                const userPulseIdx = [0, 2, 5, 7, 9]; // Tokyo, Paris, Mexico, SaoPaulo, Seoul
                 arcTargets.forEach((city, i) => {
                     const t = i / arcTargets.length;
                     const cr = 255;
@@ -712,38 +697,39 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const color = new THREE.Color(`rgb(${cr}, ${cg}, ${cb})`);
                     const { line, curve } = makeArc(userLoc, city, color, 0.45);
                     idleArcsGroup.add(line);
-                    addPulse(curve, idleArcsGroup);
+                    if (userPulseIdx.includes(i)) addPulse(curve, idleArcsGroup);
                 });
 
-                // City ↔ city (slightly dimmer warm)
-                intercityRoutes.forEach(([a, b]) => {
+                // City ↔ city — only 5 of 12 get pulses
+                const cityPulseIdx = [1, 3, 6, 9, 11];
+                intercityRoutes.forEach(([a, b], i) => {
                     const { line, curve } = makeArc(cities[a], cities[b], 0xffaa88, 0.25);
                     idleArcsGroup.add(line);
-                    addPulse(curve, idleArcsGroup);
+                    if (cityPulseIdx.includes(i)) addPulse(curve, idleArcsGroup);
                 });
 
                 scene.add(idleArcsGroup);
                 window._idleArcsGroup = idleArcsGroup;
 
-                // ── Goal-burst: fire bright pulses outward on goal check ──
+                // ── Goal-burst: fire bright pulses outward on daily goal check ──
                 function fireBurstPulses() {
                     _allCurves.forEach(curve => {
                         const dot = new THREE.Mesh(
-                            new THREE.SphereGeometry(0.7, 8, 8),
+                            new THREE.SphereGeometry(0.5, 8, 8),
                             new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1.0, depthWrite: false })
                         );
                         const glow = new THREE.Mesh(
-                            new THREE.SphereGeometry(2.5, 8, 8),
-                            new THREE.MeshBasicMaterial({ color: 0xffcc88, transparent: true, opacity: 0.4, depthWrite: false })
+                            new THREE.SphereGeometry(2.0, 8, 8),
+                            new THREE.MeshBasicMaterial({ color: 0xffcc88, transparent: true, opacity: 0.35, depthWrite: false })
                         );
                         idleArcsGroup.add(dot);
                         idleArcsGroup.add(glow);
                         _arcPulses.push({
-                            curve, dot, glow, tail: [], dir: 1,
+                            curve, dot, glow, dir: 1,
                             progress: 0,
-                            speed: 0.15 + Math.random() * 0.05, // fast burst
+                            speed: 0.18 + Math.random() * 0.06,
                             paused: false, pauseTimer: 0, pauseDuration: 0,
-                            burst: true, // one-shot, remove when done
+                            burst: true,
                         });
                     });
                 }
@@ -760,7 +746,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     for (let i = _arcPulses.length - 1; i >= 0; i--) {
                         const p = _arcPulses[i];
 
-                        // Staggered pause between trips
                         if (p.paused) {
                             p.pauseTimer -= dt;
                             if (p.pauseTimer <= 0) {
@@ -768,19 +753,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 p.dir = Math.random() > 0.5 ? 1 : -1;
                                 p.progress = p.dir === 1 ? 0 : 1;
                             }
-                            // Hide while paused
                             p.dot.material.opacity = 0;
                             p.glow.material.opacity = 0;
-                            p.tail.forEach(td => { td.material.opacity = 0; });
                             continue;
                         }
 
                         p.progress += p.speed * dt * p.dir;
 
-                        // Trip complete
                         if (p.progress > 1 || p.progress < 0) {
                             if (p.burst) {
-                                // Remove burst pulse
                                 idleArcsGroup.remove(p.dot);
                                 idleArcsGroup.remove(p.glow);
                                 p.dot.geometry.dispose(); p.dot.material.dispose();
@@ -792,34 +773,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                             p.pauseTimer = p.pauseDuration * (0.5 + Math.random());
                             p.dot.material.opacity = 0;
                             p.glow.material.opacity = 0;
-                            p.tail.forEach(td => { td.material.opacity = 0; });
                             continue;
                         }
 
-                        // Position head
                         const pos = p.curve.getPoint(p.progress);
                         p.dot.position.copy(pos);
                         p.glow.position.copy(pos);
 
-                        // Fade near endpoints
                         const edgeDist = Math.min(p.progress, 1 - p.progress);
-                        const fade = Math.min(edgeDist / 0.1, 1);
-                        const burstBoost = p.burst ? 1.0 : 0.9;
-                        p.dot.material.opacity = burstBoost * fade;
-                        p.glow.material.opacity = (p.burst ? 0.4 : 0.2) * fade;
-
-                        // Comet tail
-                        p.tail.forEach((td, ti) => {
-                            const tailT = p.progress - p.dir * TAIL_SPACING * (ti + 1);
-                            if (tailT < 0 || tailT > 1) {
-                                td.material.opacity = 0;
-                            } else {
-                                const tPos = p.curve.getPoint(tailT);
-                                td.position.copy(tPos);
-                                const tFade = (1 - (ti + 1) / (TAIL_COUNT + 1)) * fade;
-                                td.material.opacity = 0.5 * tFade;
-                            }
-                        });
+                        const fade = Math.min(edgeDist / 0.12, 1);
+                        p.dot.material.opacity = (p.burst ? 1.0 : 0.6) * fade;
+                        p.glow.material.opacity = (p.burst ? 0.35 : 0.12) * fade;
                     }
                 })();
             } catch (e) {
@@ -937,7 +901,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 propagationSpeed: 2,
                 repeatPeriod: 1800
             }])
-            .ringColor(() => t => `rgba(255, 176, 144, ${0.7 * (1 - t)})`)
+            .ringColor(() => t => `rgba(102, 238, 136, ${0.7 * (1 - t)})`)
             .ringMaxRadius('maxR')
             .ringPropagationSpeed('propagationSpeed')
             .ringRepeatPeriod('repeatPeriod');
@@ -960,7 +924,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Bright core dot on surface
             const coreDot = new THREE.Mesh(
                 new THREE.SphereGeometry(2.0, 16, 16),
-                new THREE.MeshBasicMaterial({ color: 0xffb090, transparent: true, opacity: 1.0, depthWrite: false })
+                new THREE.MeshBasicMaterial({ color: 0x66ee88, transparent: true, opacity: 1.0, depthWrite: false })
             );
             coreDot.position.copy(bNormal.clone().multiplyScalar(bR));
             beaconGroup.add(coreDot);
@@ -973,10 +937,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             innerCore.position.copy(coreDot.position);
             beaconGroup.add(innerCore);
 
-            // Warm glow around core
+            // Cyan glow around core
             const coreGlow = new THREE.Mesh(
                 new THREE.SphereGeometry(5.0, 16, 16),
-                new THREE.MeshBasicMaterial({ color: 0xffb090, transparent: true, opacity: 0.15, depthWrite: false })
+                new THREE.MeshBasicMaterial({ color: 0x66ee88, transparent: true, opacity: 0.15, depthWrite: false })
             );
             coreGlow.position.copy(coreDot.position);
             beaconGroup.add(coreGlow);
@@ -985,7 +949,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const beamHeight = 18;
             const beamGeom = new THREE.CylinderGeometry(0.15, 0.8, beamHeight, 8);
             const beamMat = new THREE.MeshBasicMaterial({
-                color: 0xffb090, transparent: true, opacity: 0.35, depthWrite: false
+                color: 0x66ee88, transparent: true, opacity: 0.35, depthWrite: false
             });
             const beam = new THREE.Mesh(beamGeom, beamMat);
             beam.position.copy(bNormal.clone().multiplyScalar(bR + beamHeight / 2 + 1));
@@ -995,7 +959,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Outer beam glow (wider, fainter)
             const beamGlowGeom = new THREE.CylinderGeometry(0.5, 2.0, beamHeight, 8);
             const beamGlowMat = new THREE.MeshBasicMaterial({
-                color: 0xffb090, transparent: true, opacity: 0.08, depthWrite: false
+                color: 0x66ee88, transparent: true, opacity: 0.08, depthWrite: false
             });
             const beamGlow = new THREE.Mesh(beamGlowGeom, beamGlowMat);
             beamGlow.position.copy(beam.position);

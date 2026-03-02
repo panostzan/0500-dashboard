@@ -2,13 +2,14 @@
 // SERVICE WORKER - Offline Support for 0500 PWA
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = '0500-v28';
+const CACHE_NAME = '0500-v29';
 
 // Files to cache for offline use
 const STATIC_ASSETS = [
     '/',
     '/index.html',
     '/sleep.html',
+    '/books.html',
     '/css/styles.css',
     '/css/sleep-theme.css',
     '/js/config.js',
@@ -26,6 +27,8 @@ const STATIC_ASSETS = [
     '/js/notes.js',
     '/js/sleep.js',
     '/js/weekly-review.js',
+    '/js/books.js',
+    '/js/books.json',
     '/js/main.js',
     '/manifest.json'
 ];

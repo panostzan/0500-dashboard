@@ -1066,6 +1066,7 @@ html, body {
 /* Globe section */
 .globe-section {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     position: relative;
@@ -1084,7 +1085,8 @@ html, body {
 }
 
 .chip-fact.active,
-.chip-notes.active {
+.chip-notes.active,
+.chip-books.active {
     border-color: var(--accent);
     box-shadow: 0 0 12px var(--accent-glow);
     color: var(--accent);
@@ -1241,6 +1243,7 @@ html, body {
     color: var(--text-muted);
     opacity: 0.5;
 }
+
 
 .globe-wrapper {
     position: relative;
@@ -3981,6 +3984,101 @@ html, body {
     color: var(--text-muted);
     font-size: 0.8rem;
     padding: 1rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   AMBIENT INSIGHT CARDS
+   Embedded intelligence section — centered below globe
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.ambient-insights {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    width: 100%;
+    max-width: 520px;
+    padding: 0 12px;
+    margin-top: -8px;
+}
+
+.ambient-insights:empty {
+    display: none;
+}
+
+.ambient-card {
+    position: relative;
+    flex: 1 1 0;
+    max-width: 250px;
+    padding: 12px 14px;
+    padding-right: 28px;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    animation: ambientFadeIn 600ms ease-out both;
+}
+
+.ambient-category {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.55rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.ambient-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 300;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.ambient-close {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 0.85rem;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: color 0.2s, background 0.2s;
+    line-height: 1;
+}
+
+.ambient-close:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+@keyframes ambientFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ambient-dismissing {
+    animation: ambientFadeOut 400ms ease-out forwards;
+}
+
+@keyframes ambientFadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
