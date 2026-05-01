@@ -289,6 +289,24 @@
 
 <!-- Three.js (loaded before globe.gl so it uses global THREE) -->
 <script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
+<!-- Polyfill THREE.Timer (added in r168) so globe.gl latest can use it -->
+<script>
+if (window.THREE && !window.THREE.Timer) {
+    window.THREE.Timer = class Timer {
+        constructor() { this._startTime = performance.now(); this._prevTime = this._startTime; this.deltaTime = 0; this.elapsedTime = 0; }
+        update(timestamp) {
+            const now = timestamp !== undefined ? timestamp : performance.now();
+            this.deltaTime = (now - this._prevTime) / 1000;
+            this.elapsedTime = (now - this._startTime) / 1000;
+            this._prevTime = now;
+            return this;
+        }
+        getDelta() { return this.deltaTime; }
+        getElapsed() { return this.elapsedTime; }
+        dispose() {}
+    };
+}
+</script>
 <!-- Globe.gl (Three.js globe) + TopoJSON for country borders -->
 <script src="https://unpkg.com/globe.gl"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
