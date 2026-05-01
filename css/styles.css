@@ -52,6 +52,15 @@
     --bg-base: #0f0a12;
     --orb-1: rgba(255, 176, 144, 0.4);
     --orb-2: rgba(200, 112, 144, 0.35);
+
+    /* Spacing scale (8px base) */
+    --sp-1: 4px;
+    --sp-2: 8px;
+    --sp-3: 12px;
+    --sp-4: 16px;
+    --sp-5: 20px;
+    --sp-6: 24px;
+    --sp-8: 32px;
 }
 
 /* ─── Theme overrides ───────────────────────────────────────────────────── */
@@ -478,8 +487,8 @@ html, body {
     left: 0;
     display: flex;
     align-items: flex-start;
-    gap: 14px;
-    padding-left: 14px;
+    gap: var(--sp-3);
+    padding-left: var(--sp-3);
 }
 
 /* HUD bracket — top-left anchor line */
@@ -701,7 +710,7 @@ html, body {
     width: 100%;
     height: 3px;
     background: var(--hud-line);
-    margin-top: 6px;
+    margin-top: var(--sp-2);
     border-radius: 2px;
     overflow: hidden;
     position: relative;
@@ -1169,7 +1178,7 @@ a.chip-analytics {
     max-width: 420px;
     min-width: 280px;
     width: max-content;
-    padding: 18px 22px;
+    padding: var(--sp-4) var(--sp-5);
     background: var(--card-bg);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
@@ -1192,7 +1201,7 @@ a.chip-analytics {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 10px;
+    margin-bottom: var(--sp-2);
     padding-bottom: 8px;
     border-bottom: 1px solid rgba(255, 176, 144, 0.1);
 }
@@ -1238,7 +1247,7 @@ a.chip-analytics {
     transform: translateX(-50%) translateY(6px);
     width: 460px;
     max-width: 90vw;
-    padding: 18px 22px;
+    padding: var(--sp-4) var(--sp-5);
     background: var(--card-bg);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
@@ -1258,7 +1267,7 @@ a.chip-analytics {
 }
 
 .notes-card-header {
-    margin-bottom: 10px;
+    margin-bottom: var(--sp-2);
     padding-bottom: 8px;
     border-bottom: 1px solid rgba(255, 176, 144, 0.1);
 }
@@ -1346,7 +1355,7 @@ a.chip-analytics {
     background: rgba(15, 10, 18, 0.75);
     border: 1px solid rgba(255, 176, 144, 0.18);
     border-radius: 8px;
-    padding: 8px 10px;
+    padding: var(--sp-2) var(--sp-3);
     max-width: 200px;
     min-width: 120px;
     pointer-events: auto;
@@ -1631,7 +1640,7 @@ a.chip-analytics {
     font-family: 'Inter', sans-serif;
     font-size: 12px;
     color: var(--text-secondary);
-    margin-bottom: 10px;
+    margin-bottom: var(--sp-2);
 }
 
 .clear-popover-actions {
@@ -1641,7 +1650,7 @@ a.chip-analytics {
 
 .clear-popover-btn {
     flex: 1;
-    padding: 7px 10px;
+    padding: var(--sp-2) var(--sp-3);
     border: none;
     border-radius: 6px;
     font-family: 'Inter', sans-serif;
@@ -1983,7 +1992,7 @@ a.chip-analytics {
 }
 
 .focus-card-header {
-    margin-bottom: 10px;
+    margin-bottom: var(--sp-2);
     padding-bottom: 8px;
     border-bottom: 1px solid rgba(255, 176, 144, 0.1);
 }
@@ -2045,7 +2054,7 @@ a.chip-analytics {
 
 /* MORE toggle chip */
 .chip-more {
-    gap: 5px;
+    gap: var(--sp-1);
 }
 
 .chip-more .chip-label {
@@ -4217,7 +4226,7 @@ a.chip-analytics {
     width: 360px;
     max-height: 420px;
     overflow-y: auto;
-    padding: 16px 18px;
+    padding: var(--sp-4) var(--sp-5);
     background: var(--card-bg);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
@@ -4241,7 +4250,7 @@ a.chip-analytics {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 10px;
+    margin-bottom: var(--sp-2);
     padding-bottom: 8px;
     border-bottom: 1px solid rgba(255, 176, 144, 0.1);
 }
@@ -4276,13 +4285,13 @@ a.chip-analytics {
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
-    padding: 7px 10px;
+    padding: var(--sp-2) var(--sp-3);
     font-family: 'Inter', sans-serif;
     font-size: 0.75rem;
     font-weight: 300;
     color: var(--text-primary);
     outline: none;
-    margin-bottom: 10px;
+    margin-bottom: var(--sp-2);
     transition: border-color 0.2s;
 }
 
@@ -4300,7 +4309,7 @@ a.chip-analytics {
 
 .intel-item {
     padding: 8px 10px 8px 12px;
-    margin-bottom: 6px;
+    margin-bottom: var(--sp-2);
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-left: 2px solid var(--accent);
@@ -4430,7 +4439,7 @@ a.chip-analytics {
     transform: translateX(-50%) translateY(6px);
     width: 380px;
     max-width: 90vw;
-    padding: 18px 22px;
+    padding: var(--sp-4) var(--sp-5);
     background: var(--card-bg);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
@@ -4453,7 +4462,7 @@ a.chip-analytics {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 14px;
+    margin-bottom: var(--sp-3);
     padding-bottom: 8px;
     border-bottom: 1px solid rgba(255, 176, 144, 0.1);
 }
@@ -4503,7 +4512,7 @@ a.chip-analytics {
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
-    padding: 8px 10px;
+    padding: var(--sp-2) var(--sp-3);
     font-family: 'Inter', sans-serif;
     font-size: 0.75rem;
     font-weight: 300;
@@ -4536,7 +4545,7 @@ a.chip-analytics {
 
 .strava-connect-btn {
     width: 100%;
-    padding: 9px 0;
+    padding: var(--sp-2) 0;
     background: rgba(255, 176, 144, 0.12);
     border: 1px solid rgba(255, 176, 144, 0.25);
     border-radius: 8px;
@@ -4588,7 +4597,7 @@ a.chip-analytics {
     font-size: 0.65rem;
     font-weight: 500;
     letter-spacing: 0.12em;
-    margin-bottom: 14px;
+    margin-bottom: var(--sp-3);
 }
 
 .fitness-status-dot {
@@ -4623,7 +4632,7 @@ a.chip-analytics {
 .fitness-hero-stat {
     display: flex;
     align-items: baseline;
-    gap: 5px;
+    gap: var(--sp-1);
 }
 
 .fitness-hero-num {
@@ -4656,7 +4665,7 @@ a.chip-analytics {
     font-size: 0.72rem;
     font-weight: 300;
     color: var(--text-muted);
-    margin-bottom: 14px;
+    margin-bottom: var(--sp-3);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -4747,7 +4756,7 @@ a.chip-analytics {
     font-size: 0.55rem;
     letter-spacing: 0.15em;
     color: var(--accent);
-    margin-bottom: 6px;
+    margin-bottom: var(--sp-2);
     opacity: 0.8;
 }
 
