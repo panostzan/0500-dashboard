@@ -8,7 +8,7 @@ let swipeState = { el: null, startX: 0, currentX: 0 };
 async function loadGoals() {
     if (!goalsCache) {
         goalsCache = await DataService.loadGoals();
-        ['daily', 'midTerm', 'oneYear', 'longTerm'].forEach(cat => {
+        ['daily', 'weekly', 'midTerm', 'oneYear', 'longTerm'].forEach(cat => {
             if (!goalsCache[cat]) goalsCache[cat] = [];
         });
         hydrateGoalTimestamps(goalsCache);
@@ -16,8 +16,10 @@ async function loadGoals() {
     return goalsCache;
 }
 
-// No-op — kept for supabase.js signOut compatibility
-async function flushGoalSaves() {}
+// Finish weekly progress writes before signing out.
+async function flushGoalSaves() {
+    await Promise.allSettled([...weeklyGoalSaves]);
+}
 
 function loadCollapsedState() {
     return DataService.loadCollapsedState();
@@ -38,7 +40,8 @@ function progressRingSVG(checked, total, r = 11) {
 }
 
 // Create a single goal item element
-function createGoalItem(item, index, isNew = false) {
+function createGoalItem(item, index, isNew = false, sectionKey = '') {
+    if (sectionKey === 'weekly') return createWeeklyGoalItem(item, index, isNew);
     const div = document.createElement('div');
     div.className = `goal-item ${item?.checked ? 'checked' : ''} ${isNew ? 'new-goal' : ''}`;
     if (!isNew) {
@@ -64,11 +67,11 @@ function updateHeaderMeta(group) {
     const checked = group.querySelectorAll('.goal-item.checked:not(.removing)').length;
 
     // Update fraction
-    const frac = group.querySelector('.goal-frac');
+    const frac = group.querySelector('.goal-header .goal-frac');
     if (frac) frac.textContent = `${checked}/${total}`;
 
     // Update ring
-    const ringFill = group.querySelector('.goal-ring-fill');
+    const ringFill = group.querySelector('.goal-header .goal-ring-fill');
     if (ringFill) {
         const r = 11;
         const c = 2 * Math.PI * r;
@@ -78,12 +81,13 @@ function updateHeaderMeta(group) {
     }
 
     // Show/hide ring + frac if total changes to/from 0
-    const ringEl = group.querySelector('.goal-ring');
+    const ringEl = group.querySelector('.goal-header .goal-ring');
     if (ringEl) ringEl.style.display = total > 0 ? '' : 'none';
     if (frac) frac.style.display = total > 0 ? '' : 'none';
 }
 
 function attachGoalListeners(item, sectionKey, group) {
+    if (sectionKey === 'weekly') { attachWeeklyGoalListeners(item, group); return; }
     const checkbox = item.querySelector('.goal-checkbox');
     const textEl = item.querySelector('.goal-text');
     const delBtn = item.querySelector('.goal-del-btn');
@@ -225,6 +229,7 @@ function attachSwipeListeners(item, sectionKey, group) {
 
     const startSwipe = (e) => {
         if (e.type === 'mousedown' && e.button !== 0) return;
+        if (sectionKey === 'weekly' && (item.dataset.saving || e.target.closest('button, input, select, [contenteditable]'))) return;
 
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         swipeState = { el: item, startX: clientX, currentX: clientX };
@@ -298,7 +303,8 @@ async function renderGoals() {
 
     const sections = [
         { key: 'daily', title: 'DAILY', items: goals.daily, collapsible: true },
-        { key: 'midTerm', title: 'UNTIL APRIL', items: goals.midTerm, collapsible: true },
+        { key: 'weekly', title: 'WEEKLY', items: goals.weekly, collapsible: true },
+        { key: 'midTerm', title: 'UNTIL DECEMBER 31ST', items: goals.midTerm, collapsible: true },
         { key: 'oneYear', title: '1 YEAR', items: goals.oneYear, collapsible: true },
         { key: 'longTerm', title: 'LONG-TERM', items: goals.longTerm, collapsible: true }
     ];
@@ -313,8 +319,8 @@ async function renderGoals() {
                 <div class="goal-header">
                     <span class="goal-header-title">${section.title}</span>
                     ${section.key === 'daily' ? '<button class="daily-clear-btn" title="Clear daily goals">CLR</button>' : ''}
-                    ${total > 0 ? progressRingSVG(checked, total) : ''}
-                    ${total > 0 ? `<span class="goal-frac">${checked}/${total}</span>` : ''}
+                    ${progressRingSVG(checked, total)}
+                    <span class="goal-frac">${checked}/${total}</span>
                     <span class="goal-header-spacer"></span>
                     <span class="goal-toggle-icon">${isCollapsed ? '+' : '−'}</span>
                 </div>
@@ -329,15 +335,16 @@ async function renderGoals() {
         const items = sections[sectionIdx].items;
 
         items.forEach((item, idx) => {
-            const goalEl = createGoalItem(item, idx);
+            const goalEl = createGoalItem(item, idx, false, sectionKey);
             goalList.appendChild(goalEl);
             attachGoalListeners(goalEl, sectionKey, group);
             attachSwipeListeners(goalEl, sectionKey, group);
         });
 
-        const newGoalEl = createGoalItem(null, -1, true);
+        const newGoalEl = createGoalItem(null, -1, true, sectionKey);
         goalList.appendChild(newGoalEl);
         attachGoalListeners(newGoalEl, sectionKey, group);
+        updateHeaderMeta(group);
 
         const clearBtn = group.querySelector('.daily-clear-btn');
         if (clearBtn) {

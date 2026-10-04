@@ -671,10 +671,6 @@ async function generateInsights() {
         insightPeopleStale(),
         insightPeopleRecent(),
         insightPeopleNoNotes(),
-        // Books
-        insightBooksReadingPace(),
-        insightBooksCurrently(),
-        insightBooksTopRated(),
         // Day-of-week patterns
         insightSleepBestWorstDay(),
         insightGoalsDayPattern(),
@@ -1261,7 +1257,6 @@ const JARVIS_PLACEHOLDERS = [
     'ask me anything...',
     'how did I sleep on fridays?',
     'who did I meet this week?',
-    'how many books have I read?',
     'remember buy groceries',
     'what are my goals?',
     'how am I doing?',
@@ -1271,7 +1266,6 @@ const JARVIS_PLACEHOLDERS = [
     "what's on my schedule?",
     'what can I do?',
     'last night sleep',
-    'best books?',
     "who haven't I talked to?",
 ];
 

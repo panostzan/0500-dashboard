@@ -155,9 +155,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Initialize schedule
         initSchedule();
 
-        // Initialize timer
-        initTimer();
-
         // Initialize notes
         initNotes();
 
@@ -174,11 +171,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         deferInit(() => initWeeklyReview());
         deferInit(() => initDailyFact());
-        deferInit(() => initBooks());
         deferInit(() => initPeople());
         deferInit(() => initAnalyticsChip());
         deferInit(() => initInsights());
-        deferInit(() => initStrava());
         deferInit(() => initJarvisToast());
 
         // MORE chip overflow toggle
@@ -1026,18 +1021,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log('[GLOBE] Location beacon skipped:', e.message);
         }
 
-        // ── Timer globe (keep old canvas DottedGlobe) ──
-        const timerGlobe = new DottedGlobe(document.getElementById('timer-globe-canvas'), {
-            size: 650,
-            highlightLocation: initialLocation,
-            rotationSpeed: 0.0006,
-            dotSpacing: 2.5,
-            dotColor: 'rgba(255, 180, 150, 0.35)',
-            highlightColor: '#ffb090',
-            initialRotation: 1.4
-        });
-        timerGlobe.loadLandData();
-
         // ── Location label (Three.js sprite) ──
         var locationLabelSprite = null;
 
@@ -1162,7 +1145,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     resolveAndLabelLocation(window.userLocation.lat, lng);
                 }
 
-                timerGlobe.setHighlightLocation(window.userLocation);
                 clearInterval(checkLocation);
             }
         }, 500);
@@ -1213,7 +1195,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Handle window resize
         window.addEventListener('resize', () => {
             resizeGlobe();
-            timerGlobe.resize();
         });
     } catch (error) {
         console.error('Initialization error:', error);

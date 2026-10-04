@@ -284,7 +284,6 @@ function checkJarvisNudges() {
         nudgeMorningNoSchedule,
         nudgeStaleContact,
         nudgeNoSleepLog,
-        nudgeReadingReminder,
         nudgeGoalStreakCongrats,
         nudgeWeekendReflection
     ];

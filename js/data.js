@@ -89,6 +89,29 @@ function _genLocalId() {
 }
 
 const DataService = {
+    // Versioned envelope in the existing text column keeps weekly targets and
+    // progress atomic with the goal, without requiring a remote schema migration.
+    _encodeGoalText(text, progress) {
+        return progress ? '0500:weekly:v1:' + JSON.stringify({ text, progress }) : text;
+    },
+
+    _decodeGoal(row) {
+        const goal = { id: row.id, text: row.text, checked: row.checked };
+        if (row.category === 'weekly' && row.text.startsWith('0500:weekly:v1:')) {
+            try {
+                const value = JSON.parse(row.text.slice('0500:weekly:v1:'.length));
+                const p = value.progress;
+                if (typeof value.text === 'string' && p && Number.isFinite(p.target) && p.target > 0 &&
+                    Number.isFinite(p.value) && p.value >= 0 && p.value <= p.target &&
+                    typeof p.unit === 'string' && Number.isFinite(p.step) && p.step > 0) {
+                    goal.text = value.text;
+                    goal.progress = p;
+                    goal.checked = p.value >= p.target;
+                }
+            } catch (_) { /* Preserve unfamiliar or malformed text unchanged. */ }
+        }
+        return goal;
+    },
     // ═══════════════════════════════════════════════════════════════════════════
     // GOALS — Atomic operations (no more delete-all-then-insert)
     // ═══════════════════════════════════════════════════════════════════════════
@@ -108,14 +131,10 @@ const DataService = {
                 return this._getEmptyGoals();
             }
 
-            const goals = { daily: [], midTerm: [], oneYear: [], longTerm: [] };
+            const goals = { daily: [], weekly: [], midTerm: [], oneYear: [], longTerm: [] };
             data.forEach(g => {
                 if (goals[g.category]) {
-                    goals[g.category].push({
-                        id: g.id,
-                        text: g.text,
-                        checked: g.checked
-                    });
+                    goals[g.category].push(this._decodeGoal(g));
                 }
             });
 
@@ -127,7 +146,7 @@ const DataService = {
             if (saved) {
                 const goals = JSON.parse(saved);
                 // Ensure all categories exist and items have IDs
-                ['daily', 'midTerm', 'oneYear', 'longTerm'].forEach(cat => {
+                ['daily', 'weekly', 'midTerm', 'oneYear', 'longTerm'].forEach(cat => {
                     if (!goals[cat]) goals[cat] = [];
                     goals[cat].forEach(g => {
                         if (!g.id) g.id = _genLocalId();
@@ -139,7 +158,7 @@ const DataService = {
         }
     },
 
-    async insertGoal(category, text, sortOrder) {
+    async insertGoal(category, text, sortOrder, progress = null) {
         if (isSignedIn()) {
             const { data, error } = await withRetry(async () => {
                 const result = await supabaseClient
@@ -147,7 +166,7 @@ const DataService = {
                     .insert({
                         user_id: currentUser.id,
                         category,
-                        text,
+                        text: category === 'weekly' ? this._encodeGoalText(text, progress) : text,
                         checked: false,
                         sort_order: sortOrder
                     })
@@ -162,7 +181,7 @@ const DataService = {
             const id = _genLocalId();
             const goals = JSON.parse(localStorage.getItem('0500_goals') || '{}');
             if (!goals[category]) goals[category] = [];
-            goals[category].push({ id, text, checked: false });
+            goals[category].push({ id, text, checked: false, ...(progress ? { progress } : {}) });
             safeSetItem('0500_goals', JSON.stringify(goals));
             return id;
         }
@@ -173,6 +192,7 @@ const DataService = {
             await withRetry(async () => {
                 const supaUpdates = {};
                 if ('text' in updates) supaUpdates.text = updates.text;
+                if ('progress' in updates) supaUpdates.text = this._encodeGoalText(updates.text, updates.progress);
                 if ('checked' in updates) supaUpdates.checked = updates.checked;
                 if ('sort_order' in updates) supaUpdates.sort_order = updates.sort_order;
 
@@ -185,12 +205,16 @@ const DataService = {
             this._mirrorGoalsToLocalStorage();
         } else {
             const goals = JSON.parse(localStorage.getItem('0500_goals') || '{}');
-            for (const cat of ['daily', 'midTerm', 'oneYear', 'longTerm']) {
+            for (const cat of ['daily', 'weekly', 'midTerm', 'oneYear', 'longTerm']) {
                 if (!goals[cat]) continue;
                 const g = goals[cat].find(g => g.id === id);
                 if (g) {
                     if ('text' in updates) g.text = updates.text;
                     if ('checked' in updates) g.checked = updates.checked;
+                    if ('progress' in updates) {
+                        if (updates.progress) g.progress = updates.progress;
+                        else delete g.progress;
+                    }
                     break;
                 }
             }
@@ -210,7 +234,7 @@ const DataService = {
             this._mirrorGoalsToLocalStorage();
         } else {
             const goals = JSON.parse(localStorage.getItem('0500_goals') || '{}');
-            for (const cat of ['daily', 'midTerm', 'oneYear', 'longTerm']) {
+            for (const cat of ['daily', 'weekly', 'midTerm', 'oneYear', 'longTerm']) {
                 if (!goals[cat]) continue;
                 const idx = goals[cat].findIndex(g => g.id === id);
                 if (idx >= 0) {
@@ -270,10 +294,10 @@ const DataService = {
                 .order('category')
                 .order('sort_order');
             if (data) {
-                const goals = { daily: [], midTerm: [], oneYear: [], longTerm: [] };
+                const goals = { daily: [], weekly: [], midTerm: [], oneYear: [], longTerm: [] };
                 data.forEach(g => {
                     if (goals[g.category]) {
-                        goals[g.category].push({ id: g.id, text: g.text, checked: g.checked });
+                        goals[g.category].push(this._decodeGoal(g));
                     }
                 });
                 safeSetItem('0500_goals', JSON.stringify(goals));
@@ -282,7 +306,7 @@ const DataService = {
     },
 
     _getEmptyGoals() {
-        return { daily: [], midTerm: [], oneYear: [], longTerm: [] };
+        return { daily: [], weekly: [], midTerm: [], oneYear: [], longTerm: [] };
     },
 
     // ═══════════════════════════════════════════════════════════════════════════
