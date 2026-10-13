@@ -4,6 +4,25 @@ A personal dashboard for setting goals and planning the day, inspired by the way
 
 [Open the app](https://0500app.vercel.app)
 
+![0500 dashboard with daily and weekly goals, an interactive globe, and a daily schedule](docs/images/dashboard.png)
+
+<details>
+<summary>More screenshots: sleep tracking, statistics, facts, and news</summary>
+
+### Sleep overview
+
+![Sleep overview with score, recent nights, and insights](docs/images/sleep-overview.png)
+
+### Sleep statistics
+
+![Sleep statistics and monthly calendar](docs/images/sleep-statistics.png)
+
+### Facts and news
+
+![Fact and news cards on the dashboard globe](docs/images/facts-and-news.png)
+
+</details>
+
 ## Features
 
 - Daily and longer-term goals, weekly progress tracking, and reviews
