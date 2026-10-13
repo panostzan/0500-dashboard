@@ -1,6 +1,6 @@
 # 0500
 
-A dashboard designed around how I use my notebook to set goals and plan my days.
+A personal dashboard for setting goals and planning the day, inspired by the way I organize my notebook.
 
 [Open the app](https://0500app.vercel.app)
 
