@@ -1,6 +1,6 @@
 # 0500
 
-A personal morning dashboard for planning the day, tracking progress, and building a consistent routine. Built with vanilla JavaScript, a warm sunrise palette, and an interactive globe.
+A dashboard designed around how I use my notebook to set goals and plan my days.
 
 [Open the app](https://0500app.vercel.app)
 
