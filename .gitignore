@@ -1,1 +1,30 @@
 .vercel
+
+# Secrets and machine-local state
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+.claude/
+.codex/
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
+
+# Personal exports, backups, and experiments
+backups/
+notion-export/
+inspo/
+inspo screenshots/
+panos365/
+*.zip
+*.bundle
+*-backup.json
+backup-*.html
+demo-*.html
+js/reservation
+icons/1767063122_thumb.webp
